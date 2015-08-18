@@ -13,6 +13,7 @@ struct UnderComp;
 struct Order;
 struct OrderState;
 struct Execution;
+struct TagValue;
 
 
 #define TickerId long
@@ -28,6 +29,12 @@ public:
     void connectToTWS(const QString & host, quint16 port, int clientId);
     void disconnectTWS();
     void send();
+
+    TickerId getTickerId() { return ++m_tickerId; }
+
+    void reqHistoricalData( TickerId tickerId, const Contract &contract, const QByteArray &endDateTime, const QByteArray &durationStr, const QByteArray & barSizeSetting, const QByteArray &whatToShow, int useRTH, int formatDate, const QList<TagValue*> & chartOptions);
+    void reqCurrentTime();
+    void reqMktData(TickerId tickerId, const Contract& contract, const QByteArray& genericTicks, bool snapshot, const QList<TagValue*>& mktDataOptions);
 
 signals:
     void tickPrice(const TickerId & tickerId, const TickType & field, const double & price, const int & canAutoExecute);
@@ -91,6 +98,7 @@ signals:
     void displayGroupUpdated( int reqId, const QByteArray& contractInfo);
 public slots:
 
+
 private slots:
     void onConnected();
     void onReadyRead();
@@ -106,6 +114,10 @@ private:
     int         m_begIdx;
     int         m_endIdx;
     bool        m_extraAuth;
+
+    QByteArray  m_debugBuffer;
+
+    TickerId    m_tickerId;
 
     void        decodeField(int & value);
     void        decodeField(bool & value);

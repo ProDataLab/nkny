@@ -74,7 +74,10 @@ struct Contract
         , strike(0)
         , includeExpired(false)
         , underComp(NULL)
+        , m_conId(0)
     {}
+
+    long getConId() { return ++m_conId; }
 
     long		conId;
     QByteArray	symbol;
@@ -99,6 +102,9 @@ struct Contract
 
     // delta neutral
     UnderComp* underComp;
+
+private:
+    long m_conId;
 
 };
 

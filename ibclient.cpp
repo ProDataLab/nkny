@@ -12,6 +12,8 @@
 
 #include <QTcpSocket>
 #include <QDebug>
+#include <QByteArray>
+#include <QList>
 
 #include <cfloat>
 
@@ -31,6 +33,7 @@ IBClient::IBClient(QObject *parent)
     , m_begIdx(0)
     , m_endIdx(0)
     , m_extraAuth(0)
+    , m_tickerId(0)
 {
     m_socket = new QTcpSocket(this);
 
@@ -70,14 +73,206 @@ void IBClient::disconnectTWS()
 
 void IBClient::send()
 {
+    qDebug() << "[DBG]" << m_debugBuffer;
+    m_debugBuffer.clear();
+
+    qDebug() << "[SND]" << m_outBuffer;
+
     int sent = m_socket->write(m_outBuffer);
 
     if (sent == m_outBuffer.size())
         m_outBuffer.clear();
     else
-        m_outBuffer.remove(0, sent);
+        m_outBuffer.remove(0, sent + 1);
 }
 
+void IBClient::reqHistoricalData(long tickerId, const Contract &contract, const QByteArray &endDateTime, const QByteArray &durationStr, const QByteArray &barSizeSetting, const QByteArray &whatToShow, int useRTH, int formatDate, const QList<TagValue*> &chartOptions)
+{
+    if (!m_connected) {
+       emit error(tickerId, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+    if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
+        if (!contract.tradingClass.isEmpty() || (contract.conId > 0)) {
+            emit error(tickerId, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+                  "  It does not support conId and tradingClass parameters in reqHistoricalData.");
+            return;
+        }
+    }
+
+    const int version = 6;
+
+    encodeField(REQ_HISTORICAL_DATA);
+    encodeField(version);
+    encodeField(tickerId);
+
+    // send contract fields
+    if (m_serverVersion >= MIN_SERVER_VER_TRADING_CLASS) {
+        encodeField(contract.conId);
+    }
+    encodeField(contract.symbol);
+    encodeField(contract.secType);
+    encodeField(contract.expiry);
+    encodeField(contract.strike);
+    encodeField(contract.right);
+    encodeField(contract.multiplier);
+    encodeField(contract.exchange);
+    encodeField(contract.primaryExchange);
+    encodeField(contract.currency);
+    encodeField(contract.localSymbol);
+    if (m_serverVersion >= MIN_SERVER_VER_TRADING_CLASS) {
+        encodeField(contract.tradingClass);
+    }
+    encodeField(contract.includeExpired);
+    encodeField(endDateTime);
+    encodeField(barSizeSetting);
+    encodeField(durationStr);
+    encodeField(useRTH);
+    encodeField(whatToShow);
+    encodeField(formatDate);
+
+    // send combo legs for BAG requests
+    if (contract.secType == "BAG") {
+        encodeField(contract.comboLegs.size());
+        foreach(ComboLeg* leg, contract.comboLegs) {
+            encodeField(leg->conId);
+            encodeField(leg->ratio);
+            encodeField(leg->action);
+            encodeField(leg->exchange);
+        }
+    }
+
+    // send chart options parameter
+    if (m_serverVersion >= MIN_SERVER_VER_LINKING) {
+        QByteArray chartOptionsStr;
+        foreach (TagValue* tv, chartOptions) {
+            chartOptionsStr.append(tv->tag);
+            chartOptionsStr.append("=");
+            chartOptionsStr.append(tv->value);
+            chartOptionsStr.append(";");
+        }
+        encodeField(chartOptionsStr);
+    }
+    send();
+}
+void IBClient::reqCurrentTime()
+{
+    // not connected?
+    if( !m_connected) {
+        emit error(NO_VALID_ID, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+    const int version = 1;
+    encodeField(REQ_CURRENT_TIME);
+    encodeField(version);
+    send();
+}
+
+
+void IBClient::reqMktData(TickerId tickerId, const Contract& contract,
+                               const QByteArray& genericTicks, bool snapshot, const QList<TagValue*>& mktDataOptions)
+{
+    // not connected?
+    if( !m_connected) {
+        emit error( tickerId, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+    if( m_serverVersion < MIN_SERVER_VER_UNDER_COMP) {
+        if( contract.underComp) {
+            emit error( tickerId, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+                "  It does not support delta-neutral orders.");
+            return;
+        }
+    }
+
+    if (m_serverVersion < MIN_SERVER_VER_REQ_MKT_DATA_CONID) {
+        if( contract.conId > 0) {
+            emit error( tickerId, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+                "  It does not support conId parameter.");
+            return;
+        }
+    }
+
+    if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
+        if( !contract.tradingClass.isEmpty()) {
+            emit error( tickerId, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+                "  It does not support tradingClass parameter in reqMktData.");
+            return;
+        }
+    }
+
+    const int VERSION = 11;
+
+    // send req mkt data msg
+    encodeField( REQ_MKT_DATA);
+    encodeField( VERSION);
+    encodeField( tickerId);
+
+    // send contract fields
+    if( m_serverVersion >= MIN_SERVER_VER_REQ_MKT_DATA_CONID) {
+        encodeField( contract.conId);
+    }
+    encodeField( contract.symbol);
+    encodeField( contract.secType);
+    encodeField( contract.expiry);
+    encodeField( contract.strike);
+    encodeField( contract.right);
+    encodeField( contract.multiplier); // srv v15 and above
+
+    encodeField( contract.exchange);
+    encodeField( contract.primaryExchange); // srv v14 and above
+    encodeField( contract.currency);
+
+    encodeField( contract.localSymbol); // srv v2 and above
+
+    if( m_serverVersion >= MIN_SERVER_VER_TRADING_CLASS) {
+        encodeField( contract.tradingClass);
+    }
+
+    // Send combo legs for BAG requests (srv v8 and above)
+    if (contract.secType == "BAG") {
+        const QList<ComboLeg*> comboLegs = contract.comboLegs;
+        encodeField(comboLegs.size());
+        foreach (ComboLeg* cl, comboLegs) {
+            encodeField(cl->conId);
+            encodeField(cl->ratio);
+            encodeField(cl->action);
+            encodeField(cl->exchange);
+        }
+    }
+
+    if( m_serverVersion >= MIN_SERVER_VER_UNDER_COMP) {
+        if( contract.underComp) {
+            encodeField( true);
+            encodeField( contract.underComp->conId);
+            encodeField( contract.underComp->delta);
+            encodeField( contract.underComp->price);
+        }
+        else {
+            encodeField( false);
+        }
+    }
+
+    encodeField( genericTicks); // srv v31 and above
+    encodeField( snapshot); // srv v35 and above
+
+    // send mktDataOptions parameter
+    if( m_serverVersion >= MIN_SERVER_VER_LINKING) {
+        QByteArray mktDataOptionsStr;
+        foreach (TagValue* tv, mktDataOptions) {
+            mktDataOptionsStr.append(tv->tag);
+            mktDataOptionsStr.append("=");
+            mktDataOptionsStr.append(tv->value);
+            mktDataOptionsStr.append(";");
+        }
+        encodeField( mktDataOptionsStr);
+    }
+
+    send();
+}
 
 void IBClient::onConnected()
 {
@@ -88,6 +283,13 @@ void IBClient::onReadyRead()
 {
     m_inBuffer.append(m_socket->readAll());
 
+//    qDebug() << "[RAW]" << m_inBuffer;
+
+
+    while (m_inBuffer.size()) {
+
+//    qDebug() << "[REP]" << m_inBuffer;
+
     // I'M GETTING EMPTY MESSAGES.. IS THIS THE CORRECT WAY TO HANDLE THIS ???
 
     if (m_inBuffer.isEmpty()) {
@@ -97,12 +299,12 @@ void IBClient::onReadyRead()
 
     // WHY ARE MESSAGES FROM TWS SARTING WITH A '\0' ??? ... IS THIS THE CORRECT WAY TO HANDLE IT?
     if (m_inBuffer.startsWith('\0')) {
-        qDebug() << "[DEBUG] onReadyRead message started with a '\0' ??? wtf, I'm removing it";
+        qDebug() << "[DEBUG] onReadyRead message started with a \'\0\' ??? wtf, I'm removing it";
         m_inBuffer.remove(0, 1);
     }
 
     // DEBUG
-    qDebug() << "onReadyRead msg:" << m_inBuffer;
+    //    qDebug() << "onReadyRead msg:" << m_inBuffer;
 
     if (!m_connected) {
         decodeField(m_serverVersion);
@@ -117,12 +319,12 @@ void IBClient::onReadyRead()
 
         m_connected = true;
 
-        cleanInBuffer();
+        //        cleanInBuffer();
 
         // DEBUG
-//        qDebug() << "server version:" << m_serverVersion;
-//        qDebug() << "tws time:" << m_twsTime;
-//        qDebug() << "left over:" << decodeField(m_inBuffer);
+        //        qDebug() << "server version:" << m_serverVersion;
+        //        qDebug() << "tws time:" << m_twsTime;
+        //        qDebug() << "left over:" << decodeField(m_inBuffer);
 
         // send the clientId
         if (m_serverVersion >= 3) {
@@ -507,7 +709,7 @@ void IBClient::onReadyRead()
             decodeField(contract.comboLegsDescrip); // ver 14 field
 
             if (version >= 29) {
-            int comboLegsCount = 0;
+                int comboLegsCount = 0;
                 decodeField(comboLegsCount);
 
                 if (comboLegsCount > 0) {
@@ -524,7 +726,7 @@ void IBClient::onReadyRead()
                         decodeField(comboLeg->exemptCode);
 
                         comboLegs.append(comboLeg);
-                }
+                    }
                     contract.comboLegs = comboLegs;
                 }
 
@@ -708,8 +910,8 @@ void IBClient::onReadyRead()
             }
 
             emit updatePortfolio( contract,
-                position, marketPrice, marketValue, averageCost,
-                unrealizedPNL, realizedPNL, accountName);
+                                  position, marketPrice, marketValue, averageCost,
+                                  unrealizedPNL, realizedPNL, accountName);
 
             break;
         }
@@ -967,7 +1169,7 @@ void IBClient::onReadyRead()
             decodeField(size);
 
             emit updateMktDepthL2( id, position, marketMaker, operation, side,
-                price, size);
+                                   price, size);
 
             break;
         }
@@ -1050,14 +1252,14 @@ void IBClient::onReadyRead()
                 bars.push_back(bar);
             }
 
-//            assert( (int)bars.size() == itemCount);
+            //            assert( (int)bars.size() == itemCount);
 
             for( int ctr = 0; ctr < itemCount; ++ctr) {
 
                 const BarData& bar = bars[ctr];
                 emit historicalData( reqId, bar.date, bar.open, bar.high, bar.low,
-                    bar.close, bar.volume, bar.barCount, bar.average,
-                    (bar.hasGaps == "true" ? 1 : 0));
+                                     bar.close, bar.volume, bar.barCount, bar.average,
+                                     (bar.hasGaps == "true" ? 1 : 0));
             }
 
             // send end of dataset marker
@@ -1106,13 +1308,13 @@ void IBClient::onReadyRead()
                 scannerDataList.push_back( data);
             }
 
-//            assert( (int)scannerDataList.size() == numberOfElements);
+            //            assert( (int)scannerDataList.size() == numberOfElements);
 
             for( int ctr=0; ctr < numberOfElements; ++ctr) {
 
                 const ScanData& data = scannerDataList[ctr];
                 emit scannerData( tickerId, data.rank, data.contract,
-                    data.distance, data.benchmark, data.projection, data.legsStr);
+                                  data.distance, data.benchmark, data.projection, data.legsStr);
             }
 
             emit scannerDataEnd( tickerId);
@@ -1168,7 +1370,7 @@ void IBClient::onReadyRead()
             decodeField(count);
 
             emit realtimeBar( reqId, time, open, high, low, close,
-                volume, average, count);
+                              volume, average, count);
 
             break;
         }
@@ -1444,6 +1646,9 @@ void IBClient::onReadyRead()
         }
         }
     }
+
+    cleanInBuffer();
+    }
 }
 
 
@@ -1525,6 +1730,8 @@ void IBClient::encodeField(const double &value)
 
 void IBClient::encodeField(const QByteArray &buf)
 {
+    m_debugBuffer.append(buf).append(" ");
+
     m_outBuffer.append(buf);
     m_outBuffer.append('\0');
 }
@@ -1536,7 +1743,7 @@ void IBClient::cleanInBuffer()
         m_begIdx = m_endIdx = 0;
     }
     else {
-        m_inBuffer.remove(0, m_endIdx);
+        m_inBuffer.remove(0, m_endIdx + 1);
         m_begIdx = 0;
     }
 }
