@@ -3,9 +3,12 @@
 #include "ibclient.h"
 #include "ibcontract.h"
 #include "qcustomplot.h"
+#include "helpers.h"
+#include "security.h"
 
 #include <QDateTime>
 #include <QSpinBox>
+#include <QPair>
 
 
 PairTabPage::PairTabPage(IBClient *ibClient, QWidget *parent)
@@ -20,6 +23,10 @@ PairTabPage::PairTabPage(IBClient *ibClient, QWidget *parent)
 PairTabPage::~PairTabPage()
 {
     delete ui;
+
+    // TODO: IS THIS CORRECT ??????
+
+    qDeleteAll(m_securityMap);
 }
 
 
@@ -45,266 +52,286 @@ void PairTabPage::on_pair2SecurityLineEdit_textEdited(const QString &arg1)
 
 void PairTabPage::on_pair1ShowButton_clicked()
 {
-    m_pair1TickerId = m_ibClient->getTickerId();
+//    m_pair1TickerId = m_ibClient->getTickerId();
 
-    reqHistoricalData(m_pair1TickerId, ui->pair1ConIdLineEdit->text().toLong()
-                      , ui->pair1SecurityLineEdit->text().toLocal8Bit()
-                      , ui->secTypeComboBox->currentText().toLocal8Bit()
-                      , ui->pair1PrimaryExchangeLineEdit->text().toLocal8Bit()
-                      , ui->timeFrameComboBox->currentIndex());
+    m_pairList.append(QPair<Security*,Security*>());
+    long tickerId = m_ibClient->getTickerId();
+    Security* pair1 = m_pairList.last().first = new Security(tickerId, new Contract);
+    m_securityMap[tickerId] = pair1;
+    Contract* contract = pair1->contract();
+    contract->conId = ui->pair1ConIdLineEdit->text().toLong();
+    contract->symbol = ui->pair1SecurityLineEdit->text().toLocal8Bit();
+    contract->secType = ui->secTypeComboBox->currentText().toLocal8Bit();
+    contract->exchange = "SMART";
+    contract->primaryExchange = ui->pair1PrimaryExchangeLineEdit->text().toLocal8Bit();
+    contract->currency = "USD";
+
+    reqMktData(pair1->tickerId(), contract);
+
 
     ui->pair2ShowButton->setEnabled(true);
 }
 
 void PairTabPage::on_pair2ShowButton_clicked()
 {
-    m_pair2TickerId = m_ibClient->getTickerId();
+    long tickerId = m_ibClient->getTickerId();
+    Security* pair2 = m_pairList.last().second = new Security(tickerId, new Contract);
+    m_securityMap[tickerId] = pair2;
+    Contract* contract = pair2->contract();
+    contract->conId = ui->pair2ConIdLineEdit->text().toLong();
+    contract->symbol = ui->pair2SecurityLineEdit->text().toLocal8Bit();
+    contract->secType = ui->secTypeComboBox->currentText().toLocal8Bit();
+    contract->exchange = "SMART";
+    contract->primaryExchange = ui->pair2PrimaryExchangeLineEdit->text().toLocal8Bit();
+    contract->currency = "USD";
 
-    reqHistoricalData(m_pair2TickerId, ui->pair2ConIdLineEdit->text().toLong()
-                      , ui->pair2SecurityLineEdit->text().toLocal8Bit()
-                      , ui->secTypeComboBox->currentText().toLocal8Bit()
-                      , ui->pair2PrimaryExchangeLineEdit->text().toLocal8Bit()
-                      , ui->timeFrameComboBox->currentIndex());
+    reqMktData(pair2->tickerId(), contract);
 }
 
 void PairTabPage::onHistoricalData(long reqId, const QByteArray &date, double open, double high, double low, double close, int volume, int barCount, double WAP, int hasGaps)
 {
-//    qDebug() << reqId << date << open << high << low << close << volume << barCount << WAP << hasGaps;
+//    qDebug() << "[HIST]" << reqId << date << open << high << low << close << volume << barCount << WAP << hasGaps;
 
-    if (reqId == m_pair1TickerId) {
-        if (QString(date).startsWith("finish")) {
-            showPlot(m_pair1TickerId);
-            return;
+//    20150819  DAY_1
+
+    if (date.startsWith("finished")) {
+        // done collecting hist data.... todo: show the plot
+        QVector<DataPoint*> data = m_securityMap[reqId]->getData(m_timeFrame);
+        foreach(DataPoint* dp, data) {
+            qDebug() << "[HIST-COLLECTED]" << dp->timeStamp.toString() << dp->value;
         }
-        m_pair1Time.append(date.toDouble());
-        m_pair1Open.append(open);
-        m_pair1High.append(high);
-        m_pair1Low.append(low);
-        m_pair1Close.append(close);
-        m_pair1Volume.append(volume);
-        m_pair1BarCount.append(barCount);
-        m_pair1HasGaps.append(hasGaps);
+
+        return;
     }
-    else if (reqId == m_pair2TickerId) {
-        if (QString(date).startsWith("finish")) {
-            showPlot(m_pair2TickerId);
-            return;
-        }
-        m_pair2Time.append(date.toDouble());
-        m_pair2Open.append(open);
-        m_pair2High.append(high);
-        m_pair2Low.append(low);
-        m_pair2Close.append(close);
-        m_pair2Volume.append(volume);
-        m_pair2BarCount.append(barCount);
-        m_pair2HasGaps.append(hasGaps);
+
+    if (!m_securityMap.contains(reqId)) {
+        // TOODO:: THIS IS AN ERROR THAT SHOULD NOT SHOW UP... HANDLE IT
+        qDebug() << "[CRITICAL] reqId is not known!";
+    }
+
+    QDateTime dt;
+
+    if (m_timeFrame != DAY_1)
+        dt = QDateTime::fromTime_t(date.toUInt());
+    else
+        dt = QDateTime::fromString(date, "yyyyMMdd");
+
+    Security* security = m_securityMap[reqId];
+    security->appendData(m_timeFrame, dt, close);
+
+}
+
+
+
+void PairTabPage::onTickGeneric(long tickerId, TickType tickType, double value)
+{
+    qDebug() << "[DEBUG-GenericTick]" << tickerId << tickType << value;
+}
+
+void PairTabPage::onTickPrice(long tickerId, TickType tickType, double price, int canAutoExecute)
+{
+    QDateTime timeStamp = QDateTime::currentDateTime();
+
+    Security* security = m_securityMap[tickerId];
+
+    if (!security->histDataRequested()) {
+        reqHistoricalData(tickerId, timeStamp);
+        security->setHistDataRequested();
+    }
+
+
+//    qDebug() << "[DEBUG-TickPrice]" << tickerId << tickType << price << canAutoExecute;
+
+
+
+    switch (tickType) {
+    case BID:
+        break;
+    case ASK:
+        break;
+    case LAST:
+//        qDebug() << "[RT]" << QDateTime::currentDateTime().toString() << price;
+        security->appendData(RAW, timeStamp, price);
+        break;
+    case HIGH:
+        break;
+    case LOW:
+        break;
+    case CLOSE:
+        break;
     }
 }
 
-void PairTabPage::reqHistoricalData(const long & tickerId, const long & conId, const QByteArray & symbol, const QByteArray & secType, const QByteArray & primaryExchange, const int & timeFrameIdx)
+void PairTabPage::onTickSize(long tickerId, TickType tickType, int size)
 {
-    Contract contract;
-    contract.conId = conId;
-    contract.symbol = symbol;
-    contract.secType = secType;
-    contract.exchange = "SMART";
-    contract.primaryExchange = primaryExchange;
-    contract.currency = "USD";
+//    qDebug() << "[DEBUG-TickSize]" << tickerId << tickType << size;
+}
 
-//    m_pair2.first = contract.symbol;
-//    m_pair2.second = contract.conId;
 
-    QDateTime dt(QDateTime::currentDateTime().toUTC());
-    QByteArray dts(dt.toString("yyyyMMdd HH:mm:ss G'M'T").toLocal8Bit());
 
-    int idx = timeFrameIdx;
+void PairTabPage::reqHistoricalData(long tickerId, const QDateTime & endDate)
+{
+    Security* security = m_securityMap[tickerId];
 
-    qDebug() << "[CURRENT IDX]" << idx;
+    TimeFrame tf = (TimeFrame)ui->timeFrameComboBox->currentIndex();
+    QByteArray barSize = ui->timeFrameComboBox->currentText().toLocal8Bit();
+    QByteArray durationStr;
+    int ma = ui->maSpinBox->value();
 
-    /*
-    1 sec
-    5 secs
-    15 secs
-    30 secs
-    1 min
-    2 mins
-    3 mins
-    5 mins
-    15 mins
-    30 mins
-    1 hour
-    1 day
-    */
-
-    int mult = 1;
-    QByteArray duration;
-    QByteArray tf;
-    int dateFormat = 2;
-
-    qDebug() << "[DEBUG] idx:" << idx;
-
-    switch (idx)
+    switch (tf)
     {
-    case 0:                     // 1 secs
-        mult = 1;
-        duration.append("D");
+    case SEC_1:
+        m_timeFrame = SEC_1;
+        durationStr = QByteArray::number(ma + 10) + " S";
         break;
-    case 1:                     // 5 secs
-        mult = 1;
-        duration.append("D");
+    case SEC_5:
+        m_timeFrame = SEC_5;
+        durationStr = QByteArray::number((ma + 10) * 5) + " S";
         break;
-    case 2:                     // 10 secs
-        mult = 1;
-        duration.append("D");
+    case SEC_15:
+        m_timeFrame = SEC_15;
+        durationStr = QByteArray::number((ma + 10) * 15) + " S";
         break;
-    case 3:                     // 15 secs
-        mult = 1;
-        duration.append("D");
-        break;\
-    case 4:                     // 30 secs
-        mult = 1;
-        duration.append("D");
+    case SEC_30:
+        m_timeFrame = SEC_30;
+        durationStr = QByteArray::number((ma + 10) * 30) + " S";
         break;
-    case 5:                     // 1 min
-        mult = 1;
-        duration.append("D");
+    case MIN_1:
+        m_timeFrame = MIN_1;
+        durationStr = "1 D";
         break;
-    case 6:                     // 2 mins
-        mult = 1;
-        duration.append("D");
+    case MIN_2:
+        m_timeFrame = MIN_2;
+        durationStr = "1 D";
         break;
-    case 7:                     // 3 mins
-        mult = 1;
-        duration.append("D");
+    case MIN_3:
+        m_timeFrame = MIN_3;
+        durationStr = "1 D";
         break;
-    case 8:                     // 5 mins
-        mult = 1;
-        duration.append("D");
+    case MIN_5:
+        m_timeFrame = MIN_5;
+        durationStr = "1 D";
         break;
-    case 9:                     // 10 mins
-        mult = 1;
-        duration.append("W");
-    case 10:                     // 15 mins
-        mult = 1;
-        duration.append("W");
+    case MIN_15:
+        m_timeFrame = MIN_15;
+        durationStr = "1 D";
         break;
-    case 11:                     // 20 mins
-        mult = 1;
-        duration.append("M");
-    case 12:                     // 30 mins
-        mult = 1;
-        duration.append("M");
+    case MIN_30:
+        m_timeFrame = MIN_30;
+        durationStr = "2 D";
         break;
-    case 13:                    // 1 hour
-        mult = 1;
-        duration.append("W");
+    case HOUR_1:
+        m_timeFrame = HOUR_1;
+        durationStr = "5 D";
         break;
-    case 14:                    // 2 hours
-        mult = 1;
-        duration.append("M");
+    case DAY_1:
+        m_timeFrame = DAY_1;
+        durationStr = QByteArray::number((ma +10)) + " D";
         break;
-    case 15:                    // 3 hours
-        mult = 1;
-        duration.append("M");
+    case DAY_1 + 1:
+        // handle 1 week time frame specially
         break;
-    case 16:                    // 4 hours
-        mult = 1;
-        duration.append("M");
-        break;
-    case 17:                    // 8 hours
-        mult = 1;
-        duration.append("M");
-        break;
-    case 18:                    // 1 day
-        mult = 1;
-        duration.append("Y");
-        dateFormat = 1;
-        break;
-    case 19:                    // 1W
-        mult = 1;
-        duration.append("Y");
-        dateFormat = 1;
-        break;
-    case 20:                    // 1M
-        mult = 1;
-        dateFormat = 1;
-        duration.append("Y");
     }
 
-    // TODO: THIS IS TEMPORARY !!!!!!!!!!!!!!!!!!1
-
-    tf.append(QByteArray::number(mult));
-    tf.append(" ").append(duration);
-
-    qDebug() << "[DURATION]" << tf;
-
-    QByteArray bs(ui->timeFrameComboBox->currentText().toLocal8Bit());
-
-    qDebug() << "[BARSIZE]" << bs;
-
     m_ibClient->reqHistoricalData(tickerId
-                                  , contract
-                                  , dts
-                                  , tf
-                                  , ui->timeFrameComboBox->currentText().toLocal8Bit()
+                                  , *(security->contract())
+                                  , endDate.toUTC().toString("yyyyMMdd hh:mm:ss 'GMT'").toLocal8Bit()
+                                  , durationStr
+                                  , barSize
                                   , "TRADES"
                                   , 1
-                                  , dateFormat
+                                  , 2
                                   , QList<TagValue*>());
+}
+
+
+void PairTabPage::reqMktData(const long &tickerId, Contract* contract)
+{
+    m_ibClient->reqMktData(tickerId, *(contract), "", false, QList<TagValue*>());
 }
 
 void PairTabPage::showPlot(const long & tickerId)
 {
+//    qDebug() << "[DEBUG] in showPlot";
 
-    QCustomPlot* customPlot = ui->customPlot;
-    customPlot->setLocale(QLocale(QLocale::English, QLocale::UnitedKingdom));
-    customPlot->addGraph();
-
-
-
-    if (tickerId == m_pair1TickerId)
-        addPair1Graph();
-    else
-        addPair2Graph();
+//    QCustomPlot* customPlot = ui->customPlot;
+//    customPlot->setLocale(QLocale(QLocale::English, QLocale::UnitedKingdom));
 
 
-    // configure bottom axis to show date and time instead of number:
-    customPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-    customPlot->xAxis->setDateTimeFormat("hh:mm:ss\ndd-MM-YY");
+//    if (tickerId == m_pair1TickerId) {
+//        if (customPlot->graphCount() >= 1)
+//            customPlot->graph(0)->clearData();
+//        addPair1Graph();
+//    }
+//    else {
+//        if (customPlot->graphCount() > 1)
+//            customPlot->graph(1)->clearData();
+//        addPair2Graph();
+//    }
 
-    // set a more compact font size for bottom and left axis tick labels:
-    customPlot->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
-    customPlot->yAxis->setTickLabelFont(QFont(QFont().family(), 8));
+//    // configure bottom axis to show date and time instead of number:
+//    customPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+//    customPlot->xAxis->setDateTimeFormat("hh:mm:ss\ndd-MM-yy");
 
-    // set a fixed tick-step to one tick per month:
-    customPlot->xAxis->setAutoTickStep(false);
-    customPlot->xAxis->setTickStep(60 * 60); // one month in seconds
-    customPlot->xAxis->setSubTickCount(5);
+//    // set a more compact font size for bottom and left axis tick labels:
+//    customPlot->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+//    customPlot->yAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
-//    // set axis ranges to show all data:
-//    customPlot->xAxis->setRange(time, now+24*3600*249);
-//    customPlot->yAxis->setRange(0, 60);
+////    // set a fixed tick-step to one tick per month:
+////    customPlot->xAxis->setAutoTickStep(false);
+////    customPlot->xAxis->setTickStep(60 * 60); // one month in seconds
+////    customPlot->xAxis->setSubTickCount(5);
 
-    customPlot->replot();
+////    // set axis ranges to show all data:
+////    customPlot->xAxis->setRange(time, now+24*3600*249);
+////    customPlot->yAxis->setRange(0, 60);
+
+//    customPlot->replot();
 
 }
 
 void PairTabPage::addPair1Graph()
 {
+    qDebug() << "DEBUG] in addPair1Graph";
     QCustomPlot* customPlot = ui->customPlot;
     QPen pen;
     pen.setColor(QColor(0, 0, 255, 200));
-    customPlot->graph()->setLineStyle(QCPGraph::lsLine);
-    customPlot->graph()->setPen(pen);
 
-    QVector<double> time = m_pair1Time.mid(m_pair1Time.size() - ui->pair1MaSpinBox->value());
-    QVector<double> close = m_pair1Close.mid(m_pair1Close.size() - ui->pair1MaSpinBox->value());
-    customPlot->graph()->setData(time, close);
+qDebug() << "[1]";
+    if (customPlot->graphCount() == 0)
+        customPlot->addGraph();
 
-    // set axis ranges to show all data:
-    customPlot->xAxis->setRange(time.first(), time.last());
-    customPlot->yAxis->setRange(close.first(), close.last());
+    customPlot->graph(0)->setLineStyle(QCPGraph::lsLine);
+    customPlot->graph(0)->setPen(pen);
 
+qDebug() << "[2]";
+    if (m_pair1Time.size() > 100 && m_pair1Close.size() > 100) {
+        QVector<double> time = m_pair1Time.mid(m_pair1Time.size() - 100);
+        QVector<double> close = m_pair1Close.mid(m_pair1Close.size() - 100);
+        customPlot->graph(0)->setData(time, close);
+
+        // set axis ranges to show all data:
+        double min = getMin(close);
+        double max = getMax(close);
+        qDebug() << "[DEBUG] min:" << min << "max:" << max;
+        customPlot->xAxis->setRange(time.first(), time.last());
+        customPlot->yAxis->setRange(getMin(close), getMax(close));
+        qDebug() << "[DEBUG] leaving addPair1Graph SIZE:" << m_pair1Time.size();
+
+    }
+    else {
+        customPlot->graph(0)->setData(m_pair1Time, m_pair2Close);
+
+        // set axis ranges to show all data:
+        double min = getMin(m_pair1Close);
+        double max = getMax(m_pair1Close);
+        qDebug() << "[DEBUG] min:" << min << "max:" << max;
+        customPlot->xAxis->setRange(m_pair1Time.first(), m_pair1Time.last());
+        customPlot->yAxis->setRange(getMin(m_pair1Close), getMax(m_pair1Close));
+
+        customPlot->xAxis->setRange(m_pair1Time.first(), m_pair1Time.last());
+        customPlot->yAxis->setRange(getMin(m_pair2Close), getMax(m_pair2Close));
+    }
 }
 
 void PairTabPage::addPair2Graph()
@@ -312,12 +339,23 @@ void PairTabPage::addPair2Graph()
     QCustomPlot* customPlot = ui->customPlot;
     QPen pen;
     pen.setColor(QColor(0, 0, 255, 200));
-    customPlot->graph()->setLineStyle(QCPGraph::lsLine);
-    customPlot->graph()->setPen(pen);
 
-    QVector<double> time = m_pair2Time.mid(m_pair2Time.size() - ui->pair2MaSpinBox->value());
-    QVector<double> close = m_pair2Close.mid(m_pair2Close.size() - ui->pair2MaSpinBox->value());
-    customPlot->graph()->setData(time, close);
+    if (customPlot->graphCount() < 2)
+        customPlot->addGraph();
+
+    customPlot->graph(1)->setLineStyle(QCPGraph::lsLine);
+    customPlot->graph(1)->setPen(pen);
+
+//    QVector<double> time = m_pair2Time.mid(m_pair2Time.size() - ui->pair2MaSpinBox->value());
+//    QVector<double> close = m_pair2Close.mid(m_pair2Close.size() - ui->pair2MaSpinBox->value());
+
+    if (m_pair2Time.size() > 100 && m_pair2Close.size() > 100) {
+        QVector<double> time = m_pair2Time.mid(m_pair2Time.size() - 100);
+        QVector<double> close = m_pair2Close.mid(m_pair2Close.size() - 100);
+        customPlot->graph()->setData(time, close);
+    }
+    else
+        customPlot->graph(1)->setData(m_pair2Time, m_pair2Close);
 
 
 

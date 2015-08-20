@@ -30,7 +30,8 @@ private slots:
     void onIbError(const int id, const int errorCode, const QByteArray errorString);
     void onNextValidId( OrderId orderId);
     void onCurrentTime(long time);
-
+    void onTwsConnected();
+    void onTwsConnectionClosed();
 
 
 private:

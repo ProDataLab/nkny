@@ -15,7 +15,8 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     qcustomplot.cpp \
     pairtabpage.cpp \
-    ibclient.cpp
+    ibclient.cpp \
+    security.cpp
 
 
 HEADERS  += mainwindow.h \
@@ -33,7 +34,9 @@ HEADERS  += mainwindow.h \
     ibbardata.h \
     ibscandata.h \
     ibcommissionreport.h \
-    ibsocketerrors.h
+    ibsocketerrors.h \
+    helpers.h \
+    security.h
 
 
 FORMS    += mainwindow.ui \
@@ -42,5 +45,8 @@ FORMS    += mainwindow.ui \
 
 INCLUDEPATH += $$PWD/
 DEPENDPATH += $$PWD/
+
+DISTFILES += \
+    README.txt
 
 

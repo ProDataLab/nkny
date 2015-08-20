@@ -1,12 +1,17 @@
 #ifndef PAIRTABPAGE_H
 #define PAIRTABPAGE_H
 
+#include "ibticktype.h"
+#include "security.h"
+
 #include <QWidget>
 #include <QVector>
-
-#define TickerId long
+#include <QMap>
+#include <QList>
+#include <QPair>
 
 class IBClient;
+struct Contract;
 
 namespace Ui {
 class PairTabPage;
@@ -22,8 +27,12 @@ public:
     Ui::PairTabPage* getUi() { return ui; }
 
 public slots:
-    void onHistoricalData(TickerId reqId, const QByteArray& date, double open, double high,
+    void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
         double low, double close, int volume, int barCount, double WAP, int hasGaps);
+
+    void onTickGeneric(long tickerId, TickType tickType, double value);
+    void onTickPrice(long tickerId, TickType tickType, double price, int canAutoExecute);
+    void onTickSize(long tickerId, TickType tickType, int size);
 
 private slots:
     void on_pair1SecurityLineEdit_textEdited(const QString &arg1);
@@ -32,19 +41,15 @@ private slots:
     void on_pair2SecurityLineEdit_editingFinished();
     void on_pair1ShowButton_clicked();
     void on_pair2ShowButton_clicked();
-
-
-
     void on_pair1PrimaryExchangeLineEdit_textEdited(const QString &arg1);
-
     void on_pair2PrimaryExchangeLineEdit_textEdited(const QString &arg1);
 
 private:
-    IBClient* m_ibClient;
-    Ui::PairTabPage *ui;
-
-    long m_pair1TickerId;
-    long m_pair2TickerId;
+    IBClient*                               m_ibClient;
+    Ui::PairTabPage*                        ui;
+    QList<QPair<Security*,Security*> >      m_pairList;
+    QMap<long,Security*>                    m_securityMap;
+    TimeFrame                               m_timeFrame;
 
     QVector<double> m_pair1Time;
     QVector<double> m_pair1Open;
@@ -64,7 +69,9 @@ private:
     QVector<double> m_pair2BarCount;
     QVector<int>    m_pair2HasGaps;
 
-    void reqHistoricalData(const long &tickerId, const long &conId, const QByteArray &symbol, const QByteArray &secType, const QByteArray &primaryExchange, const int &timeFrameIdx);
+    void reqHistoricalData(long tickerId, const QDateTime &endDate);
+    void reqMktData(const long & tickerId, Contract *contract);
+
     void showPlot(const long &tickerId);
     void addPair1Graph();
     void addPair2Graph();

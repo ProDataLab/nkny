@@ -82,8 +82,10 @@ void IBClient::send()
 
     if (sent == m_outBuffer.size())
         m_outBuffer.clear();
-    else
+    else {
+        qDebug() << "[WARNING !!!] NOT ALL DATA IN THE OUT BUFFER WAS SENT... PREPENDING TO NEXT MESSAGE";
         m_outBuffer.remove(0, sent + 1);
+    }
 }
 
 void IBClient::reqHistoricalData(long tickerId, const Contract &contract, const QByteArray &endDateTime, const QByteArray &durationStr, const QByteArray &barSizeSetting, const QByteArray &whatToShow, int useRTH, int formatDate, const QList<TagValue*> &chartOptions)
@@ -274,6 +276,67 @@ void IBClient::reqMktData(TickerId tickerId, const Contract& contract,
     send();
 }
 
+void IBClient::reqRealTimeBars(const long &tickerId, const Contract &contract, const int &barSize, const QByteArray &whatToShow, const bool &useRTH, const QList<TagValue *> &realTimeBarsOptions)
+{
+    if (!m_connected) {
+        error(tickerId, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+    if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
+        if (!contract.tradingClass.isEmpty() || contract.conId > 0) {
+            error(tickerId, UPDATE_TWS.code(), UPDATE_TWS.msg()
+                  + "  It does not support conId and tradingClass params in reqRealTimeBars.");
+            return;
+        }
+    }
+
+    const int VERSION = 3;
+
+
+    encodeField(REQ_REAL_TIME_BARS);
+    encodeField(VERSION);
+    encodeField(tickerId);
+
+    // send contract fields
+    if( m_serverVersion >= MIN_SERVER_VER_TRADING_CLASS) {
+        encodeField(contract.conId);
+    }
+    encodeField(contract.symbol);
+    encodeField(contract.secType);
+    encodeField(contract.expiry);
+    encodeField(contract.strike);
+    encodeField(contract.right);
+    encodeField(contract.multiplier);
+    encodeField(contract.exchange);
+    encodeField(contract.primaryExchange);
+    encodeField(contract.currency);
+    encodeField(contract.localSymbol);
+    if( m_serverVersion >= MIN_SERVER_VER_TRADING_CLASS) {
+        encodeField(contract.tradingClass);
+    }
+    encodeField(barSize);
+    encodeField(whatToShow);
+    encodeField(useRTH);
+
+    // send realTimeBarsOptions parameter
+    if( m_serverVersion >= MIN_SERVER_VER_LINKING) {
+        QByteArray realTimeBarsOptionsStr;
+        if( realTimeBarsOptions.size() > 0) {
+            for( int i = 0; i < realTimeBarsOptions.size(); ++i) {
+                const TagValue* tagValue = realTimeBarsOptions.at(i);
+                realTimeBarsOptionsStr += tagValue->tag;
+                realTimeBarsOptionsStr += "=";
+                realTimeBarsOptionsStr += tagValue->value;
+                realTimeBarsOptionsStr += ";";
+            }
+        }
+        encodeField(realTimeBarsOptionsStr);
+    }
+
+    send();
+}
+
 void IBClient::onConnected()
 {
     qDebug() << "TWS is connected";
@@ -318,6 +381,7 @@ void IBClient::onReadyRead()
         }
 
         m_connected = true;
+        emit twsConnected();
 
         //        cleanInBuffer();
 
@@ -1639,6 +1703,7 @@ void IBClient::onReadyRead()
 
         default:
         {
+            qDebug() << "[CRITICAL] UNKNOWN_ID:" << msgId;
             emit error( msgId, UNKNOWN_ID.code(), UNKNOWN_ID.msg());
             disconnectTWS();
             emit connectionClosed();
