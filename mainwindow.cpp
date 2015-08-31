@@ -1,8 +1,10 @@
 #include "mainwindow.h"
-#include "pairtabpage.h"
+#include "pairtabpage2.h"
 #include "ibclient.h"
 #include "ui_mainwindow.h"
 #include "ui_pairtabpage.h"
+#include "ui_contractdetailswidget.h"
+#include "contractdetailswidget.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -14,6 +16,27 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    QTableWidget* tab = ui->homeTableWidget;
+
+    QStringList hlables;
+    hlables << "Pair1"
+            << "Pair2"
+            << "Price1"
+            << "Price2"
+            << "Ratio"
+            << "Delta/StdDev"
+            << "Percent From Mean"
+            << "Correlation"
+            << "Cointegration"
+            << "Volatility"
+            << "RSI of Ratio"
+            << "RSI of Spread";
+    tab->setColumnCount(hlables.size());
+    tab->setHorizontalHeaderLabels(hlables);
+
+    tab->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+//    tab->verticalHeader()->hide();
+    tab->setShowGrid(true);
 }
 
 MainWindow::~MainWindow()
@@ -27,20 +50,16 @@ void MainWindow::on_action_New_triggered()
     QString cntStr(QString::number(ui->tabWidget->count()));
     PairTabPage* page = new PairTabPage(m_ibClient, this);
 
-    connect(m_ibClient, SIGNAL(historicalData(long,QByteArray,double,double,double,double,int,int,double,int)),
-            page, SLOT(onHistoricalData(long,QByteArray,double,double,double,double,int,int,double,int)));
-    connect(m_ibClient, SIGNAL(realtimeBar(long,long,double,double,double,double,long,double,int)),
-            page, SLOT(onRealTimeBars(long,long,double,double,double,double,long,double,int)));
-    connect(m_ibClient, SIGNAL(tickGeneric(long,TickType,double)),
-            page, SLOT(onTickGeneric(long,TickType,double)));
-    connect(m_ibClient, SIGNAL(tickPrice(long,TickType,double,int)),
-            page, SLOT(onTickPrice(long,TickType,double,int)));
-    connect(m_ibClient, SIGNAL(tickSize(long,TickType,int)),
-            page, SLOT(onTickSize(long,TickType,int)));
-
     m_pairTabPages.append(page);
-    ui->tabWidget->addTab(page, cntStr);
+
     ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+
+    QString sym1 = page->getUi()->pair1ContractDetailsWidget->getUi()->symbolLineEdit->text();
+    QString sym2 = page->getUi()->pair2ContractDetailsWidget->getUi()->symbolLineEdit->text();
+
+    ui->tabWidget->addTab(page, sym1 + "/" + sym2);
+    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+
 }
 
 void MainWindow::on_actionConnect_To_TWS_triggered()
@@ -63,8 +82,11 @@ void MainWindow::on_actionConnect_To_TWS_triggered()
             this, SLOT(onTwsConnectionClosed()));
 
     ui->actionConnect_To_TWS->setEnabled(false);
+    ui->actionConnect_To_TWS->setText("TWS Connected");
 
     m_ibClient->connectToTWS("127.0.0.1", 7496, 0);
+
+    ui->action_New->setEnabled(true);
 
 }
 
@@ -81,6 +103,7 @@ void MainWindow::onIbError(const int id, const int errorCode, const QByteArray e
 void MainWindow::onNextValidId(long orderId)
 {
     qDebug() << "NextValidId:" << orderId;
+    m_ibClient->setOrderId(orderId);
 }
 
 void MainWindow::onCurrentTime(long time)
@@ -100,3 +123,7 @@ void MainWindow::onTwsConnectionClosed()
 {
     ui->actionConnect_To_TWS->setEnabled(true);
 }
+
+
+
+

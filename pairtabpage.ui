@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>790</width>
+    <width>725</width>
     <height>551</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
@@ -46,6 +46,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QPushButton" name="activateButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Activate</string>
            </property>
@@ -53,6 +56,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="deactivateButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Deactivate</string>
            </property>
@@ -61,193 +67,509 @@
         </layout>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="title">
-          <string>Pair 1</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout_4">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>Security</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="pair1SecurityLineEdit">
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>MSFT</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Contract Id</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="pair1ConIdLineEdit">
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>0</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Exchange</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLineEdit" name="pair1PrimaryExchangeLineEdit">
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>NASDAQ</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QPushButton" name="pair1ShowButton">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Show</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="groupBox_3">
-         <property name="title">
-          <string>Pair 2</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout_3">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Security</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="pair2SecurityLineEdit">
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>IBM</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>Contract Id</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="pair2ConIdLineEdit">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>0</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Exchange</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLineEdit" name="pair2PrimaryExchangeLineEdit">
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>NYSE</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QPushButton" name="pair2ShowButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>75</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>Show</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
         <widget class="QToolBox" name="toolBox">
          <property name="currentIndex">
-          <number>1</number>
+          <number>2</number>
          </property>
+         <widget class="QWidget" name="page_3">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>205</width>
+            <height>347</height>
+           </rect>
+          </property>
+          <attribute name="label">
+           <string>Pairs</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <widget class="QComboBox" name="timeFrameComboBox">
+             <property name="maximumSize">
+              <size>
+               <width>75</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="currentIndex">
+              <number>11</number>
+             </property>
+             <item>
+              <property name="text">
+               <string>1 secs</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>5 secs</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>15 secs</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>30 secs</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>1 min</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>2 mins</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>3 mins</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>5 mins</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>15 mins</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>30 mins</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>1 hour</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>1 day</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>1 week</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="timeFrameLabel_2">
+             <property name="text">
+              <string>Time Frame</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTabWidget" name="pairsTabWidget">
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
+             <widget class="QWidget" name="tab_2">
+              <attribute name="title">
+               <string>Tab 1</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_4">
+               <item>
+                <widget class="QPushButton" name="pair1ShowButton">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>75</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Show</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ContractDetailsWidget" name="pair1ContractDetailsWidget" native="true"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tab_3">
+              <attribute name="title">
+               <string>Tab 2</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_5">
+               <item>
+                <widget class="QPushButton" name="pair2ShowButton">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>75</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Show</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ContractDetailsWidget" name="pair2ContractDetailsWidget" native="true"/>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_2">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>205</width>
+            <height>347</height>
+           </rect>
+          </property>
+          <attribute name="label">
+           <string>Configuration</string>
+          </attribute>
+          <layout class="QFormLayout" name="formLayout_6">
+           <item row="0" column="0">
+            <widget class="QLabel" name="maLabel">
+             <property name="text">
+              <string>MA Period</string>
+             </property>
+             <property name="buddy">
+              <cstring>maPeriodSpinBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="maPeriodSpinBox">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="value">
+              <number>21</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="maLabel_2">
+             <property name="text">
+              <string>RSI Period</string>
+             </property>
+             <property name="buddy">
+              <cstring>maPeriodSpinBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="rsiPeriodSpinBox">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="value">
+              <number>14</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="maLabel_3">
+             <property name="text">
+              <string>StdDev Period</string>
+             </property>
+             <property name="buddy">
+              <cstring>maPeriodSpinBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="stdDevPeriodSpinBox">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="value">
+              <number>21</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="maLabel_10">
+             <property name="text">
+              <string>Volatility Period</string>
+             </property>
+             <property name="buddy">
+              <cstring>maPeriodSpinBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="volatilityPeriodSpinBox">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="value">
+              <number>21</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_4">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>205</width>
+            <height>347</height>
+           </rect>
+          </property>
+          <attribute name="label">
+           <string>Trade Entry</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <layout class="QFormLayout" name="formLayout_8">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Amount $</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QSpinBox" name="tradeEntryAmountSpinBox">
+               <property name="minimumSize">
+                <size>
+                 <width>75</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="showGroupSeparator" stdset="0">
+                <bool>true</bool>
+               </property>
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+               <property name="singleStep">
+                <number>100</number>
+               </property>
+               <property name="value">
+                <number>10000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QCheckBox" name="tradeEntryRSICheckBox">
+               <property name="text">
+                <string>RSI</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QSpinBox" name="tradeEntryRSIUpperSpinBox">
+               <property name="maximumSize">
+                <size>
+                 <width>50</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="value">
+                <number>70</number>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QCheckBox" name="tradeEntryPercentFromMeanCheckBox">
+               <property name="text">
+                <string>% From Mean</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QSpinBox" name="tradeEntryPercentFromMeanSpinBox">
+               <property name="maximumSize">
+                <size>
+                 <width>50</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="value">
+                <number>25</number>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Num StdDev Layers</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QSpinBox" name="tradeEntryNumStdDevLayersSpinBox">
+               <property name="maximumSize">
+                <size>
+                 <width>50</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>false</bool>
+               </property>
+               <property name="maximum">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QCheckBox" name="waitCheckBox">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Wait</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QCheckBox" name="layerBufferCheckBox">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Buffer</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QDoubleSpinBox" name="layerBufferDoubleSpinBox">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>50</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QTabWidget" name="layersTabWidget">
+             <property name="currentIndex">
+              <number>-1</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_5">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>205</width>
+            <height>347</height>
+           </rect>
+          </property>
+          <attribute name="label">
+           <string>Trade Exit</string>
+          </attribute>
+          <layout class="QFormLayout" name="formLayout_9">
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="tradeExitPercentStopLossCheckBox">
+             <property name="text">
+              <string>% Stop Loss</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="tradeExitPercentStopLossSpinBox">
+             <property name="value">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="tradeExitPercentFromMeanCheckBox">
+             <property name="text">
+              <string>% From Mean</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="tradeExitPercentFromMeanSpinBox">
+             <property name="value">
+              <number>5</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="tradeExitStdDevCheckBox">
+             <property name="text">
+              <string>Std Dev</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="tradeExitStdDevDoubleSpinBox">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <double>0.300000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
          <widget class="QWidget" name="page">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>141</width>
-            <height>246</height>
+            <width>205</width>
+            <height>347</height>
            </rect>
           </property>
           <attribute name="label">
@@ -409,250 +731,24 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="page_2">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>188</width>
-            <height>191</height>
-           </rect>
-          </property>
-          <attribute name="label">
-           <string>Configuration</string>
-          </attribute>
-          <layout class="QFormLayout" name="formLayout_2">
-           <item row="0" column="0">
-            <widget class="QLabel" name="secTypeLabel">
-             <property name="text">
-              <string>Sec Type</string>
-             </property>
-             <property name="buddy">
-              <cstring>secTypeComboBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="secTypeComboBox">
-             <property name="maximumSize">
-              <size>
-               <width>75</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <item>
-              <property name="text">
-               <string>STK</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="timeFrameLabel">
-             <property name="text">
-              <string>Time Frame</string>
-             </property>
-             <property name="buddy">
-              <cstring>timeFrameComboBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="timeFrameComboBox">
-             <property name="maximumSize">
-              <size>
-               <width>75</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="currentIndex">
-              <number>0</number>
-             </property>
-             <item>
-              <property name="text">
-               <string>1 secs</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>5 secs</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>15 secs</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>30 secs</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>1 min</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>2 mins</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>3 mins</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>5 mins</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>15 mins</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>30 mins</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>1 hour</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>1 day</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>1 week</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="maLabel">
-             <property name="text">
-              <string>MA / Mean</string>
-             </property>
-             <property name="buddy">
-              <cstring>maSpinBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="maSpinBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="value">
-              <number>21</number>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="stdDevTriggersLabel">
-             <property name="text">
-              <string>Std Dev Triggers</string>
-             </property>
-             <property name="buddy">
-              <cstring>stdDevTriggersComboBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QComboBox" name="stdDevTriggersComboBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="editable">
-              <bool>true</bool>
-             </property>
-             <property name="currentText">
-              <string>2.2</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QCheckBox" name="waitCheckBox">
-             <property name="text">
-              <string>Wait</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="bufferLabel">
-             <property name="text">
-              <string>Buffer</string>
-             </property>
-             <property name="buddy">
-              <cstring>bufferDoubleSpinBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QDoubleSpinBox" name="bufferDoubleSpinBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="percentFromMeanLabel">
-             <property name="text">
-              <string>% From Mean</string>
-             </property>
-             <property name="buddy">
-              <cstring>percentFromMeanSpinBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="1">
-            <widget class="QSpinBox" name="percentFromMeanSpinBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="maximum">
-              <number>100</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
         </widget>
        </item>
       </layout>
      </widget>
-     <widget class="QCustomPlot" name="customPlot" native="true"/>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>-1</number>
+      </property>
+     </widget>
     </widget>
    </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QCustomPlot</class>
+   <class>ContractDetailsWidget</class>
    <extends>QWidget</extends>
-   <header>qcustomplot.h</header>
+   <header>contractdetailswidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

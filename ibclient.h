@@ -30,12 +30,17 @@ public:
     void disconnectTWS();
     void send();
 
-    TickerId getTickerId() { return ++m_tickerId; }
+    TickerId getTickerId() { return m_tickerId++; }
+    OrderId  getOrderId() { return m_orderId++; }
+    void    setOrderId(long orderId) { m_orderId = orderId; }
 
     void reqHistoricalData( TickerId tickerId, const Contract &contract, const QByteArray &endDateTime, const QByteArray &durationStr, const QByteArray & barSizeSetting, const QByteArray &whatToShow, int useRTH, int formatDate, const QList<TagValue*> & chartOptions);
     void reqCurrentTime();
     void reqMktData(TickerId tickerId, const Contract& contract, const QByteArray& genericTicks, bool snapshot, const QList<TagValue*>& mktDataOptions);
     void reqRealTimeBars(const TickerId & tickerId, const Contract & contract, const int & barSize, const QByteArray & whatToShow, const bool & useRTH, const QList<TagValue*> & realTimeBarsOptions);
+    void placeOrder(OrderId id, const Contract & contract, const Order & order);
+    void reqOpenOrders();
+    void reqContractDetails(int reqId, const Contract & contract);
 
 signals:
     void twsConnected();
@@ -121,6 +126,7 @@ private:
     QByteArray  m_debugBuffer;
 
     TickerId    m_tickerId;
+    OrderId     m_orderId;
 
     void        decodeField(int & value);
     void        decodeField(bool & value);
@@ -138,8 +144,13 @@ private:
     void        encodeField(const long & value);
     void        encodeField(const double & value);
     void        encodeField(const QByteArray & buf);
+    void        encodeFieldMax(int value);
+    void        encodeFieldMax(double value);
 
     void        cleanInBuffer();
+
+    bool        IsEmpty(const QByteArray & ba) { return ba.isEmpty(); }
+    int         Compare(const QByteArray& a1, const QByteArray & a2) { return (a1==a2?0:1); }
 
 };
 

@@ -12,6 +12,7 @@ class PairTabPage;
 
 namespace Ui {
 class MainWindow;
+class PairTabPage;
 }
 
 class MainWindow : public QMainWindow
@@ -21,6 +22,8 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+    Ui::MainWindow* getUi() { return ui; }
 
 private slots:
     void on_action_New_triggered();
@@ -33,9 +36,9 @@ private slots:
     void onTwsConnected();
     void onTwsConnectionClosed();
 
-
 private:
     Ui::MainWindow *ui;
+    Ui::PairTabPage* ptpui;
     IBClient* m_ibClient;
     QList<PairTabPage*> m_pairTabPages;
 };
