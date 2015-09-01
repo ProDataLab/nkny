@@ -60,13 +60,13 @@ DISTFILES += \
 
 
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/ -lnewmat-mybuild
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/ -lnewmat-mybuild
+#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/ -lnewmat-mybuild
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/ -lnewmat-mybuild
 
-INCLUDEPATH += $$PWD/../newmat_10
-DEPENDPATH += $$PWD/../newmat_10
+#INCLUDEPATH += $$PWD/../newmat_10
+#DEPENDPATH += $$PWD/../newmat_10
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/libnewmat-mybuild.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/libnewmat-mybuild.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/newmat-mybuild.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/newmat-mybuild.lib
+#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/libnewmat-mybuild.a
+#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/libnewmat-mybuild.a
+#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/newmat-mybuild.lib
+#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/newmat-mybuild.lib
