@@ -143,9 +143,9 @@ QVector<double> getCorrelation(const QVector<double> & pair1, const QVector<doub
         pair22 = pair2;
     }
 
-    double absum;
-    double aasum;
-    double bbsum;
+    double absum=0;
+    double aasum=0;
+    double bbsum=0;
 
     QVector<double> ret;
 

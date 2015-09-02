@@ -30,8 +30,10 @@ PairTabPage::PairTabPage(IBClient *ibClient, QWidget *parent)
     , ui(new Ui::PairTabPage)
 {
 
+//    qDebug() << "[DEBUG-PairTabPage]";
 
     ui->setupUi(this);
+
     mwui = qobject_cast<MainWindow*>(parent)->getUi();
 
     m_origButtonStyleSheet = ui->activateButton->styleSheet();
@@ -384,7 +386,7 @@ void PairTabPage::onContractDetails(int reqId, const ContractDetails &contractDe
     s->setContractDetails(contractDetails);
     Ui::ContractDetailsWidget* c;
 
-    Contract* ct = s->contract();
+//    Contract* ct = s->contract();
 
     if (m_securityMap.values().indexOf(s) == 0)
          c = m_pair1ContractDetailsWidget->getUi();
@@ -724,6 +726,8 @@ void PairTabPage::exitOrder()
 
 void PairTabPage::showPlot(long tickerId, ChartType chartType)
 {
+    Q_UNUSED(chartType);
+
     Security* s = m_securityMap[tickerId];
     DataVecsHist* dvh = s->getHistData(m_timeFrame);
 

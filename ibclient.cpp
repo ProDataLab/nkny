@@ -19,7 +19,7 @@
 #include <cassert>
 
 
-static const qint64 BUFFER_SIZE_HIGH_MARK = 1 * 1024 * 1024; // 1 MB
+//static const qint64 BUFFER_SIZE_HIGH_MARK = 1 * 1024 * 1024; // 1 MB
 
 
 IBClient::IBClient(QObject *parent)
@@ -1099,6 +1099,8 @@ void IBClient::onReadyRead()
                     break;
                 case LAST:
                     sizeTickType = LAST_SIZE;
+                    break;
+                default:
                     break;
                 }
                 if (sizeTickType != NOT_SET)

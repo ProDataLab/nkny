@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "pairtabpage2.h"
+#include "pairtabpage.h"
 #include "ibclient.h"
 #include "ui_mainwindow.h"
 #include "ui_pairtabpage.h"
@@ -47,7 +47,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_action_New_triggered()
 {
-    QString cntStr(QString::number(ui->tabWidget->count()));
     PairTabPage* page = new PairTabPage(m_ibClient, this);
 
     m_pairTabPages.append(page);

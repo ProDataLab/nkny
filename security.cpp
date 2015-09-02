@@ -24,7 +24,6 @@ void Security::appendHistData(TimeFrame timeFrame, double timeStamp, double open
 
     DataVecsHist* dvh;
     if (!m_dataMap.contains(timeFrame)) {
-        if (!m_dataMap.contains(timeFrame));
         dvh = new DataVecsHist;
         m_dataMap[timeFrame] = dvh;
     }

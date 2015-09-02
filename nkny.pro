@@ -11,6 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 TARGET = nkny
 TEMPLATE = app
 
+QMAKE_CXXFLAGS_DEBUG += -Werror
+
 SOURCES += main.cpp\
         mainwindow.cpp \
     qcustomplot.cpp \
