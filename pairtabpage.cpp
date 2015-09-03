@@ -384,18 +384,18 @@ void PairTabPage::onContractDetails(int reqId, const ContractDetails &contractDe
     }
 
     s->setContractDetails(contractDetails);
-    Ui::ContractDetailsWidget* c;
+//    Ui::ContractDetailsWidget* c = NULL;
 
-//    Contract* ct = s->contract();
+////    Contract* ct = s->contract();
 
-    if (m_securityMap.values().indexOf(s) == 0)
-         c = m_pair1ContractDetailsWidget->getUi();
-    else if (m_securityMap.values().indexOf(s) == 1)
-        c = m_pair2ContractDetailsWidget->getUi();
-    else {
-        qDebug() << "[WARNING] Security not in securityMap";
-        return;
-    }
+//    if (m_securityMap.values().indexOf(s) == 0)
+//         c = m_pair1ContractDetailsWidget->getUi();
+//    else if (m_securityMap.values().indexOf(s) == 1)
+//        c = m_pair2ContractDetailsWidget->getUi();
+//    else {
+//        qDebug() << "[WARNING] Security not in securityMap";
+//        return;
+//    }
 
 //    c->underCompLineEdit->setText(
 //                QByteArray("conId=")
