@@ -58,7 +58,7 @@ INCLUDEPATH += $$PWD/
 DEPENDPATH += $$PWD/
 
 DISTFILES += \
-    README.txt
+    README.rst
 
 
 
