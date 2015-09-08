@@ -12,6 +12,10 @@ ContractDetailsWidget::ContractDetailsWidget(QWidget *parent) :
 {
     ui->setupUi(this);
     m_pairTabPage = (PairTabPage*)parent;
+    ui->localSymbolLabel->setVisible(false);
+    ui->localSymbolLineEdit->setVisible(false);
+    ui->currencyLabel->setVisible(false);
+    ui->currencyLineEdit->setVisible(false);
 }
 
 ContractDetailsWidget::~ContractDetailsWidget()
@@ -27,7 +31,6 @@ Ui::ContractDetailsWidget *ContractDetailsWidget::getUi() const
 void ContractDetailsWidget::on_symbolLineEdit_textEdited(const QString &arg1)
 {
     ui->symbolLineEdit->setText(arg1.toUpper());
-
 }
 
 void ContractDetailsWidget::on_primaryExchangeLineEdit_textEdited(const QString &arg1)
@@ -44,6 +47,12 @@ void ContractDetailsWidget::on_securityTypeComboBox_currentIndexChanged(const QS
         ui->strikeLineEdit->setEnabled(false);
         ui->rightLineEdit->setEnabled(false);
         ui->multiplierLineEdit->setEnabled(false);
+//        ui->exchangeLineEdit->setText("GLOBEX");
+//        ui->symbolLabel->setVisible(false);
+//        ui->symbolLineEdit->setVisible(false);
+//        ui->localSymbolLabel->setVisible(false);
+//        ui->localSymbolLineEdit->setVisible(false);
+//        ui->localSymbolLineEdit->setEnabled(false);
     }
     else if (arg1 == "OPT") {
         ui->expiryLineEdit->setEnabled(true);
@@ -57,4 +66,14 @@ void ContractDetailsWidget::on_securityTypeComboBox_currentIndexChanged(const QS
         ui->rightLineEdit->setEnabled(false);
         ui->multiplierLineEdit->setEnabled(false);
     }
+}
+
+void ContractDetailsWidget::on_localSymbolLineEdit_textChanged(const QString &arg1)
+{
+    ui->localSymbolLineEdit->setText(arg1.toUpper());
+}
+
+void ContractDetailsWidget::on_exchangeLineEdit_textChanged(const QString &arg1)
+{
+    ui->exchangeLineEdit->setText(arg1.toUpper());
 }

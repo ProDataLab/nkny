@@ -66,7 +66,7 @@
             <bool>false</bool>
            </property>
            <property name="text">
-            <string/>
+            <string>Deactivate</string>
            </property>
           </widget>
          </item>
@@ -82,8 +82,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>276</width>
-            <height>322</height>
+            <width>280</width>
+            <height>396</height>
            </rect>
           </property>
           <attribute name="label">
@@ -251,8 +251,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>727</width>
-            <height>322</height>
+            <width>134</width>
+            <height>116</height>
            </rect>
           </property>
           <attribute name="label">
@@ -370,8 +370,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>727</width>
-            <height>322</height>
+            <width>195</width>
+            <height>205</height>
            </rect>
           </property>
           <attribute name="label">
@@ -379,15 +379,25 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <layout class="QFormLayout" name="formLayout_8">
+            <layout class="QFormLayout" name="formLayout_2">
              <item row="0" column="0">
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>Account:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="managedAccountsComboBox"/>
+             </item>
+             <item row="1" column="0">
               <widget class="QLabel" name="label">
                <property name="text">
                 <string>Amount $</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
+             <item row="1" column="1">
               <widget class="QSpinBox" name="tradeEntryAmountSpinBox">
                <property name="minimumSize">
                 <size>
@@ -409,14 +419,14 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
+             <item row="2" column="0">
               <widget class="QCheckBox" name="tradeEntryRSICheckBox">
                <property name="text">
                 <string>RSI</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
+             <item row="2" column="1">
               <widget class="QSpinBox" name="tradeEntryRSIUpperSpinBox">
                <property name="maximumSize">
                 <size>
@@ -429,14 +439,14 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="3" column="0">
               <widget class="QCheckBox" name="tradeEntryPercentFromMeanCheckBox">
                <property name="text">
                 <string>% From Mean</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="3" column="1">
               <widget class="QSpinBox" name="tradeEntryPercentFromMeanSpinBox">
                <property name="maximumSize">
                 <size>
@@ -449,14 +459,14 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
+             <item row="4" column="0">
               <widget class="QLabel" name="label_3">
                <property name="text">
                 <string>Num StdDev Layers</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
+             <item row="4" column="1">
               <widget class="QSpinBox" name="tradeEntryNumStdDevLayersSpinBox">
                <property name="maximumSize">
                 <size>
@@ -475,7 +485,7 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="0">
+             <item row="5" column="0">
               <widget class="QCheckBox" name="waitCheckBox">
                <property name="enabled">
                 <bool>false</bool>
@@ -485,7 +495,7 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="0">
+             <item row="6" column="0">
               <widget class="QCheckBox" name="layerBufferCheckBox">
                <property name="enabled">
                 <bool>false</bool>
@@ -495,7 +505,7 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="1">
+             <item row="6" column="1">
               <widget class="QDoubleSpinBox" name="layerBufferDoubleSpinBox">
                <property name="enabled">
                 <bool>false</bool>
@@ -524,8 +534,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>727</width>
-            <height>322</height>
+            <width>167</width>
+            <height>90</height>
            </rect>
           </property>
           <attribute name="label">
@@ -584,8 +594,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>713</width>
-            <height>327</height>
+            <width>141</width>
+            <height>246</height>
            </rect>
           </property>
           <attribute name="label">

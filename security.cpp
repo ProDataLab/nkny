@@ -10,7 +10,7 @@ Security::Security(const long &tickerId, QObject *parent)
 //    , m_fillDataHandled(false)
     , m_order(NULL)
 {
-    qDebug() << "[DEBUG-Security] tickerId:" << tickerId;
+//    qDebug() << "[DEBUG-Security] tickerId:" << tickerId;
 }
 
 Security::~Security()

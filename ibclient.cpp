@@ -14,6 +14,7 @@
 #include <QDebug>
 #include <QByteArray>
 #include <QList>
+#include <QVariant>
 
 #include <cfloat>
 #include <cassert>
@@ -38,6 +39,11 @@ IBClient::IBClient(QObject *parent)
     , m_orderId(0)
 {
     m_socket = new QTcpSocket(this);
+
+
+//    m_socket->setSocketOption(QAbstractSocket::ReceiveBufferSizeSocketOption, var);
+//    m_socket->setSocketOption(QAbstractSocket::KeepAliveOption, QVariant(1));
+
 
     connect(m_socket, SIGNAL(connected()),
             this, SLOT(onConnected()));
@@ -72,15 +78,18 @@ void IBClient::disconnectTWS()
     m_socket->disconnectFromHost();
 }
 
+OrderId IBClient::getOrderId()
+{
+    OrderId ret = m_orderId;
+    ++m_orderId;
+    return ret;
+}
 
 void IBClient::send()
 {
-    qDebug();
-    qDebug() << "[DBG]" << m_debugBuffer;
+//    qDebug() << "[DEBUG-send] debugBuffer" << m_debugBuffer;
     m_debugBuffer.clear();
-    qDebug();
-//    qDebug() << "[SND]" << m_outBuffer;
-    qDebug();
+    qDebug() << "[DEBUG-send] rawBuffer" << m_outBuffer;
 
     int sent = m_socket->write(m_outBuffer);
 
@@ -343,9 +352,11 @@ void IBClient::reqRealTimeBars(const long &tickerId, const Contract &contract, c
 
 void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 {
+    qDebug() << "[DEBUG-placeOrder] m_serverVersion:" << m_serverVersion;
+
     // not connected?
     if( !m_connected) {
-        emit error( id, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        error(id, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
         return;
     }
 
@@ -354,7 +365,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     //	if( order.scaleNumComponents != UNSET_INTEGER ||
     //		order.scaleComponentSize != UNSET_INTEGER ||
     //		order.scalePriceIncrement != UNSET_DOUBLE) {
-    //		emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+    //		error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
     //			"  It does not support Scale orders.");
     //		return;
     //	}
@@ -371,7 +382,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     //			assert( comboLeg);
     //			if( comboLeg->shortSaleSlot != 0 ||
     //				!comboLeg->designatedLocation.IsEmpty()) {
-    //				emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+    //				error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
     //					"  It does not support SSHORT flag for combo legs.");
     //				return;
     //			}
@@ -381,7 +392,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     //
     //if( m_serverVersion < MIN_SERVER_VER_WHAT_IF_ORDERS) {
     //	if( order.whatIf) {
-    //		emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+    //		error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
     //			"  It does not support what-if orders.");
     //		return;
     //	}
@@ -389,7 +400,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_UNDER_COMP) {
         if( contract.underComp) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support delta-neutral orders.");
             return;
         }
@@ -397,7 +408,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS2) {
         if( order.scaleSubsLevelSize != UNSET_INTEGER) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support Subsequent Level Size for Scale orders.");
             return;
         }
@@ -406,7 +417,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     if( m_serverVersion < MIN_SERVER_VER_ALGO_ORDERS) {
 
         if( !IsEmpty(order.algoStrategy)) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support algo orders.");
             return;
         }
@@ -414,7 +425,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_NOT_HELD) {
         if (order.notHeld) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support notHeld parameter.");
             return;
         }
@@ -422,7 +433,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_SEC_ID_TYPE) {
         if( !IsEmpty(contract.secIdType) || !IsEmpty(contract.secId)) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support secIdType and secId parameters.");
             return;
         }
@@ -430,7 +441,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_PLACE_ORDER_CONID) {
         if( contract.conId > 0) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support conId parameter.");
             return;
         }
@@ -438,22 +449,18 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_SSHORTX) {
         if( order.exemptCode != -1) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support exemptCode parameter.");
             return;
         }
     }
 
     if (m_serverVersion < MIN_SERVER_VER_SSHORTX) {
-//		const Contract::ComboLegList* const comboLegs = contract.comboLegs.get();
-//		const int comboLegsCount = comboLegs ? comboLegs->size() : 0;
-        const QList<ComboLeg*> comboLegs = contract.comboLegs;
-        int comboLegsCount = comboLegs.size();
-        for( int i = 0; i < comboLegsCount; ++i) {
-            const ComboLeg* comboLeg = comboLegs.at(i);
+        for( int i = 0; i < contract.comboLegs.size(); ++i) {
+            const ComboLeg* comboLeg = contract.comboLegs.at(i);
             assert( comboLeg);
             if( comboLeg->exemptCode != -1 ){
-                emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+                error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support exemptCode parameter.");
                 return;
             }
@@ -462,7 +469,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_HEDGE_ORDERS) {
         if( !IsEmpty(order.hedgeType)) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support hedge orders.");
             return;
         }
@@ -470,7 +477,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_OPT_OUT_SMART_ROUTING) {
         if (order.optOutSmartRouting) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support optOutSmartRouting parameter.");
             return;
         }
@@ -482,7 +489,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
                 || !IsEmpty(order.deltaNeutralClearingAccount)
                 || !IsEmpty(order.deltaNeutralClearingIntent)
                 ) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support deltaNeutral parameters: ConId, SettlingFirm, ClearingAccount, ClearingIntent.");
             return;
         }
@@ -494,7 +501,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
                 || order.deltaNeutralShortSaleSlot > 0
                 || !IsEmpty(order.deltaNeutralDesignatedLocation)
                 ) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support deltaNeutral parameters: OpenClose, ShortSale, ShortSaleSlot, DesignatedLocation.");
             return;
         }
@@ -509,7 +516,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
                 || order.scaleInitPosition != UNSET_INTEGER
                 || order.scaleInitFillQty != UNSET_INTEGER
                 || order.scaleRandomPercent) {
-                emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+                error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                         "  It does not support Scale order parameters: PriceAdjustValue, PriceAdjustInterval, " +
                         "ProfitOffset, AutoReset, InitPosition, InitFillQty and RandomPercent");
                 return;
@@ -518,15 +525,11 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     }
 
     if (m_serverVersion < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE && Compare(contract.secType, "BAG") == 0) {
-//		const Order::OrderComboLegList* const orderComboLegs = order.orderComboLegs.get();
-//		const int orderComboLegsCount = orderComboLegs ? orderComboLegs->size() : 0;
-        const QList<OrderComboLeg*> orderComboLegs = order.orderComboLegs;
-        int orderComboLegsCount = orderComboLegs.size();
-        for( int i = 0; i < orderComboLegsCount; ++i) {
-            const OrderComboLeg* orderComboLeg = orderComboLegs.at(i);
+        for( int i = 0; i < order.orderComboLegs.size(); ++i) {
+            const OrderComboLeg* orderComboLeg = order.orderComboLegs.at(i);
             assert( orderComboLeg);
             if( orderComboLeg->price != UNSET_DOUBLE) {
-                emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+                error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support per-leg prices for order combo legs.");
                 return;
             }
@@ -535,7 +538,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_TRAILING_PERCENT) {
         if (order.trailingPercent != UNSET_DOUBLE) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support trailing percent parameter");
             return;
         }
@@ -543,7 +546,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
         if( !IsEmpty(contract.tradingClass)) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support tradingClass parameter in placeOrder.");
             return;
         }
@@ -551,114 +554,116 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_SCALE_TABLE) {
         if( !IsEmpty(order.scaleTable) || !IsEmpty(order.activeStartTime) || !IsEmpty(order.activeStopTime)) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support scaleTable, activeStartTime and activeStopTime parameters");
             return;
         }
     }
 
-    if (m_serverVersion < MIN_SERVER_VER_ALGO_ID) {
-        if( !IsEmpty(order.algoId)) {
-            emit error( id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
-                    "  It does not support algoId parameter");
-            return;
-        }
-    }
-
-    int VERSION = (m_serverVersion < MIN_SERVER_VER_NOT_HELD) ? 27 : 43;
+    int VERSION = (m_serverVersion < MIN_SERVER_VER_NOT_HELD) ? 27 : 42;
 
     // send place order msg
-    encodeField( PLACE_ORDER);
-    encodeField( VERSION);
-    encodeField( id);
+    encodeField(PLACE_ORDER);
+    encodeField(VERSION);
+    encodeField(id);
+
+
 
     // send contract fields
     if( m_serverVersion >= MIN_SERVER_VER_PLACE_ORDER_CONID) {
-        encodeField( contract.conId);
+        encodeField(contract.conId);
     }
-    encodeField( contract.symbol);
-    encodeField( contract.secType);
-    encodeField( contract.expiry);
-    encodeField( contract.strike);
-    encodeField( contract.right);
-    encodeField( contract.multiplier); // srv v15 and above
-    encodeField( contract.exchange);
-    encodeField( contract.primaryExchange); // srv v14 and above
-    encodeField( contract.currency);
-    encodeField( contract.localSymbol); // srv v2 and above
+    encodeField(contract.symbol);
+    encodeField(contract.secType);
+    encodeField(contract.expiry);
+    encodeField(contract.strike);
+    encodeField(contract.right);
+    encodeField(contract.multiplier); // srv v15 and above
+    encodeField(contract.exchange);
+    encodeField(contract.primaryExchange); // srv v14 and above
+    encodeField(contract.currency);
+    encodeField(contract.localSymbol); // srv v2 and above
     if( m_serverVersion >= MIN_SERVER_VER_TRADING_CLASS) {
-        encodeField( contract.tradingClass);
+        encodeField(contract.tradingClass);
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_SEC_ID_TYPE){
-        encodeField( contract.secIdType);
-        encodeField( contract.secId);
+        encodeField(contract.secIdType);
+        encodeField(contract.secId);
     }
 
     // send main order fields
-    encodeField( order.action);
-    encodeField( order.totalQuantity);
-    encodeField( order.orderType);
+    encodeField(order.action);
+    encodeField(order.totalQuantity);
+    encodeField(order.orderType);
     if( m_serverVersion < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE) {
-        encodeField( order.lmtPrice == UNSET_DOUBLE ? 0 : order.lmtPrice);
+        encodeField(order.lmtPrice == UNSET_DOUBLE ? 0 : order.lmtPrice);
     }
     else {
         encodeFieldMax( order.lmtPrice);
     }
     if( m_serverVersion < MIN_SERVER_VER_TRAILING_PERCENT) {
-        encodeField( order.auxPrice == UNSET_DOUBLE ? 0 : order.auxPrice);
+        encodeField(order.auxPrice == UNSET_DOUBLE ? 0 : order.auxPrice);
     }
     else {
         encodeFieldMax( order.auxPrice);
     }
 
-    // send extended order fields
-    encodeField( order.tif);
-    encodeField( order.ocaGroup);
-    encodeField( order.account);
-    encodeField( order.openClose);
-    encodeField( order.origin);
-    encodeField( order.orderRef);
-    encodeField( order.transmit);
-    encodeField( order.parentId); // srv v4 and above
+//    qDebug() << "[[order.auxPrice]]" << order.auxPrice;
 
-    encodeField( order.blockOrder); // srv v5 and above
-    encodeField( order.sweepToFill); // srv v5 and above
-    encodeField( order.displaySize); // srv v5 and above
-    encodeField( order.triggerMethod); // srv v5 and above
+
+    // send extended order fields
+    encodeField(order.tif);
+//    qDebug() << "[[order.tif]]" << order.tif;
+    encodeField(order.ocaGroup);
+//    qDebug() << "[[order.ocaGroup]]" << order.ocaGroup;
+    encodeField(order.account);
+//    qDebug() << "[[order.acconut]]" << order.account;
+    encodeField(order.openClose);
+//    qDebug() << "[[order.openClose]]" << order.openClose;
+    encodeField(order.origin);
+//    qDebug() << "[[order.origin]]" << order.origin;
+    encodeField(order.orderRef);
+//    qDebug() << "[[order.orderRef]]" << order.orderRef;
+    encodeField(order.transmit);
+//    qDebug() << "[[order.transmit]]" << order.transmit;
+    encodeField(order.parentId); // srv v4 and above
+//    qDebug() << "[[order.parentId]]" << order.parentId;
+
+    encodeField(order.blockOrder); // srv v5 and above
+    encodeField(order.sweepToFill); // srv v5 and above
+    encodeField(order.displaySize); // srv v5 and above
+    encodeField(order.triggerMethod); // srv v5 and above
 
     //if( m_serverVersion < 38) {
     // will never happen
-    //	encodeField(/* order.ignoreRth */ false);
+    //	ENCODE_FIELD(/* order.ignoreRth */ false);
     //}
     //else {
-        encodeField( order.outsideRth); // srv v5 and above
+        encodeField(order.outsideRth); // srv v5 and above
     //}
 
-    encodeField( order.hidden); // srv v7 and above
+    encodeField(order.hidden); // srv v7 and above
 
     // Send combo legs for BAG requests (srv v8 and above)
     if( Compare(contract.secType, "BAG") == 0)
     {
-//        const Contract::ComboLegList* const comboLegs = contract.comboLegs.get();
-//        const int comboLegsCount = comboLegs ? comboLegs->size() : 0;
-        const QList<ComboLeg*> comboLegs = contract.comboLegs;
-        int comboLegsCount = comboLegs.size();
-        encodeField( comboLegsCount);
+        const int comboLegsCount = contract.comboLegs.size();
+        encodeField(comboLegsCount);
         if( comboLegsCount > 0) {
             for( int i = 0; i < comboLegsCount; ++i) {
-                const ComboLeg* comboLeg = comboLegs.at(i);
+                const ComboLeg* comboLeg = contract.comboLegs.at(i);
                 assert( comboLeg);
-                encodeField( comboLeg->conId);
-                encodeField( comboLeg->ratio);
-                encodeField( comboLeg->action);
-                encodeField( comboLeg->exchange);
-                encodeField( comboLeg->openClose);
+                encodeField(comboLeg->conId);
+                encodeField(comboLeg->ratio);
+                encodeField(comboLeg->action);
+                encodeField(comboLeg->exchange);
+                encodeField(comboLeg->openClose);
 
-                encodeField( comboLeg->shortSaleSlot); // srv v35 and above
-                encodeField( comboLeg->designatedLocation); // srv v35 and above
+                encodeField(comboLeg->shortSaleSlot); // srv v35 and above
+                encodeField(comboLeg->designatedLocation); // srv v35 and above
                 if (m_serverVersion >= MIN_SERVER_VER_SSHORTX_OLD) {
-                    encodeField( comboLeg->exemptCode);
+                    encodeField(comboLeg->exemptCode);
                 }
             }
         }
@@ -667,14 +672,11 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     // Send order combo legs for BAG requests
     if( m_serverVersion >= MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE && Compare(contract.secType, "BAG") == 0)
     {
-//        const Order::OrderComboLegList* const orderComboLegs = order.orderComboLegs.get();
-//        const int orderComboLegsCount = orderComboLegs ? orderComboLegs->size() : 0;
-        const QList<OrderComboLeg*> orderComboLegs = order.orderComboLegs;
-        int orderComboLegsCount = orderComboLegs.size();
-        encodeField( orderComboLegsCount);
+        const int orderComboLegsCount = order.orderComboLegs.size();
+        encodeField(orderComboLegsCount);
         if( orderComboLegsCount > 0) {
             for( int i = 0; i < orderComboLegsCount; ++i) {
-                const OrderComboLeg* orderComboLeg = orderComboLegs.at(i);
+                const OrderComboLeg* orderComboLeg = order.orderComboLegs.at(i);
                 assert( orderComboLeg);
                 encodeFieldMax( orderComboLeg->price);
             }
@@ -682,16 +684,13 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_SMART_COMBO_ROUTING_PARAMS && Compare(contract.secType, "BAG") == 0) {
-//        const TagValueList* const smartComboRoutingParams = order.smartComboRoutingParams.get();
-//        const int smartComboRoutingParamsCount = smartComboRoutingParams ? smartComboRoutingParams->size() : 0;
-        const QList<TagValue*> smartComboRoutingParams = order.smartComboRoutingParams;
-        int smartComboRoutingParamsCount = smartComboRoutingParams.size();
-        encodeField( smartComboRoutingParamsCount);
+        const int smartComboRoutingParamsCount = order.smartComboRoutingParams.size();
+        encodeField(smartComboRoutingParamsCount);
         if( smartComboRoutingParamsCount > 0) {
             for( int i = 0; i < smartComboRoutingParamsCount; ++i) {
-                const TagValue* tagValue = smartComboRoutingParams.at(i);
-                encodeField( tagValue->tag);
-                encodeField( tagValue->value);
+                const TagValue* tagValue = order.smartComboRoutingParams.at(i);
+                encodeField(tagValue->tag);
+                encodeField(tagValue->value);
             }
         }
     }
@@ -710,43 +709,44 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     /////////////////////////////////////////////////////////////////////////////
     {
         // send deprecated sharesAllocation field
-        encodeField( ""); // srv v9 and above
+        QByteArray ba = "";
+        encodeField(ba); // srv v9 and above
     }
 
-    encodeField( order.discretionaryAmt); // srv v10 and above
-    encodeField( order.goodAfterTime); // srv v11 and above
-    encodeField( order.goodTillDate); // srv v12 and above
+    encodeField(order.discretionaryAmt); // srv v10 and above
+    encodeField(order.goodAfterTime); // srv v11 and above
+    encodeField(order.goodTillDate); // srv v12 and above
 
-    encodeField( order.faGroup); // srv v13 and above
-    encodeField( order.faMethod); // srv v13 and above
-    encodeField( order.faPercentage); // srv v13 and above
-    encodeField( order.faProfile); // srv v13 and above
+    encodeField(order.faGroup); // srv v13 and above
+    encodeField(order.faMethod); // srv v13 and above
+    encodeField(order.faPercentage); // srv v13 and above
+    encodeField(order.faProfile); // srv v13 and above
 
     // institutional short saleslot data (srv v18 and above)
-    encodeField( order.shortSaleSlot);      // 0 for retail, 1 or 2 for institutions
-    encodeField( order.designatedLocation); // populate only when shortSaleSlot = 2.
+    encodeField(order.shortSaleSlot);      // 0 for retail, 1 or 2 for institutions
+    encodeField(order.designatedLocation); // populate only when shortSaleSlot = 2.
     if (m_serverVersion >= MIN_SERVER_VER_SSHORTX_OLD) {
-        encodeField( order.exemptCode);
+        encodeField(order.exemptCode);
     }
 
     // not needed anymore
     //bool isVolOrder = (order.orderType.CompareNoCase("VOL") == 0);
 
     // srv v19 and above fields
-    encodeField( order.ocaType);
+    encodeField(order.ocaType);
     //if( m_serverVersion < 38) {
     // will never happen
     //	send( /* order.rthOnly */ false);
     //}
-    encodeField( order.rule80A);
-    encodeField( order.settlingFirm);
-    encodeField( order.allOrNone);
+    encodeField(order.rule80A);
+    encodeField(order.settlingFirm);
+    encodeField(order.allOrNone);
     encodeFieldMax( order.minQty);
     encodeFieldMax( order.percentOffset);
-    encodeField( order.eTradeOnly);
-    encodeField( order.firmQuoteOnly);
+    encodeField(order.eTradeOnly);
+    encodeField(order.firmQuoteOnly);
     encodeFieldMax( order.nbboPriceCap);
-    encodeField( order.auctionStrategy); // AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
+    encodeField(order.auctionStrategy); // AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
     encodeFieldMax( order.startingPrice);
     encodeFieldMax( order.stockRefPrice);
     encodeFieldMax( order.delta);
@@ -756,7 +756,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     encodeFieldMax( order.stockRangeLower);
     encodeFieldMax( order.stockRangeUpper);
 
-    encodeField( order.overridePercentageConstraints); // srv v22 and above
+    encodeField(order.overridePercentageConstraints); // srv v22 and above
 
     // Volatility orders (srv v26 and above)
     encodeFieldMax( order.volatility);
@@ -766,25 +766,25 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     //	send( order.deltaNeutralOrderType.CompareNoCase("MKT") == 0);
     //}
     //else {
-        encodeField( order.deltaNeutralOrderType); // srv v28 and above
+        encodeField(order.deltaNeutralOrderType); // srv v28 and above
         encodeFieldMax( order.deltaNeutralAuxPrice); // srv v28 and above
 
         if (m_serverVersion >= MIN_SERVER_VER_DELTA_NEUTRAL_CONID && !IsEmpty(order.deltaNeutralOrderType)){
-            encodeField( order.deltaNeutralConId);
-            encodeField( order.deltaNeutralSettlingFirm);
-            encodeField( order.deltaNeutralClearingAccount);
-            encodeField( order.deltaNeutralClearingIntent);
+            encodeField(order.deltaNeutralConId);
+            encodeField(order.deltaNeutralSettlingFirm);
+            encodeField(order.deltaNeutralClearingAccount);
+            encodeField(order.deltaNeutralClearingIntent);
         }
 
         if (m_serverVersion >= MIN_SERVER_VER_DELTA_NEUTRAL_OPEN_CLOSE && !IsEmpty(order.deltaNeutralOrderType)){
-            encodeField( order.deltaNeutralOpenClose);
-            encodeField( order.deltaNeutralShortSale);
-            encodeField( order.deltaNeutralShortSaleSlot);
-            encodeField( order.deltaNeutralDesignatedLocation);
+            encodeField(order.deltaNeutralOpenClose);
+            encodeField(order.deltaNeutralShortSale);
+            encodeField(order.deltaNeutralShortSaleSlot);
+            encodeField(order.deltaNeutralDesignatedLocation);
         }
 
     //}
-    encodeField( order.continuousUpdate);
+    encodeField(order.continuousUpdate);
     //if( m_serverVersion == 26) {
     //	// Volatility orders had specific watermark price attribs in server version 26
     //	double lower = (isVolOrder ? order.stockRangeLower : DBL_MAX);
@@ -807,7 +807,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     }
     else {
         // srv v35 and above)
-        encodeField( ""); // for not supported scaleNumComponents
+        encodeField(""); // for not supported scaleNumComponents
         encodeFieldMax( order.scaleInitLevelSize); // for scaleComponentSize
     }
 
@@ -818,95 +818,84 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
         encodeFieldMax( order.scalePriceAdjustValue);
         encodeFieldMax( order.scalePriceAdjustInterval);
         encodeFieldMax( order.scaleProfitOffset);
-        encodeField( order.scaleAutoReset);
+        encodeField(order.scaleAutoReset);
         encodeFieldMax( order.scaleInitPosition);
         encodeFieldMax( order.scaleInitFillQty);
-        encodeField( order.scaleRandomPercent);
+        encodeField(order.scaleRandomPercent);
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_SCALE_TABLE) {
-        encodeField( order.scaleTable);
-        encodeField( order.activeStartTime);
-        encodeField( order.activeStopTime);
+        encodeField(order.scaleTable);
+        encodeField(order.activeStartTime);
+        encodeField(order.activeStopTime);
     }
 
     // HEDGE orders
     if( m_serverVersion >= MIN_SERVER_VER_HEDGE_ORDERS) {
-        encodeField( order.hedgeType);
+        encodeField(order.hedgeType);
         if ( !IsEmpty(order.hedgeType)) {
-            encodeField( order.hedgeParam);
+            encodeField(order.hedgeParam);
         }
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_OPT_OUT_SMART_ROUTING){
-        encodeField( order.optOutSmartRouting);
+        encodeField(order.optOutSmartRouting);
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_PTA_ORDERS) {
-        encodeField( order.clearingAccount);
-        encodeField( order.clearingIntent);
+        encodeField(order.clearingAccount);
+        encodeField(order.clearingIntent);
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_NOT_HELD){
-        encodeField( order.notHeld);
+        encodeField(order.notHeld);
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_UNDER_COMP) {
         if( contract.underComp) {
             const UnderComp& underComp = *contract.underComp;
-            encodeField( true);
-            encodeField( underComp.conId);
-            encodeField( underComp.delta);
-            encodeField( underComp.price);
+            encodeField(true);
+            encodeField(underComp.conId);
+            encodeField(underComp.delta);
+            encodeField(underComp.price);
         }
         else {
-            encodeField( false);
+            encodeField(false);
         }
     }
 
     if( m_serverVersion >= MIN_SERVER_VER_ALGO_ORDERS) {
-        encodeField( order.algoStrategy);
+        encodeField(order.algoStrategy);
 
         if( !IsEmpty(order.algoStrategy)) {
-//            const TagValueList* const algoParams = order.algoParams.get();
-//            const int algoParamsCount = algoParams ? algoParams->size() : 0;
-            const QList<TagValue*> algoParams = order.algoParams;
-            int algoParamsCount = algoParams.size();
-            encodeField( algoParamsCount);
+            const int algoParamsCount = order.algoParams.size();
+            encodeField(algoParamsCount);
             if( algoParamsCount > 0) {
                 for( int i = 0; i < algoParamsCount; ++i) {
-                    const TagValue* tagValue = algoParams.at(i);
-                    encodeField( tagValue->tag);
-                    encodeField( tagValue->value);
+                    const TagValue* tagValue = order.algoParams.at(i);
+                    encodeField(tagValue->tag);
+                    encodeField(tagValue->value);
                 }
             }
         }
-
     }
 
-    if( m_serverVersion >= MIN_SERVER_VER_ALGO_ID) {
-        encodeField( order.algoId);
-    }
-
-    encodeField( order.whatIf); // srv v36 and above
+    encodeField(order.whatIf); // srv v36 and above
 
     // send miscOptions parameter
     if( m_serverVersion >= MIN_SERVER_VER_LINKING) {
         QByteArray miscOptionsStr("");
-//        const TagValueList* const orderMiscOptions = order.orderMiscOptions.get();
-//        const int orderMiscOptionsCount = orderMiscOptions ? orderMiscOptions->size() : 0;
-        const QList<TagValue*> orderMiscOptions = order.orderMiscOptions;
-        int orderMiscOptionsCount = orderMiscOptions.size();
+        const int orderMiscOptionsCount = order.orderMiscOptions.size();
         if( orderMiscOptionsCount > 0) {
             for( int i = 0; i < orderMiscOptionsCount; ++i) {
-                const TagValue* tagValue = orderMiscOptions.at(i);
+                const TagValue* tagValue = order.orderMiscOptions.at(i);
                 miscOptionsStr += tagValue->tag;
                 miscOptionsStr += "=";
                 miscOptionsStr += tagValue->value;
                 miscOptionsStr += ";";
             }
         }
-        encodeField( miscOptionsStr);
+        encodeField(miscOptionsStr);
     }
 
     send();
@@ -992,18 +981,45 @@ void IBClient::reqContractDetails(int reqId, const Contract &contract)
     send();
 }
 
+void IBClient::reqIds(int numIds)
+{
+    qDebug() << "[DEBUG-reqIds]";
+
+    // not connected?
+    if( !m_connected) {
+        error(numIds, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+    const int VERSION = 1;
+
+    // send req open orders msg
+    encodeField(REQ_IDS);
+    encodeField(VERSION);
+    encodeField(numIds);
+
+    send();
+}
+
 void IBClient::onConnected()
 {
     qDebug() << "TWS is connected";
+//    m_socket->setSocketOption(QAbstractSocket::ReceiveBufferSizeSocketOption, 16384);
+//    /*qDebug*/() << "[DEBUG-onConnected] socketRecvBufferSize:" << m_socket->socketOption(QAbstractSocket::ReceiveBufferSizeSocketOption).toInt();
+//    qDebug() << "[DEBUG-onConnected] readBufferSize:" << m_socket->readBufferSize();
 }
 
 void IBClient::onReadyRead()
 {
-//    qDebug() << "[DEBUG-onReadyRead]";
+//    qDebug();
+//    qDebug();
+//    qDebug() << "[DEBUG-onReadyRead] bytesAvailable:" << m_socket->bytesAvailable();
+
 
     m_inBuffer.append(m_socket->readAll());
 
-//    qDebug() << "[RAW]" << m_inBuffer;
+//    qDebug() << "[DEBUG-onReadyRead] m_inBuffer.size():" << m_inBuffer.size();
+//    qDebug() << "[DEBUG-onReadyRead] raw:" << m_inBuffer;
 
 
     while (m_inBuffer.size()) {
@@ -1065,8 +1081,12 @@ void IBClient::onReadyRead()
 
     else { // yes we're connected
 
-        int msgId;
+        int msgId = 0;
+
         decodeField(msgId);
+
+        qDebug() << "[DEBUG-onReadyRead] msgId:" << msgId;
+
 
         switch (msgId) {
         case TICK_PRICE:
@@ -1958,8 +1978,14 @@ void IBClient::onReadyRead()
 
             QVector<BarData> bars;
 
+//            bool start = true;
+//            uint recordSize = 0;
 
             for( int ctr = 0; ctr < itemCount; ++ctr) {
+
+//                if (start) {
+//                    recordSize = m_begIdx;
+//                }
 
                 BarData bar;
                 decodeField(bar.date);
@@ -1972,12 +1998,27 @@ void IBClient::onReadyRead()
                 decodeField(bar.hasGaps);
                 decodeField(bar.barCount); // ver 3 field
 
+
+//                qDebug() << "[DEBUG-HISTORICAL_DATA] bytes consumed:" << m_begIdx;
+
                 bars.push_back(bar);
+
+//                if (start) {
+//                    recordSize = m_begIdx - recordSize;
+//                    start = false;
+//                }
+//                else {
+//                    if (m_inBuffer.size() - m_begIdx < recordSize) {
+//                        bar
+//                    }
+//                }
             }
 
             //            assert( (int)bars.size() == itemCount);
 
-            for( int ctr = 0; ctr < itemCount; ++ctr) {
+//            qDebug() << "[DEBUG-HISTORICAL_DATA] bar.size:" << bars.size() << "itemCount:" << itemCount;
+
+            for( int ctr = 0; ctr < bars.size(); ++ctr) {
 
                 const BarData& bar = bars[ctr];
                 emit historicalData( reqId, bar.date, bar.open, bar.high, bar.low,
@@ -1988,6 +2029,7 @@ void IBClient::onReadyRead()
             // send end of dataset marker
             QByteArray finishedStr = QByteArray("finished-") + startDateStr + "-" + endDateStr;
             emit historicalData( reqId, finishedStr, -1, -1, -1, -1, -1, -1, -1, 0);
+
             break;
         }
 
@@ -2372,6 +2414,7 @@ void IBClient::onReadyRead()
     }
 
     cleanInBuffer();
+
     }
 }
 
@@ -2408,6 +2451,9 @@ QByteArray IBClient::decodeField()
     m_endIdx = m_inBuffer.indexOf('\0', m_begIdx);
     ret = m_inBuffer.mid(m_begIdx, m_endIdx - m_begIdx);
     m_begIdx = m_endIdx + 1;
+
+//    qDebug() << "[DEBUG-decodeField]" << ret;
+
     return ret;
 }
 
@@ -2439,7 +2485,7 @@ void IBClient::encodeField(const int &value)
 
 void IBClient::encodeField(const bool &value)
 {
-    encodeField(QByteArray::number((value ? 1 : 0)));
+    encodeField(QByteArray::number((value == true ? 1 : 0)));
 }
 
 void IBClient::encodeField(const long &value)
@@ -2454,6 +2500,8 @@ void IBClient::encodeField(const double &value)
 
 void IBClient::encodeField(const QByteArray &buf)
 {
+    if (buf == "1")
+        qDebug() << "[DEBUG-encodeField]";
     m_debugBuffer.append(buf).append(" ");
 
     m_outBuffer.append(buf);
@@ -2463,7 +2511,8 @@ void IBClient::encodeField(const QByteArray &buf)
 void IBClient::encodeFieldMax(int value)
 {
     if (value == INT_MAX) {
-        encodeField("");
+        QByteArray ba = "";
+        encodeField(ba);
         return;
     }
     encodeField(value);
@@ -2472,7 +2521,8 @@ void IBClient::encodeFieldMax(int value)
 void IBClient::encodeFieldMax(double value)
 {
     if (value == DBL_MAX) {
-        encodeField("");
+        QByteArray ba = "";
+        encodeField(ba);
         return;
     }
     encodeField(value);
@@ -2480,6 +2530,8 @@ void IBClient::encodeFieldMax(double value)
 
 void IBClient::cleanInBuffer()
 {
+//    qDebug() << "[DEBUG-cleanInBuffer]";
+
     if (m_endIdx == m_inBuffer.size()) {
         m_inBuffer.clear();
         m_begIdx = m_endIdx = 0;
@@ -2488,5 +2540,7 @@ void IBClient::cleanInBuffer()
         m_inBuffer.remove(0, m_endIdx + 1);
         m_begIdx = 0;
     }
+    if (!m_inBuffer.isEmpty())
+        qDebug() << "[DEBUG-cleanInBuffer] remnants:" << m_inBuffer;
 }
 

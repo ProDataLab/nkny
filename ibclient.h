@@ -31,7 +31,7 @@ public:
     void send();
 
     TickerId getTickerId() { return m_tickerId++; }
-    OrderId  getOrderId() { return m_orderId++; }
+    OrderId  getOrderId();
     void    setOrderId(long orderId) { m_orderId = orderId; }
 
     void reqHistoricalData( TickerId tickerId, const Contract &contract, const QByteArray &endDateTime, const QByteArray &durationStr, const QByteArray & barSizeSetting, const QByteArray &whatToShow, int useRTH, int formatDate, const QList<TagValue*> & chartOptions);
@@ -41,6 +41,7 @@ public:
     void placeOrder(OrderId id, const Contract & contract, const Order & order);
     void reqOpenOrders();
     void reqContractDetails(int reqId, const Contract & contract);
+    void reqIds(int numIds);
 
 signals:
     void twsConnected();

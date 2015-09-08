@@ -47,7 +47,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_action_New_triggered()
 {
-    PairTabPage* page = new PairTabPage(m_ibClient, this);
+    PairTabPage* page = new PairTabPage(m_ibClient, m_managedAccounts, this);
 
     m_pairTabPages.append(page);
 
@@ -91,7 +91,8 @@ void MainWindow::on_actionConnect_To_TWS_triggered()
 
 void MainWindow::onManagedAccounts(const QByteArray &msg)
 {
-    qDebug() << "ManagedAccounts:" << msg;
+    m_managedAccounts = QString(msg).split(',', QString::SkipEmptyParts);
+    qDebug() << "ManagedAccounts:" << m_managedAccounts;
 }
 
 void MainWindow::onIbError(const int id, const int errorCode, const QByteArray errorString)
@@ -101,7 +102,7 @@ void MainWindow::onIbError(const int id, const int errorCode, const QByteArray e
 
 void MainWindow::onNextValidId(long orderId)
 {
-    qDebug() << "NextValidId:" << orderId;
+    qDebug() << "[DEBUG-onNextValidId] orderId:" << orderId;
     m_ibClient->setOrderId(orderId);
 }
 

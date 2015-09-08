@@ -44,7 +44,8 @@ HEADERS  += mainwindow.h \
     pairtabpage.h \
     adfhelper.h \
     stddevlayertab.h \
-    contractdetailswidget.h
+    contractdetailswidget.h \
+    JohansenCointegration/CommonTypes.h
 
 
 FORMS    += mainwindow.ui \

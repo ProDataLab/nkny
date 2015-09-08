@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QList>
+#include <QStringList>
 
 #define TickerId long
 #define OrderId  long
@@ -41,6 +42,7 @@ private:
     Ui::PairTabPage* ptpui;
     IBClient* m_ibClient;
     QList<PairTabPage*> m_pairTabPages;
+    QStringList m_managedAccounts;
 };
 
 #endif // MAINWINDOW_H

@@ -26,7 +26,7 @@ class PairTabPage : public QWidget
     Q_OBJECT
 
 public:
-    explicit PairTabPage(IBClient* ibClient, QWidget *parent = 0);
+    explicit PairTabPage(IBClient* ibClient, const QStringList &managedAccounts, QWidget *parent = 0);
     ~PairTabPage();
     Ui::PairTabPage* getUi() { return ui; }
 
@@ -61,6 +61,7 @@ private slots:
 
     void onSingleShotTimer();
     void onContractDetails(int reqId, const ContractDetails & contractDetails);
+    void onContractDetailsEnd(int reqId);
     void onTradeEntryNumStdDevLayersChanged(int num);
     void onWaitCheckBoxStateChanged(int state);
     void onTrailCheckBoxStateChanged(int state);
@@ -68,12 +69,17 @@ private slots:
     void onCdui2SymbolTextChanged(QString text);
 
 
+    void onMoreHistoricalDataNeeded();
+
+
 private:
     IBClient*                               m_ibClient;
+    QStringList                             m_managedAccounts;
     Ui::PairTabPage*                        ui;
     Ui::MainWindow*                         mwui;
     QMap<long,Security*>                    m_securityMap;
     QMap<long, long>                        m_newBarMap;
+    QMap<long, long>                        m_moreDataMap;
     QMap<long, long>                        m_contractDetailsMap;
     TimeFrame                               m_timeFrame;
     uint                                    m_timeFrameInSeconds;
@@ -102,6 +108,7 @@ private:
 
     ContractDetailsWidget*                  m_pair1ContractDetailsWidget;
     ContractDetailsWidget*                  m_pair2ContractDetailsWidget;
+    bool                                    m_gettingMoreHistoricalData;
 
     enum ChartType
     {
@@ -112,8 +119,7 @@ private:
         SCATTER
     };
 
-    void reqHistoricalData(long tickerId);
-    void placeOrders();
+    void reqHistoricalData(long tickerId, QDateTime dt=QDateTime::currentDateTime());
     void placeOrder();
     void exitOrder();
     void showPlot(long tickerId, ChartType chartType);

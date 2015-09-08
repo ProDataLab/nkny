@@ -25,6 +25,10 @@ private slots:
 
     void on_securityTypeComboBox_currentIndexChanged(const QString &arg1);
 
+    void on_localSymbolLineEdit_textChanged(const QString &arg1);
+
+    void on_exchangeLineEdit_textChanged(const QString &arg1);
+
 private:
     Ui::ContractDetailsWidget *ui;
     PairTabPage* m_pairTabPage;

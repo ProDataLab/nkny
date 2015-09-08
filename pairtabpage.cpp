@@ -24,10 +24,12 @@
 #include <QLineEdit>
 
 
-PairTabPage::PairTabPage(IBClient *ibClient, QWidget *parent)
+PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts, QWidget *parent)
     : QWidget(parent)
     , m_ibClient(ibClient)
+    , m_managedAccounts(managedAccounts)
     , ui(new Ui::PairTabPage)
+    , m_gettingMoreHistoricalData(false)
 {
 
 //    qDebug() << "[DEBUG-PairTabPage]";
@@ -41,7 +43,7 @@ PairTabPage::PairTabPage(IBClient *ibClient, QWidget *parent)
     QStringList secTypes;
     secTypes += "STK";
     secTypes += "FUT";
-    secTypes += "OPT";
+//    secTypes += "OPT";
 //    secTypes += "IND";
 //    secTypes += "FOP";
 //    secTypes += "CASH";
@@ -61,18 +63,30 @@ PairTabPage::PairTabPage(IBClient *ibClient, QWidget *parent)
     cdui2->securityTypeComboBox->addItems(secTypes);
 
 
-    cdui1->symbolLineEdit->setText("A");
+    cdui1->symbolLineEdit->setText("MSFT");
     cdui1->primaryExchangeLineEdit->setText("NYSE");
 
-    cdui2->symbolLineEdit->setText("AFFX");
+    cdui2->symbolLineEdit->setText("AAPL");
     cdui2->primaryExchangeLineEdit->setText("NASDAQ");
 
     ui->pairsTabWidget->tabBar()->setTabText(0, cdui1->symbolLineEdit->text());
     ui->pairsTabWidget->tabBar()->setTabText(1, cdui2->symbolLineEdit->text());
 
+    ui->managedAccountsComboBox->addItems(m_managedAccounts);
+
+    qDebug() << "[DEBUG-PairTabPage]" << ui->pair1ShowButton->styleSheet();
+//    ui->pair1ShowButton->setStyleSheet("background-color:green");
+    ui->pair2ShowButton->setEnabled(false);
+
+
     connect(cdui1->symbolLineEdit, SIGNAL(textChanged(QString)),
             this, SLOT(onCdui1SymbolTextChanged(QString)));
     connect(cdui2->symbolLineEdit, SIGNAL(textChanged(QString)),
+            this, SLOT(onCdui2SymbolTextChanged(QString)));
+
+    connect(cdui1->localSymbolLineEdit, SIGNAL(textChanged(QString)),
+            this, SLOT(onCdui1SymbolTextChanged(QString)));
+    connect(cdui2->localSymbolLineEdit, SIGNAL(textChanged(QString)),
             this, SLOT(onCdui2SymbolTextChanged(QString)));
 
     connect(ui->activateButton, SIGNAL(clicked(bool)),
@@ -91,7 +105,8 @@ PairTabPage::PairTabPage(IBClient *ibClient, QWidget *parent)
             this, SLOT(onTradeEntryNumStdDevLayersChanged(int)));
     connect(ui->waitCheckBox, SIGNAL(stateChanged(int)),
             this, SLOT(onWaitCheckBoxStateChanged(int)));
-
+    connect(m_ibClient, SIGNAL(contractDetailsEnd(int)),
+            this, SLOT(onContractDetailsEnd(int)));
 }
 
 PairTabPage::~PairTabPage()
@@ -106,13 +121,16 @@ PairTabPage::~PairTabPage()
 void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double open, double high,
     double low, double close, int volume, int barCount, double WAP, int hasGaps)
 {
-    if (!(m_securityMap.keys().contains(reqId) || m_newBarMap.keys().contains(reqId)))
-        return;
+//    qDebug() << "[DEBUG-onHistoricalData]";
+
+//    if (!(m_securityMap.keys().contains(reqId) || m_newBarMap.keys().contains(reqId)))
+//        return;
 
     Security* s= NULL;
     long sid = 0;
     double timeStamp = 0;
     bool isNewBarReq = false;
+    bool isMoreDataReq = false;
 
     if (m_timeFrame == DAY_1)
         timeStamp = (double)QDateTime::fromString(date, "yyyyMMdd").toTime_t();
@@ -123,51 +141,86 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
     if (m_securityMap.keys().contains(reqId)) {
         s = m_securityMap[reqId];
         sid = reqId;
+//        qDebug() << "[DEBUG-onHistoricalData] initial data request";
     }
     else if (m_newBarMap.values().contains(reqId)) {
         isNewBarReq = true;
         sid = m_newBarMap.key(reqId);
         s = m_securityMap[sid];
+//        qDebug() << "[DEBUG-onHistoricalData] new bar data request";
+    }
+    else if (m_moreDataMap.values().contains(reqId)) {
+        isMoreDataReq = true;
+        sid = m_moreDataMap.key(reqId);
+        s = m_securityMap[sid];
+//        qDebug() << "[DEBUG-onHistoricalData] more data request";
     }
     else {
-        qDebug() << "[ERROR-onHistoricalData] request Id UNKNOWN!";
+        qDebug() << "[ERROR-onHistoricalData] request Id UNKNOWN";
         qDebug() << "    secMapKeys:" << m_securityMap.keys();
         qDebug() << "    secMapVals:" << m_securityMap.values();
         qDebug() << "    reqId:" << reqId;
+        return;
     }
 
     if (!isNewBarReq) {
         if (date.startsWith("finished")) {
-            double lastBarsTimeStamp = s->getHistData(m_timeFrame)->timeStamp.last();
-            s->setLastBarsTimeStamp(lastBarsTimeStamp);
+            if (!isMoreDataReq) {
+                double lastBarsTimeStamp = s->getHistData(m_timeFrame)->timeStamp.last();
+                s->setLastBarsTimeStamp(lastBarsTimeStamp);
 
-            s->getTimer()->start(m_timeFrameInSeconds * 1000);
+                s->getTimer()->start(m_timeFrameInSeconds * 1000);
 
-            DataVecsHist* dvh = s->getHistData(m_timeFrame);
-            if (dvh->timeStamp.size() > 250) {
-                s->fixHistDataSize(m_timeFrame);
+                DataVecsHist* dvh = s->getHistData(m_timeFrame);
+
+                qDebug() << "[DEBUG-onHistoricalData] NUM BARS RECEIVED:" << dvh->timeStamp.size();
+
+                if (dvh->timeStamp.size() >= 250) {
+                    s->fixHistDataSize(m_timeFrame);
+                }
+                else {
+                    // FIXME: I need more bars (1 HOUR BARS)
+//                    m_moreDataMap[s->tickerId()] = m_ibClient->getTickerId();
+//                    QTimer::singleShot(1000, this, SLOT(onMoreHistoricalDataNeeded()));
+//                    return;
+                }
+            }
+            else {
+//                qDebug() << "[DEBUG-onHistoricalData] firstTimeStamp:"  << QDateTime::fromTime_t((uint)s->getHistData(m_timeFrame)->timeStamp.first()).toString("yyyyMMdd/hh:mm:ss");
             }
 
             showPlot(sid, LINE);
 
             if (m_securityMap.keys().indexOf(reqId) == 1) {
+
                 plotRatio();
+
                 plotRatioMA();
+
                 plotRatioStdDev();
+
                 plotRatioPercentFromMean();
+
                 plotCorrelation();
+
 //                plotCointegration();
                 plotRatioVolatility();
+
                 plotRatioRSI();
+
                 addTableRow();
+
             }
         }
         else {
-//            qDebug() << "[DEBUG-onHistData] reqId:" << reqId;
-//            qDebug() << "                   tickerId:" << m_securityMap.key(s);
-//            qDebug() << "                   contract-symbol:" << s->contract()->symbol;
-//            qDebug();
-            s->appendHistData(m_timeFrame, timeStamp, open, high, low, close, volume, barCount, WAP, hasGaps);
+            if (isMoreDataReq) {
+//                qDebug() << "[DEBUG-onHistoricalData]" << m_timeFrame << QDateTime::fromTime_t((int)timeStamp).toString("yyyyMMdd/hh:mm:ss") << open << high << low << close << volume << barCount << WAP << hasGaps;
+
+            }
+            else {
+//                qDebug() << "[DEBUG-onHistoricalData]" << m_timeFrame << QDateTime::fromTime_t((int)timeStamp).toString("yyyyMMdd/hh:mm:ss") << open << high << low << close << volume << barCount << WAP << hasGaps;
+                s->appendHistData(m_timeFrame, timeStamp, open, high, low, close, volume, barCount, WAP, hasGaps);
+            }
         }
     }
     else if (isNewBarReq){
@@ -184,6 +237,7 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
             s->appendNewBarData(m_timeFrame, timeStamp, open, high, low, close, volume, barCount, WAP, hasGaps);
         }
     }
+//    qDebug() << "[DEBUG-onHistoricalData] leaving";
 }
 
 //void PairTabPage::on_pair1SymbolLineEdit_textEdited(const QString &arg1)
@@ -233,13 +287,17 @@ void PairTabPage::on_pair1ShowButton_clicked()
 
     Contract* c = s->contract();
 //    c->conId = 0;
-    c->symbol = m_pair1ContractDetailsWidget->getUi()->symbolLineEdit->text().toLocal8Bit();
     c->secType = m_pair1ContractDetailsWidget->getUi()->securityTypeComboBox->currentText().toLocal8Bit();
     c->exchange = m_pair1ContractDetailsWidget->getUi()->exchangeLineEdit->text().toLocal8Bit();
     c->primaryExchange = m_pair1ContractDetailsWidget->getUi()->primaryExchangeLineEdit->text().toLocal8Bit();
     c->currency = m_pair1ContractDetailsWidget->getUi()->currencyLineEdit->text().toLocal8Bit();
+    if (m_pair1ContractDetailsWidget->getUi()->securityTypeComboBox->currentText() == "STK") {
+        c->symbol = m_pair1ContractDetailsWidget->getUi()->symbolLineEdit->text().toLocal8Bit();
+    }
     if (m_pair1ContractDetailsWidget->getUi()->securityTypeComboBox->currentText()=="FUT") {
+        c->symbol = m_pair1ContractDetailsWidget->getUi()->symbolLineEdit->text().toLocal8Bit();
         c->expiry = m_pair1ContractDetailsWidget->getUi()->expiryLineEdit->text().toLocal8Bit();
+        c->localSymbol = m_pair1ContractDetailsWidget->getUi()->localSymbolLineEdit->text().toLocal8Bit();
     }
     else if (m_pair1ContractDetailsWidget->getUi()->securityTypeComboBox->currentText() == "OPT") {
         c->expiry = m_pair1ContractDetailsWidget->getUi()->expiryLineEdit->text().toLocal8Bit();
@@ -252,9 +310,8 @@ void PairTabPage::on_pair1ShowButton_clicked()
     m_contractDetailsMap[tickerId] = reqId;
     m_ibClient->reqContractDetails(reqId, *c);
 
-    reqHistoricalData(tickerId);
-
     ui->pair2ShowButton->setEnabled(true);
+    ui->pair1ShowButton->setEnabled(false);
 }
 void PairTabPage::on_pair2ShowButton_clicked()
 {
@@ -268,7 +325,7 @@ void PairTabPage::on_pair2ShowButton_clicked()
             this, SLOT(onPair2TimeOut()));
 
     ui->activateButton->setEnabled(true);
-    ui->activateButton->setStyleSheet("background-color:green");
+//    ui->activateButton->setStyleSheet("background-color:green");
 
     Contract* contract = pair2->contract();
 //    contract->conId = ui->pair2ContractIdLineEdit->text().toLong();
@@ -278,12 +335,16 @@ void PairTabPage::on_pair2ShowButton_clicked()
     contract->exchange = m_pair2ContractDetailsWidget->getUi()->exchangeLineEdit->text().toLocal8Bit();
     contract->primaryExchange = m_pair2ContractDetailsWidget->getUi()->primaryExchangeLineEdit->text().toLocal8Bit();
     contract->currency = m_pair2ContractDetailsWidget->getUi()->currencyLineEdit->text().toLocal8Bit();
+    contract->expiry = m_pair1ContractDetailsWidget->getUi()->expiryLineEdit->text().toLocal8Bit();
+    contract->localSymbol = m_pair1ContractDetailsWidget->getUi()->localSymbolLineEdit->text().toLocal8Bit();
+    contract->strike = m_pair1ContractDetailsWidget->getUi()->strikeLineEdit->text().toDouble();
+    contract->right = m_pair1ContractDetailsWidget->getUi()->rightLineEdit->text().toLocal8Bit();
+    contract->multiplier = m_pair1ContractDetailsWidget->getUi()->multiplierLineEdit->text().toLocal8Bit();
 
     long reqId = m_ibClient->getTickerId();
     m_contractDetailsMap[tickerId] = reqId;
     m_ibClient->reqContractDetails(reqId, *contract);
 
-    reqHistoricalData(tickerId);
 }
 
 //void PairTabPage::on_pair1PrimaryExchangeLineEdit_textEdited(const QString &arg1)
@@ -315,9 +376,9 @@ void PairTabPage::onActivateButtonClicked(bool)
 
     ui->activateButton->setEnabled(false);
     ui->deactivateButton->setEnabled(true);
-    ui->deactivateButton->setStyleSheet("background-color:red");
-    ui->activateButton->setAutoFillBackground(true);
-    ui->activateButton->setPalette(ui->activateButton->parentWidget()->palette());
+//    ui->deactivateButton->setStyleSheet("background-color:red");
+//    ui->activateButton->setAutoFillBackground(true);
+//    ui->activateButton->setPalette(ui->activateButton->parentWidget()->palette());
 
     for (int i=0;i<5;++i) {
         m_stdDevLayerPeaks.append(m_ratioStdDev.last());
@@ -332,7 +393,7 @@ void PairTabPage::onActivateButtonClicked(bool)
 
 void PairTabPage::onDeactivateButtonClicked(bool)
 {
-
+    m_ibClient->reqOpenOrders();
 }
 
 void PairTabPage::onOrderStatus(long orderId, const QByteArray &status, int filled, int remaining, double avgFillPrice,
@@ -357,6 +418,8 @@ void PairTabPage::onOpenOrder(long orderId, const Contract &contract, const Orde
              << orderId
              << contract.symbol
              << order.action
+             << orderState.initMargin
+             << orderState.maintMargin
              << orderState.status;
 }
 
@@ -368,22 +431,27 @@ void PairTabPage::onSingleShotTimer()
 
 void PairTabPage::onContractDetails(int reqId, const ContractDetails &contractDetails)
 {
-//    qDebug() << "[DEBUG-onContractDetails]";
-//             << reqId
-//             << contractDetails.summary.symbol
-//             << contractDetails.summary.localSymbol
-//             << contractDetails.summary.conId;
+    qDebug() << "[DEBUG-onContractDetails]"
+             << reqId
+             << contractDetails.summary.symbol
+             << contractDetails.summary.localSymbol
+             << contractDetails.summary.conId
+             << contractDetails.summary.expiry;
 
     Security* s = m_securityMap[m_contractDetailsMap.key(reqId)];
 
     if (!s) {
-        qDebug() << "[WARN-onContractDetails]"
-                 << "m_securityMap.keys().size:" << m_securityMap.keys().size()
-                 << "m_contractDetailsMap.keys().size:" << m_contractDetailsMap.keys().size();
+//        qDebug() << "[WARN-onContractDetails]"
+//                 << "m_securityMap.keys().size:" << m_securityMap.keys().size()
+//                 << "m_contractDetailsMap.keys().size:" << m_contractDetailsMap.keys().size();
         return;
     }
 
     s->setContractDetails(contractDetails);
+
+    reqHistoricalData(m_contractDetailsMap.key(reqId));
+
+
 //    Ui::ContractDetailsWidget* c = NULL;
 
 ////    Contract* ct = s->contract();
@@ -418,6 +486,11 @@ void PairTabPage::onContractDetails(int reqId, const ContractDetails &contractDe
 //    c->strikeLineEdit->setText(QString::number(ct->strike));
 //    c->expiryLineEdit->setText(ct->expiry);
 
+}
+
+void PairTabPage::onContractDetailsEnd(int reqId)
+{
+    Q_UNUSED(reqId);
 }
 
 void PairTabPage::onTradeEntryNumStdDevLayersChanged(int num)
@@ -481,7 +554,7 @@ void PairTabPage::onTrailCheckBoxStateChanged(int state)
 
 void PairTabPage::onCdui1SymbolTextChanged(QString text)
 {
-    qDebug() << "[DEBUG-onCdui1Sym]" << text;
+//    qDebug() << "[DEBUG-onCdui1Sym]" << text;
     ui->pairsTabWidget->setTabText(0, text.toUpper());
     mwui->tabWidget->setTabText(mwui->tabWidget->currentIndex(),
                                 text.toUpper() + "/" + ui->pairsTabWidget->tabText(1));
@@ -494,6 +567,8 @@ void PairTabPage::onCdui2SymbolTextChanged(QString text)
                                 ui->pairsTabWidget->tabText(0) + "/" + text.toUpper());
 }
 
+
+
 ContractDetailsWidget *PairTabPage::getPair2ContractDetailsWidget() const
 {
     return m_pair2ContractDetailsWidget;
@@ -505,9 +580,9 @@ ContractDetailsWidget *PairTabPage::getPair1ContractDetailsWidget() const
 }
 
 
-void PairTabPage::reqHistoricalData(long tickerId)
+void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
 {
-    QDateTime dt = QDateTime::currentDateTime();
+    qDebug() << "[DEBUG-reqHistoricalData]";
 
     TimeFrame tf = (TimeFrame)ui->timeFrameComboBox->currentIndex();
     QByteArray barSize = ui->timeFrameComboBox->currentText().toLocal8Bit();
@@ -515,17 +590,24 @@ void PairTabPage::reqHistoricalData(long tickerId)
     bool isNewBarReq = false;
     Security* security;
 
-    if (!m_securityMap.keys().contains(tickerId)) {
+    if (m_newBarMap.values().contains(tickerId)) {
         security = m_securityMap[m_newBarMap.key(tickerId)];
         isNewBarReq = true;
     }
-    else {
+    else if (m_securityMap.keys().contains(tickerId)) {
         security = m_securityMap[tickerId];
+    }
+    else if (m_moreDataMap.values().contains(tickerId)) {
+        security = m_securityMap[m_moreDataMap.key(tickerId)];
+    }
+    else {
+        qFatal("Security* security.. was not established!!");
     }
 
     /*
      *  390 mins in a trading day
      */
+
 
     switch (tf)
     {
@@ -629,6 +711,21 @@ void PairTabPage::reqHistoricalData(long tickerId)
         // handle 1 week time frame specially
         break;
     }
+//    qDebug() << "[DEBUG-reqHistoricalData] -secs:" << m_timeFrameInSeconds;
+
+
+//    qDebug() << "[DEBUG-reqHistoricalData] dt1:" << dt.toString("yyyyMMdd/hh:mm:ss");
+
+    if (m_timeFrame == DAY_1) {
+        dt = dt.addDays(-1);
+    }
+    else {
+        QTime t(dt.time());
+        t = t.addSecs(-m_timeFrameInSeconds);
+        dt.setTime(t);
+    }
+
+//    qDebug() << "[DEBUG-reqHistoricalData] dt2:" << dt.toString("yyyyMMdd/hh:mm:ss");
 
     m_ibClient->reqHistoricalData(tickerId
                                   , *(security->contract())
@@ -641,81 +738,128 @@ void PairTabPage::reqHistoricalData(long tickerId)
                                   , QList<TagValue*>());
 }
 
-void PairTabPage::placeOrders()
+void PairTabPage::onMoreHistoricalDataNeeded()
 {
-    // TODO: NOT NEEDED.. SEE placeOrder
-
-    Security* s1 = m_securityMap.values().first();
-    Security* s2 = m_securityMap.values().last();
-
-    Order* o1 = s1->getOrder();
-    Order* o2 = s2->getOrder();
-
-    long oid1 = m_ibClient->getOrderId();
-    long oid2 = m_ibClient->getOrderId();
-
-    s1->setOrderId(oid1);
-    s2->setOrderId(oid2);
-
-    o1->action = "BUY";
-    o1->totalQuantity = 1000;
-    o1->orderType = "LMT";
-    o1->lmtPrice = 0.01;
-    o1->account = "DU210787";
-
-    o2->action = "SSHORT";
-    o2->totalQuantity = 50;
-    o2->orderType = "MKT";
-    o2->account = "DU210787";
-
-    qDebug() << "PLACING ORDERS NOW";
-
-    m_ibClient->placeOrder(oid1, *(s1->contract()), *(o1));
-    //    m_ibClient->placeOrder(oid2, *(s2->contract()), *(o2));
+    qDebug() << "[DEBUG-onMoreHistoricalDataNeeded]";
+    m_gettingMoreHistoricalData = true;
+    Security* s = m_securityMap[m_moreDataMap.keys().last()];
+    double firstTimeStamp = s->getHistData(m_timeFrame)->timeStamp.first();
+    QDateTime firstDT = QDateTime::fromTime_t((uint)firstTimeStamp);
+    long id = m_moreDataMap[m_moreDataMap.values().last()];
+    reqHistoricalData(id, firstDT);
 }
+
+
+
+
 
 void PairTabPage::placeOrder()
 {
     qDebug() << "[DEBUG-placeOrder]";
-    ComboLeg c1;
-    ComboLeg c2;
+
+
+//    Contract contract;
+//    Order order;
+
+//    contract.symbol = "IBM";
+//    contract.secType = "STK";
+//    contract.exchange = "SMART";
+//    contract.currency = "USD";
+
+//    order.action = "BUY";
+//    order.totalQuantity = 1000;
+//    order.orderType = "LMT";
+//    order.lmtPrice = 0.01;
 
     Security* s1 = m_securityMap.values().at(0);
     Security* s2 = m_securityMap.values().at(1);
 
-    c1.conId = s1->contract()->conId;
-    c1.ratio = 1;
-    c1.action = "SELL";
-    c1.exchange = "SMART";
-    c1.openClose = 0;
-    c1.shortSaleSlot = 0;
-    c1.designatedLocation = "";
+    Contract* c1 = s1->contract();
+    Contract* c2 = s2->contract();
 
-    c2.conId = s2->contract()->conId;
-    c2.ratio = 1;
-    c2.action = "BUY";
-    c2.exchange = "SMART";
-    c2.openClose = 0;
-    c2.shortSaleSlot = 0;
-    c2.designatedLocation = "";
+    Order o1;
+    Order o2;
 
-    QList<ComboLeg*> clist;
-    clist.append(&c1);
-    clist.append(&c2);
+    double ratio1, ratio2;
 
-    Contract ct1 = *(s1->contract());
+    if (m_ratio.last() < 1) {
+        ratio1 = m_ratio.last();
+        ratio2 = 1 - m_ratio.last();
+    }
+    else {
+        ratio1 = s2->getHistData(m_timeFrame)->close.last() / s1->getHistData(m_timeFrame)->close.last();
+        ratio2 = 1 - ratio1;
+    }
 
-    ct1.symbol = "USD";
-    ct1.secType = "BAG";
-    ct1.comboLegs = clist;
+    qDebug() << "[DEBUG-placeOrder] ratio1: " << ratio1 << "ratio2:" << ratio2;
 
-    Order order;
-    order.action = "BUY";
-    order.totalQuantity = 1;
-    order.orderType = "MKT";
+    o1.action = "BUY";
+    o1.totalQuantity = (long)ui->tradeEntryAmountSpinBox->value() * ratio1 / s1->getHistData(m_timeFrame)->close.last();
+//    o1.totalQuantity = 1;
+    qDebug() << "[DEBUG-placeOrder] o1.totalQuantity:" << o1.totalQuantity;
 
-    long id = m_ibClient->getOrderId();
-    m_ibClient->placeOrder(id, ct1, order);
+    o1.orderType = "MKT";
+    o1.transmit = true;
+    o1.account = ui->managedAccountsComboBox->currentText().toLocal8Bit();
+
+    o2.action = "SELL";
+    o2.totalQuantity = (long)ui->tradeEntryAmountSpinBox->value() * ratio2 / s2->getHistData(m_timeFrame)->close.last();
+//    o2.totalQuantity = 1;
+    qDebug() << "[DEBUG-placeOrder] o2.totalQuantity:" << o2.totalQuantity;
+    o2.orderType = "MKT";
+    o2.transmit = true;
+    o2.account = ui->managedAccountsComboBox->currentText().toLocal8Bit();
+
+
+
+//    ComboLeg c1;
+//    ComboLeg c2;
+
+//    Security* s1 = m_securityMap.values().at(0);
+//    Security* s2 = m_securityMap.values().at(1);
+
+//    c1.conId = s1->contract()->conId;
+//    c1.ratio = 1;
+//    c1.action = "SELL";
+//    c1.exchange = "SMART";
+//    c1.openClose = 0;
+//    c1.shortSaleSlot = 0;
+//    c1.designatedLocation = "";
+
+//    c2.conId = s2->contract()->conId;
+//    c2.ratio = 1;
+//    c2.action = "BUY";
+//    c2.exchange = "SMART";
+//    c2.openClose = 0;
+//    c2.shortSaleSlot = 0;
+//    c2.designatedLocation = "";
+
+//    QList<ComboLeg*> clist;
+//    clist.append(&c1);
+//    clist.append(&c2);
+
+//    Contract ct1 = *(s1->contract());
+
+//    ct1.symbol = "USD";
+//    ct1.secType = "BAG";
+//    ct1.comboLegs = clist;
+
+//    Order order;
+//    order.action = "BUY";
+//    order.totalQuantity = 100;
+//    order.orderType = "MKT";
+
+//    long id = m_ibClient->getOrderId();
+//    m_ibClient->placeOrder(id, ct1, order);
+
+//    m_ibClient->placeOrder( id, contract, order);
+
+    long id1 = m_ibClient->getOrderId();
+    m_ibClient->placeOrder(id1, *c1, o1);
+
+    long id2 = m_ibClient->getOrderId();
+    m_ibClient->placeOrder(id2, *c2, o2);
+
 
 }
 
@@ -726,13 +870,14 @@ void PairTabPage::exitOrder()
 
 void PairTabPage::showPlot(long tickerId, ChartType chartType)
 {
+    qDebug() << "[DEBUG-showPlot]";
     Q_UNUSED(chartType);
 
     Security* s = m_securityMap[tickerId];
     DataVecsHist* dvh = s->getHistData(m_timeFrame);
 
-    qDebug() << "[DEBUG-showPlot] last dt:" << QDateTime::fromTime_t(dvh->timeStamp.last()).toString("yy.MM.dd/hh:mm:ss")
-             << "numbars:" << dvh->timeStamp.size();
+//    qDebug() << "[DEBUG-showPlot] last dt:" << QDateTime::fromTime_t(dvh->timeStamp.last()).toString("yy.MM.dd/hh:mm:ss")
+//             << "numbars:" << dvh->timeStamp.size();
 
 //    for (int i=0;i<dvh->timeStamp.size();++i) {
 //        qDebug() << i+1 << ")"
@@ -759,13 +904,18 @@ void PairTabPage::showPlot(long tickerId, ChartType chartType)
     g->setBrush(QBrush(QColor(0, 0, 255, 20)));
     g->setData(dvh->timeStamp, dvh->close);
 
+//    g->setScatterStyle(QCPScatterStyle::ssCross);
+
     cp->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
     cp->axisRect()->setRangeDrag(Qt::Horizontal);
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
     cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
     cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
     cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(dvh->timeStamp.first(), dvh->timeStamp.last());
@@ -776,10 +926,15 @@ void PairTabPage::showPlot(long tickerId, ChartType chartType)
     cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
 
     cp->replot();
+
+    qDebug() << "[DEBUG-showPlot] leaving";
 }
 
 void PairTabPage::appendPlot(long tickerId)
 {
+    qDebug() << "[DEBUG-appendPlot]";
+
+    int idx = m_securityMap.keys().indexOf(tickerId);
     Security* s = m_securityMap[tickerId];
     DataVecsHist* dvh = s->getHistData(m_timeFrame);
 
@@ -801,6 +956,11 @@ void PairTabPage::appendPlot(long tickerId)
     }
 
     s->setLastBarsTimeStamp(dvh->timeStamp.last());
+
+    QCustomPlot* cp = m_customPlotMap[idx];
+    cp->graph()->addData(dvh->timeStamp.last(), dvh->close.last());
+    cp->replot();
+
 }
 
 void PairTabPage::plotRatio()
@@ -848,9 +1008,12 @@ void PairTabPage::plotRatio()
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
 //    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(dvh1->timeStamp.first(), dvh1->timeStamp.last());
 
@@ -908,10 +1071,13 @@ void PairTabPage::plotRatioMA()
     cp->axisRect()->setRangeDrag(Qt::Horizontal);
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
-//    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(ts.first(), ts.last());
 
@@ -968,10 +1134,13 @@ void PairTabPage::plotRatioStdDev()
     cp->axisRect()->setRangeDrag(Qt::Horizontal);
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
-//    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(dvh1->timeStamp.first(), dvh1->timeStamp.last());
 
@@ -1008,10 +1177,13 @@ void PairTabPage::plotRatioPercentFromMean()
     cp->axisRect()->setRangeDrag(Qt::Horizontal);
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
-//    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(dvh1->timeStamp.first(), dvh1->timeStamp.last());
 
@@ -1049,10 +1221,13 @@ void PairTabPage::plotCorrelation()
     cp->axisRect()->setRangeDrag(Qt::Horizontal);
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
-//    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(d1->timeStamp.first(), d1->timeStamp.last());
 
@@ -1094,10 +1269,13 @@ void PairTabPage::plotRatioVolatility()
     cp->axisRect()->setRangeDrag(Qt::Horizontal);
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
-//    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(d1->timeStamp.first(), d1->timeStamp.last());
 
@@ -1134,10 +1312,13 @@ void PairTabPage::plotRatioRSI()
     cp->axisRect()->setRangeDrag(Qt::Horizontal);
     cp->axisRect()->setRangeZoom(Qt::Horizontal);
 
-//    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    cp->xAxis->setDateTimeFormat("yy.MM.dd\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    if (m_timeFrame == DAY_1)
+        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+    else
+        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
 
     cp->xAxis->setRange(d1->timeStamp.at(d1->timeStamp.size() - m_ratioRSI.size()), d1->timeStamp.last());
 

@@ -57,6 +57,8 @@ struct DataVecsNewBar : public DataVecs
     QVector<bool>   hasGaps;
 };
 
+struct DataVecsMoreHist : public DataVecsHist {};
+
 //struct DataVecsRaw : public DataVecs
 //{
 //    QVector<double> timeStamp;

@@ -50,7 +50,7 @@ QVector<double> getMA(const QVector<double> & vec, int period)
         }
         ret += sum / period;
     }
-    qDebug() << "[DEBUG-getMA] ret.size:" << ret.size();
+//    qDebug() << "[DEBUG-getMA] ret.size:" << ret.size();
     return ret;
 }
 
@@ -175,7 +175,7 @@ QVector<double> getRatio(const QVector<double> & vec1, const QVector<double> & v
     if (vec1.size() < vec2.size()) {
         size = vec1.size();
         vec11 = vec1;
-        vec22 = vec22.mid(vec2.size()-size);
+        vec22 = vec2.mid(vec2.size()-size);
     }
     else {
         size = vec2.size();
