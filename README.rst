@@ -14,7 +14,7 @@ Install nkny
 2. For install location, click the Browse button and create a folder called "nkny" on your desktop
 3. finish the install with default by simply pressing "Next" or "Ok"
 4. Navigate to the "nkny" folder and open it
-5. Double click the "nkny.ext" application to open it
+5. Double click the "nkny.exe" application to open it
 
 
 
@@ -37,7 +37,7 @@ http://stackoverflow.com/questions/18985816/change-default-socket-buffer-size-un
 8. Open the "services" folder
 9. Open the "AFD" folder
 10. Open the "Parameters" folder
-11. In the main window, right-click and press the "New" key and then "DWORD (32-bit) Value"
+11. In the main window, right-click and press the "New" entry and then "DWORD (32-bit) Value"
 12. Enter "DefaultReceiveWindow" for the Name
 13. Right-click the new entry and click the "Decimal" radio button
 14. Now, for the value enter "32768"
