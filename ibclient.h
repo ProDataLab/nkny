@@ -40,6 +40,7 @@ public:
     void reqRealTimeBars(const TickerId & tickerId, const Contract & contract, const int & barSize, const QByteArray & whatToShow, const bool & useRTH, const QList<TagValue*> & realTimeBarsOptions);
     void placeOrder(OrderId id, const Contract & contract, const Order & order);
     void reqOpenOrders();
+    void reqAllOpenOrders();
     void reqContractDetails(int reqId, const Contract & contract);
     void reqIds(int numIds);
 

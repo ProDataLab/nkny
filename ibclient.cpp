@@ -1019,7 +1019,7 @@ void IBClient::onReadyRead()
     m_inBuffer.append(m_socket->readAll());
 
 //    qDebug() << "[DEBUG-onReadyRead] m_inBuffer.size():" << m_inBuffer.size();
-//    qDebug() << "[DEBUG-onReadyRead] raw:" << m_inBuffer;
+    qDebug() << "[DEBUG-onReadyRead] raw:" << m_inBuffer;
 
 
     while (m_inBuffer.size()) {
@@ -2500,8 +2500,8 @@ void IBClient::encodeField(const double &value)
 
 void IBClient::encodeField(const QByteArray &buf)
 {
-    if (buf == "1")
-        qDebug() << "[DEBUG-encodeField]";
+//    if (buf == "1")
+//        qDebug() << "[DEBUG-encodeField]";
     m_debugBuffer.append(buf).append(" ");
 
     m_outBuffer.append(buf);
@@ -2540,7 +2540,8 @@ void IBClient::cleanInBuffer()
         m_inBuffer.remove(0, m_endIdx + 1);
         m_begIdx = 0;
     }
-    if (!m_inBuffer.isEmpty())
+    if (!m_inBuffer.isEmpty()) {
         qDebug() << "[DEBUG-cleanInBuffer] remnants:" << m_inBuffer;
+    }
 }
 

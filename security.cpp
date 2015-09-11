@@ -8,7 +8,6 @@ Security::Security(const long &tickerId, QObject *parent)
     , m_lastBarsTimeStamp(0)
 //    , m_gettingRealTimeData(false)
 //    , m_fillDataHandled(false)
-    , m_order(NULL)
 {
 //    qDebug() << "[DEBUG-Security] tickerId:" << tickerId;
 }
@@ -206,28 +205,27 @@ void Security::handleNewBarData(TimeFrame timeFrame)
     m_newBarDataMap.remove(timeFrame);
 }
 
-Order *Security::getOrder()
-{
-    if (!m_order)
-        m_order = new Order();
-    return m_order;
-}
+
 
 void Security::fixHistDataSize(TimeFrame timeFrame)
 {
     DataVecsHist* dvh = (DataVecsHist*)m_dataMap[timeFrame];
     int n = dvh->timeStamp.size() - 250;
 
+//    qDebug() << "[DEBUG-fixHistDataSize] dvh.size:" << dvh->timeStamp.size();
+//    qDebug() << "[DEBUG-fixHistDataSize] size - 250:" << n;
+
     for (int i = 0;i<n;++i) {
-        dvh->timeStamp.remove(i);
-        dvh->open.remove(i);
-        dvh->high.remove(i);
-        dvh->low.remove(i);
-        dvh->close.remove(i);
-        dvh->volume.remove(i);
-        dvh->barCount.remove(i);
-        dvh->wap.remove(i);
-        dvh->hasGaps.remove(i);
+//        qDebug() << "[DEBUG-fixHistDataSize] i:" << i;
+        dvh->timeStamp.removeFirst();
+        dvh->open.removeFirst();
+        dvh->high.removeFirst();
+        dvh->low.removeFirst();
+        dvh->close.removeFirst();
+        dvh->volume.removeFirst();
+        dvh->barCount.removeFirst();
+        dvh->wap.removeFirst();
+        dvh->hasGaps.removeFirst();
     }
 
 //    qDebug() << "[DEBUG-fixHistDataSize] size:" << dvh->timeStamp.size();
@@ -242,6 +240,22 @@ void Security::setContractDetails(const ContractDetails &contractDetails)
 {
     m_contractDetails = contractDetails;
 }
+QMap<long, SecurityOrder *> Security::getSecurityOrderMap() const
+{
+    return m_securityOrderMap;
+}
+
+SecurityOrder *Security::newSecurityOrder(long orderId)
+{
+    Order* o = new Order;
+    OrderState* os = new OrderState;
+    SecurityOrder* so = new SecurityOrder;
+    so->order = o;
+    so->orderState = os;
+    m_securityOrderMap[orderId] = so;
+    return so;
+}
+
 
 
 

@@ -23,13 +23,26 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="tab">
+      <property name="tabsClosable">
+       <bool>true</bool>
+      </property>
+      <property name="movable">
+       <bool>true</bool>
+      </property>
+      <property name="tabBarAutoHide">
+       <bool>false</bool>
+      </property>
+      <widget class="QWidget" name="homeTab">
        <attribute name="title">
         <string>Home</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QTableWidget" name="homeTableWidget"/>
+         <widget class="QTableWidget" name="homeTableWidget">
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

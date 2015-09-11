@@ -4,6 +4,7 @@
 #include "qcustomplot.h"
 #include "ibcontract.h"
 #include "iborder.h"
+#include "iborderstate.h"
 #include <QObject>
 #include <QMap>
 #include <QByteArray>
@@ -68,6 +69,13 @@ struct DataVecsMoreHist : public DataVecsHist {};
 
 
 //#define DataVecsFill DataVecsHist
+
+struct SecurityOrder
+{
+    long orderId;
+    Order* order;
+    OrderState* orderState;
+};
 
 
 class Security : public QObject
@@ -134,14 +142,16 @@ public:
 //    bool fillDataHandled() const { return m_fillDataHandled; }
 //    void handleRawData(TimeFrame timeFrame);
     void handleNewBarData(TimeFrame timeFrame);
-    Order* getOrder();
     QTimer* getTimer() { return &m_timer; }
-    long getOrderId() const { return m_orderId; }
-    void setOrderId(long id) { m_orderId = id; }
+
     void fixHistDataSize(TimeFrame timeFrame);
 
     ContractDetails* getContractDetails();
     void setContractDetails(const ContractDetails &contractDetails);
+
+    QMap<long, SecurityOrder *> getSecurityOrderMap() const;
+
+    SecurityOrder* newSecurityOrder(long orderId);
 
 signals:
 
@@ -157,9 +167,8 @@ private:
     double                              m_lastBarsTimeStamp;
 //    bool                                m_gettingRealTimeData;
 //    bool                                m_fillDataHandled;
-    Order*                              m_order;
     QTimer                              m_timer;
-    long                                m_orderId;
+    QMap<long,SecurityOrder*>           m_securityOrderMap;
 };
 
 #endif // SECURITY_H

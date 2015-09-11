@@ -30,13 +30,16 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
     , m_managedAccounts(managedAccounts)
     , ui(new Ui::PairTabPage)
     , m_gettingMoreHistoricalData(false)
+    , m_homeTablePageRowIndex(-1)
+    , m_bothPairsUpdated(true)
 {
 
 //    qDebug() << "[DEBUG-PairTabPage]";
 
     ui->setupUi(this);
 
-    mwui = qobject_cast<MainWindow*>(parent)->getUi();
+    m_mainWindow = qobject_cast<MainWindow*>(parent);
+    mwui = m_mainWindow->getUi();
 
     m_origButtonStyleSheet = ui->activateButton->styleSheet();
 
@@ -93,10 +96,10 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
             this, SLOT(onActivateButtonClicked(bool)));
     connect(ui->deactivateButton, SIGNAL(clicked(bool)),
             this, SLOT(onDeactivateButtonClicked(bool)));
-    connect(m_ibClient, SIGNAL(orderStatus(long,QByteArray,int,int,double,int,int,double,int,QByteArray)),
-            this, SLOT(onOrderStatus(long,QByteArray,int,int,double,int,int,double,int,QByteArray)));
-    connect(m_ibClient, SIGNAL(openOrder(long,Contract,Order,OrderState)),
-            this, SLOT(onOpenOrder(long,Contract,Order,OrderState)));
+//    connect(m_ibClient, SIGNAL(orderStatus(long,QByteArray,int,int,double,int,int,double,int,QByteArray)),
+//            this, SLOT(onOrderStatus(long,QByteArray,int,int,double,int,int,double,int,QByteArray)));
+//    connect(m_ibClient, SIGNAL(openOrder(long,Contract,Order,OrderState)),
+//            this, SLOT(onOpenOrder(long,Contract,Order,OrderState)));
     connect(m_ibClient, SIGNAL(contractDetails(int,ContractDetails)),
             this, SLOT(onContractDetails(int,ContractDetails)));
     connect(m_ibClient, SIGNAL(historicalData(long,QByteArray,double,double,double,double,int,int,double,int)),
@@ -123,8 +126,10 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
 {
 //    qDebug() << "[DEBUG-onHistoricalData]";
 
-//    if (!(m_securityMap.keys().contains(reqId) || m_newBarMap.keys().contains(reqId)))
-//        return;
+    if (!(m_securityMap.keys().contains(reqId)
+          || m_newBarMap.keys().contains(reqId)
+          || m_moreDataMap.keys().contains(reqId)))
+        return;
 
     Security* s= NULL;
     long sid = 0;
@@ -228,10 +233,10 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
             s->handleNewBarData(m_timeFrame);
             if (ui->activateButton->isEnabled()) {
                 checkTradeTriggers();
-                if (!m_orders.isEmpty())
+                if (!s->getSecurityOrderMap().isEmpty())
                     checkTradeExits();
             }
-            appendPlot(sid);
+            appendPlotsAndTable(sid);
         }
         else {
             s->appendNewBarData(m_timeFrame, timeStamp, open, high, low, close, volume, barCount, WAP, hasGaps);
@@ -282,6 +287,8 @@ void PairTabPage::on_pair1ShowButton_clicked()
     Security* s = new Security(tickerId);
     m_securityMap[tickerId] = s;
 
+    qDebug() << "[DEBUG-on_pair1ShowButtonClicked] m_securityMap.size():" << m_securityMap.size();
+
     connect(s->getTimer(), SIGNAL(timeout()),
             this, SLOT(onPair1TimeOut()));
 
@@ -312,14 +319,25 @@ void PairTabPage::on_pair1ShowButton_clicked()
 
     ui->pair2ShowButton->setEnabled(true);
     ui->pair1ShowButton->setEnabled(false);
+
+    ui->timeFrameComboBox->setEnabled(false);
 }
 void PairTabPage::on_pair2ShowButton_clicked()
 {
+    ui->pair2ShowButton->setEnabled(false);
+
     if (m_securityMap.keys().size() >= 2)
         return;
     long tickerId = m_ibClient->getTickerId();
     Security* pair2 = new Security(tickerId);
     m_securityMap[tickerId] = pair2;
+
+    qDebug() << "[DEBUG-on_pair2ShowButtonClicked] m_securityMap.size():" << m_securityMap.size();
+
+    m_tabSymbol = ui->pairsTabWidget->tabText(0) + "/" + ui->pairsTabWidget->tabText(1) + " (" + m_timeFrameString + ")";
+    mwui->tabWidget->setTabText(mwui->tabWidget->currentIndex(),
+                                m_tabSymbol);
+
 
     connect(pair2->getTimer(), SIGNAL(timeout()),
             this, SLOT(onPair2TimeOut()));
@@ -344,6 +362,7 @@ void PairTabPage::on_pair2ShowButton_clicked()
     long reqId = m_ibClient->getTickerId();
     m_contractDetailsMap[tickerId] = reqId;
     m_ibClient->reqContractDetails(reqId, *contract);
+
 
 }
 
@@ -396,32 +415,7 @@ void PairTabPage::onDeactivateButtonClicked(bool)
     m_ibClient->reqOpenOrders();
 }
 
-void PairTabPage::onOrderStatus(long orderId, const QByteArray &status, int filled, int remaining, double avgFillPrice,
-                                int permId, int parentId, double lastFillPrice, int clientId, const QByteArray &whyHeld)
-{
-    qDebug() << "[DEBUG-onOrderStatus]"
-             << orderId
-             << status
-             << filled
-             << remaining
-             << avgFillPrice
-             << permId
-             << parentId
-             << lastFillPrice
-             << clientId
-             << whyHeld;
-}
 
-void PairTabPage::onOpenOrder(long orderId, const Contract &contract, const Order &order, const OrderState &orderState)
-{
-    qDebug() << "[DEBUG-onOpenOrder]"
-             << orderId
-             << contract.symbol
-             << order.action
-             << orderState.initMargin
-             << orderState.maintMargin
-             << orderState.status;
-}
 
 void PairTabPage::onSingleShotTimer()
 {
@@ -563,8 +557,9 @@ void PairTabPage::onCdui1SymbolTextChanged(QString text)
 void PairTabPage::onCdui2SymbolTextChanged(QString text)
 {
     ui->pairsTabWidget->setTabText(1, text.toUpper());
+    m_tabSymbol = ui->pairsTabWidget->tabText(0) + "/" + text.toUpper() + "(" + m_timeFrameString + ")";
     mwui->tabWidget->setTabText(mwui->tabWidget->currentIndex(),
-                                ui->pairsTabWidget->tabText(0) + "/" + text.toUpper());
+                                m_tabSymbol);
 }
 
 
@@ -572,6 +567,53 @@ void PairTabPage::onCdui2SymbolTextChanged(QString text)
 ContractDetailsWidget *PairTabPage::getPair2ContractDetailsWidget() const
 {
     return m_pair2ContractDetailsWidget;
+}
+
+bool PairTabPage::reqClosePair()
+{
+    qDebug() << "[DEBUG-reqClosePair]";
+
+    Security* s1=NULL;
+    Security* s2=NULL;
+
+    // THIS IS A HACK FOR AN BAD VALUE AT MAP INDEX 0... FIXME !!!;
+    if (m_securityMap.size() == 1)
+        s1 = m_securityMap.values().at(0);
+    if (m_securityMap.keys().size() == 2) {
+        s1 = m_securityMap.values().at(0);
+        s2 = m_securityMap.values().at(1);
+    }
+    else if (m_securityMap.keys().size() == 3) {
+        s1 = m_securityMap.values().at(1);
+        s2 = m_securityMap.values().at(2);
+    }
+
+    QSettings s;
+
+    // IF S2 NOT SET YET
+    if (m_securityMap.isEmpty() || s2 == NULL) {
+        s.remove(m_tabSymbol);
+        return true;
+    }
+    if (s1->getSecurityOrderMap().isEmpty()
+            && s2->getSecurityOrderMap().isEmpty()
+            && mwui->homeTableWidget->rowCount() > 0
+            && m_homeTablePageRowIndex != -1) {
+//        qDebug() << "[DEBUG-reqClosePair] rowIdx:" << m_homeTablePageRowIndex;
+//        qDebug() << "[DEBUG-reqClosePair] rowCount:" << mwui->homeTableWidget->rowCount();
+        QTableWidget* tw = mwui->homeTableWidget;
+        for (int r=0;r<tw->rowCount();++r) {
+            if (tw->item(r,0)->text() == s1->contract()->symbol
+                    && tw->item(r,1)->text() == s2->contract()->symbol) {
+                tw->removeRow(r);
+                tw->repaint();
+            }
+        }
+        s.remove(m_tabSymbol);
+        return true;
+    }
+    else
+        return false;
 }
 
 ContractDetailsWidget *PairTabPage::getPair1ContractDetailsWidget() const
@@ -614,6 +656,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case SEC_1:
         m_timeFrame = SEC_1;
         m_timeFrameInSeconds = 1;
+        m_timeFrameString = "1 Sec";
+
         if (!isNewBarReq)
             durationStr = "250 S";
         else
@@ -622,6 +666,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case SEC_5:
         m_timeFrame = SEC_5;
         m_timeFrameInSeconds = 5;
+        m_timeFrameString = "5 Sec";
+
         if (!isNewBarReq)
             durationStr = QByteArray::number((250) * 5) + " S";
         else
@@ -630,6 +676,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case SEC_15:
         m_timeFrame = SEC_15;
         m_timeFrameInSeconds = 15;
+        m_timeFrameString = "15 Sec";
+
         if (!isNewBarReq)
             durationStr = QByteArray::number((250) * 15) + " S";
         else
@@ -638,6 +686,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case SEC_30:
         m_timeFrame = SEC_30;
         m_timeFrameInSeconds = 30;
+        m_timeFrameString = "30 Sec";
+
         if (!isNewBarReq)
             durationStr = QByteArray::number((250) * 30) + " S";
         else
@@ -646,6 +696,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case MIN_1:
         m_timeFrame = MIN_1;
         m_timeFrameInSeconds = 60;
+        m_timeFrameString = "1 Min";
+
         if (!isNewBarReq)
             durationStr = "2 D";
         else
@@ -654,6 +706,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case MIN_2:
         m_timeFrame = MIN_2;
         m_timeFrameInSeconds = 120;
+        m_timeFrameString = "2 Min";
+
         if (!isNewBarReq)
             durationStr = "2 D";
         else
@@ -662,6 +716,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case MIN_3:
         m_timeFrame = MIN_3;
         m_timeFrameInSeconds = 180;
+        m_timeFrameString = "3 Min";
+
         if (!isNewBarReq)
             durationStr = "2 D";
         else
@@ -670,6 +726,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case MIN_5:
         m_timeFrame = MIN_5;
         m_timeFrameInSeconds = 60 * 5;
+        m_timeFrameString = "5 Min";
+
         if (!isNewBarReq)
             durationStr = "4 D";
         else
@@ -678,6 +736,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case MIN_15:
         m_timeFrame = MIN_15;
         m_timeFrameInSeconds = 60 * 15;
+        m_timeFrameString = "15 Min";
+
         if (!isNewBarReq)
             durationStr = "11 D";
         else
@@ -686,6 +746,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case MIN_30:
         m_timeFrame = MIN_30;
         m_timeFrameInSeconds = 60 * 30;
+        m_timeFrameString = "30 Min";
+
         if (!isNewBarReq)
             durationStr = "21 D";
         else
@@ -694,6 +756,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case HOUR_1:
         m_timeFrame = HOUR_1;
         m_timeFrameInSeconds = 60 * 60;
+        m_timeFrameString = "1 Hour";
+
         if (!isNewBarReq)
             durationStr = "1 M";            // FIXME: I can only get 140 data points for 1 hour.. need to call again ?
         else
@@ -702,6 +766,8 @@ void PairTabPage::reqHistoricalData(long tickerId, QDateTime dt)
     case DAY_1:
         m_timeFrame = DAY_1;
         m_timeFrameInSeconds = 60 * 60 * 24;
+        m_timeFrameString = "1 Day";
+
         if (!isNewBarReq)
             durationStr = "1 Y";
         else
@@ -748,6 +814,193 @@ void PairTabPage::onMoreHistoricalDataNeeded()
     long id = m_moreDataMap[m_moreDataMap.values().last()];
     reqHistoricalData(id, firstDT);
 }
+void PairTabPage::setTabSymbol(const QString &tabSymbol)
+{
+    m_tabSymbol = tabSymbol;
+}
+
+void PairTabPage::setIbClient(IBClient *ibClient)
+{
+    m_ibClient = ibClient;
+}
+
+QString PairTabPage::getTimeFrameString() const
+{
+    return m_timeFrameString;
+}
+
+void PairTabPage::writeSettings() const
+{
+    QSettings s;
+    s.beginGroup(m_tabSymbol);
+    s.setValue("activateButtonEnabled", ui->activateButton->isEnabled());
+    s.setValue("dectivateButtonEnabled", ui->deactivateButton->isEnabled());
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/pairsPage");
+    s.setValue("timeFrame", m_timeFrame);
+    s.setValue("timeFrameIndex", ui->timeFrameComboBox->currentIndex());
+    s.setValue("tabWidgetIndex", ui->tabWidget->currentIndex());
+    s.setValue("pairsTabWidgetIndex", ui->pairsTabWidget->currentIndex());
+    s.beginWriteArray("pairsTabWidgetPages");
+    for (int i=0;i<ui->pairsTabWidget->count();++i) {
+        s.setArrayIndex(i);
+        s.setValue("tabText", ui->pairsTabWidget->tabText(i));
+        if (i == 0)
+            s.setValue("showButton1Enabled", ui->pair1ShowButton->isEnabled());
+        else
+            s.setValue("showButton2Enabled", ui->pair2ShowButton->isEnabled());
+        Ui::ContractDetailsWidget* c = qobject_cast<ContractDetailsWidget*>(ui->pairsTabWidget->widget(i))->getUi();
+        s.setValue("securityTypeComboBoxIndex", c->securityTypeComboBox->currentIndex());
+        s.setValue("symbol", c->symbolLineEdit->text());
+        s.setValue("exchange", c->exchangeLineEdit->text());
+        if (c->expiryLineEdit->isEnabled())
+            s.setValue("expiry", c->expiryLineEdit->text());
+    }
+    s.endArray();
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/configPage");
+    s.setValue("maPeriod", ui->maPeriodSpinBox->value());
+    s.setValue("rsiPeriod", ui->rsiPeriodSpinBox->value());
+    s.setValue("stdDevPeriod", ui->stdDevPeriodSpinBox->value());
+    s.setValue("volatilityPeriod", ui->volatilityPeriodSpinBox->value());
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/tradeEntry");
+    s.setValue("managedAccountsComboBoxText", ui->managedAccountsComboBox->currentText());
+    s.setValue("amount", ui->tradeEntryAmountSpinBox->value());
+    s.setValue("rsiCheckState", ui->tradeEntryRSICheckBox->checkState());
+    s.setValue("rsi", ui->tradeEntryRSIUpperSpinBox->value());
+    s.setValue("percentFromMeanCheckState", ui->tradeEntryPercentFromMeanCheckBox->checkState());
+    s.setValue("percentFromMean", ui->tradeEntryPercentFromMeanSpinBox->value());
+    s.setValue("numStdDevLayers", ui->tradeEntryNumStdDevLayersSpinBox->value());
+    s.setValue("waitCheckBoxEnabled", ui->waitCheckBox->isEnabled());
+    s.setValue("waitCheckBoxState", ui->waitCheckBox->checkState());
+    s.setValue("bufferCheckBoxEnabled", ui->layerBufferCheckBox->isEnabled());
+    s.setValue("bufferCheckBoxState", ui->layerBufferCheckBox->checkState());
+    s.setValue("bufferSpinBoxEnabled", ui->layerBufferDoubleSpinBox->isEnabled());
+    s.setValue("buffer", ui->layerBufferDoubleSpinBox->value());
+    s.beginWriteArray("layers");
+    for (int i=0;i<ui->tradeEntryNumStdDevLayersSpinBox->value();++i) {
+        StdDevLayerTab* t = qobject_cast<StdDevLayerTab*>(ui->layersTabWidget->widget(i));
+        s.setValue("stdDev", t->getUi()->layerStdDevDoubleSpinBox->value());
+        s.setValue("trailCheckBoxEnabled", t->getUi()->layerTrailCheckBox->isEnabled());
+        s.setValue("trailCheckBoxCheckState", t->getUi()->layerTrailCheckBox->checkState());
+        s.setValue("trail", t->getUi()->layerTrailDoubleSpinBox->value());
+        s.setValue("stdDevMinCheckBoxEnabled", t->getUi()->layerStdMinCheckBox->isEnabled());
+        s.setValue("stdDevMinCheckBoxState", t->getUi()->layerStdMinCheckBox->checkState());
+        s.setValue("stdDevMin", t->getUi()->layerStdMinDoubleSpinBox->value());
+    }
+    s.endArray();
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/tradeExit");
+    s.setValue("percentStopLossCheckBoxState", ui->tradeExitPercentStopLossCheckBox->checkState());
+    s.setValue("percentStopLoss", ui->tradeExitPercentStopLossSpinBox->value());
+    s.setValue("percentFromMeanCheckState", ui->tradeExitPercentFromMeanCheckBox->checkState());
+    s.setValue("percentFromMean", ui->tradeExitPercentFromMeanSpinBox->value());
+    s.setValue("stdDevCheckBox", ui->tradeExitStdDevCheckBox->checkState());
+    s.setValue("stdDev", ui->tradeExitStdDevDoubleSpinBox->value());
+    s.endGroup();
+}
+
+void PairTabPage::readSettings()
+{
+    QSettings s;
+    s.beginGroup(m_tabSymbol);
+    ui->activateButton->setEnabled(s.value("activateButtonEnabled").toBool());
+    ui->deactivateButton->setEnabled(s.value("deactivateButtonEnabled").toBool());
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/pairsPage");
+    m_timeFrame =(TimeFrame) s.value("timeFrame").toInt();
+    ui->timeFrameComboBox->setCurrentIndex(s.value("timeFrameIndex").toInt());
+    ui->tabWidget->setCurrentIndex(s.value("tabWidgetIndex").toInt());
+    ui->pairsTabWidget->setCurrentIndex(s.value("pairsTabWidgetIndex").toInt());
+    int size = s.beginReadArray("pairsTabWidgetPages");
+    for (int i=0;i<size;++i) {
+        s.setArrayIndex(i);
+        ui->pairsTabWidget->setTabText(i, s.value("tabText").toString());
+        if (i==0)
+            ui->pair1ShowButton->setEnabled(s.value("showButton1Enabled").toBool());
+        else
+            ui->pair2ShowButton->setEnabled(s.value("showButton2Enabled").toBool());
+        Ui::ContractDetailsWidget* c = qobject_cast<ContractDetailsWidget*>(ui->pairsTabWidget->widget(i))->getUi();
+        c->securityTypeComboBox->setCurrentIndex(s.value("securityTypeComboBoxIndex").toInt());
+        c->symbolLineEdit->setText(s.value("symbol").toString());
+        c->exchangeLineEdit->setText(s.value("exchange").toString());
+        if (c->expiryLineEdit->isEnabled())
+            c->expiryLineEdit->setText(s.value("expiry").toString());
+    }
+    s.endArray();
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/configPage");
+    ui->maPeriodSpinBox->setValue(s.value("maPeriod").toInt());
+    ui->rsiPeriodSpinBox->setValue(s.value("rsiPeriod").toInt());
+    ui->stdDevPeriodSpinBox->setValue(s.value("stdDevPeriod").toInt());
+    ui->volatilityPeriodSpinBox->setValue(s.value("volatilityPeriod").toInt());
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/tradeEntry");
+    QString accountString = s.value("managedAccountsComboBoxText").toString();
+    for (int i=0;i<ui->managedAccountsComboBox->count();++i) {
+        if (ui->managedAccountsComboBox->currentText() == accountString) {
+            ui->managedAccountsComboBox->setCurrentIndex(i);
+            break;
+        }
+    }
+    ui->tradeEntryAmountSpinBox->setValue(s.value("amount").toInt());
+    ui->tradeEntryRSICheckBox->setCheckState((Qt::CheckState)s.value("rsiCheckState").toInt());
+    ui->tradeEntryRSIUpperSpinBox->setValue(s.value("rsi").toInt());
+    ui->tradeEntryPercentFromMeanCheckBox->setCheckState((Qt::CheckState)s.value("percentFromMeanCheckState").toInt());
+    ui->tradeEntryPercentFromMeanSpinBox->setValue(s.value("percentFromMean").toInt());
+    ui->tradeEntryNumStdDevLayersSpinBox->setValue(s.value("numStdDevLayers").toInt());
+    ui->waitCheckBox->setEnabled(s.value("waitCheckBoxEnabled").toBool());
+    ui->waitCheckBox->setCheckState((Qt::CheckState)s.value("waitCheckBoxState").toInt());
+    ui->layerBufferCheckBox->setEnabled(s.value("bufferCheckBoxEnabled").toBool());
+    ui->layerBufferCheckBox->setCheckState((Qt::CheckState)s.value("bufferCheckBoxState").toInt());
+    ui->layerBufferDoubleSpinBox->setEnabled(s.value("bufferSpinBoxEnabled").toBool());
+    ui->layerBufferDoubleSpinBox->setValue(s.value("buffer").toDouble());
+    size = s.beginReadArray("layers");
+    for (int i = 0;i<size;++i) {
+        StdDevLayerTab* l = new StdDevLayerTab(i, this);
+        Ui::StdDevLayerTab* ul = l->getUi();
+        ui->layersTabWidget->addTab(l, QString::number(i+1));
+        connect(l->getUi()->layerTrailCheckBox, SIGNAL(stateChanged(int)),
+                this, SLOT(onTrailCheckBoxStateChanged(int)));
+        ul->layerStdDevDoubleSpinBox->setValue(s.value("stdDev").toDouble());
+        ul->layerTrailCheckBox->setEnabled(s.value("trailCheckBoxEnabled").toBool());
+        ul->layerTrailCheckBox->setCheckState((Qt::CheckState)s.value("trailCheckBoxState").toInt());
+        ul->layerTrailDoubleSpinBox->setValue(s.value("trail").toDouble());
+        ul->layerStdMinCheckBox->setEnabled(s.value("stdDevMinCheckBoxEnabled").toBool());
+        ul->layerStdMinCheckBox->setCheckState((Qt::CheckState)s.value("stdDevCheckBoxState").toInt());
+        ul->layerStdMinDoubleSpinBox->setValue(s.value("stdDevMin").toDouble());
+    }
+    s.endArray();
+    s.endGroup();
+
+    s.beginGroup(m_tabSymbol + "/tradeExit");
+    ui->tradeExitPercentStopLossCheckBox->setCheckState((Qt::CheckState)s.value("percentStopLossCheckBoxState").toInt());
+    ui->tradeExitPercentStopLossSpinBox->setValue(s.value("percentStopLoss").toInt());
+    ui->tradeExitPercentFromMeanCheckBox->setCheckState((Qt::CheckState)s.value("percentFromMeanCheckBoxState").toInt());
+    ui->tradeExitPercentFromMeanSpinBox->setValue(s.value("percentFromMean").toInt());
+    ui->tradeExitStdDevCheckBox->setCheckState((Qt::CheckState)s.value("stdDevCheckBox").toInt());
+    ui->tradeExitStdDevDoubleSpinBox->setValue(s.value("stdDev").toDouble());
+    s.endGroup();
+}
+
+TimeFrame PairTabPage::getTimeFrame() const
+{
+    return m_timeFrame;
+}
+
+QString PairTabPage::getTabSymbol() const
+{
+    return m_tabSymbol;
+}
+
 
 
 
@@ -777,8 +1030,11 @@ void PairTabPage::placeOrder()
     Contract* c1 = s1->contract();
     Contract* c2 = s2->contract();
 
-    Order o1;
-    Order o2;
+    long orderId1 = m_ibClient->getOrderId();
+    long orderId2 = m_ibClient->getOrderId();
+
+    Order* o1 = s1->newSecurityOrder(orderId1)->order;
+    Order* o2 = s2->newSecurityOrder(orderId2)->order;
 
     double ratio1, ratio2;
 
@@ -793,23 +1049,23 @@ void PairTabPage::placeOrder()
 
     qDebug() << "[DEBUG-placeOrder] ratio1: " << ratio1 << "ratio2:" << ratio2;
 
-    o1.action = "BUY";
-    o1.totalQuantity = (long)ui->tradeEntryAmountSpinBox->value() * ratio1 / s1->getHistData(m_timeFrame)->close.last();
-//    o1.totalQuantity = 1;
-    qDebug() << "[DEBUG-placeOrder] o1.totalQuantity:" << o1.totalQuantity;
+    o1->action = "BUY";
+    o1->totalQuantity = (long)ui->tradeEntryAmountSpinBox->value() * ratio1 / s1->getHistData(m_timeFrame)->close.last();
+    qDebug() << "[DEBUG-placeOrder] o1->totalQuantity:" << o1->totalQuantity;
 
-    o1.orderType = "MKT";
-    o1.transmit = true;
-    o1.account = ui->managedAccountsComboBox->currentText().toLocal8Bit();
+    o1->orderType = "MKT";
+    o1->transmit = true;
+    o1->account = ui->managedAccountsComboBox->currentText().toLocal8Bit();
 
-    o2.action = "SELL";
-    o2.totalQuantity = (long)ui->tradeEntryAmountSpinBox->value() * ratio2 / s2->getHistData(m_timeFrame)->close.last();
-//    o2.totalQuantity = 1;
-    qDebug() << "[DEBUG-placeOrder] o2.totalQuantity:" << o2.totalQuantity;
-    o2.orderType = "MKT";
-    o2.transmit = true;
-    o2.account = ui->managedAccountsComboBox->currentText().toLocal8Bit();
+    o2->action = "SELL";
+    o2->totalQuantity = (long)ui->tradeEntryAmountSpinBox->value() * ratio2 / s2->getHistData(m_timeFrame)->close.last();
+    qDebug() << "[DEBUG-placeOrder] o2->totalQuantity:" << o2->totalQuantity;
+    o2->orderType = "MKT";
+    o2->transmit = true;
+    o2->account = ui->managedAccountsComboBox->currentText().toLocal8Bit();
 
+    m_ibClient->placeOrder(orderId1, *c1, *o1);
+    m_ibClient->placeOrder(orderId2, *c2, *o2);
 
 
 //    ComboLeg c1;
@@ -853,13 +1109,6 @@ void PairTabPage::placeOrder()
 //    m_ibClient->placeOrder(id, ct1, order);
 
 //    m_ibClient->placeOrder( id, contract, order);
-
-    long id1 = m_ibClient->getOrderId();
-    m_ibClient->placeOrder(id1, *c1, o1);
-
-    long id2 = m_ibClient->getOrderId();
-    m_ibClient->placeOrder(id2, *c2, o2);
-
 
 }
 
@@ -930,7 +1179,7 @@ void PairTabPage::showPlot(long tickerId, ChartType chartType)
     qDebug() << "[DEBUG-showPlot] leaving";
 }
 
-void PairTabPage::appendPlot(long tickerId)
+void PairTabPage::appendPlotsAndTable(long tickerId)
 {
     qDebug() << "[DEBUG-appendPlot]";
 
@@ -961,7 +1210,113 @@ void PairTabPage::appendPlot(long tickerId)
     cp->graph()->addData(dvh->timeStamp.last(), dvh->close.last());
     cp->replot();
 
+    if (m_bothPairsUpdated) {
+        m_bothPairsUpdated = false;
+        return;
+    }
+
+    Security* s1 = m_securityMap.values().at(0);
+    Security* s2 = m_securityMap.values().at(1);
+
+    DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
+    DataVecsHist* dvh2 = s2->getHistData(m_timeFrame);
+
+    m_ratio = getRatio(dvh1->close, dvh2->close);
+    m_ratioMA = getMA(m_ratio, ui->maPeriodSpinBox->value());
+    m_ratioStdDev = getMovingStdDev(m_ratio, ui->stdDevPeriodSpinBox->value());
+    m_ratioPercentFromMean = getPercentFromMean(m_ratio);
+    m_correlation = getCorrelation(dvh1->close, dvh2->close);
+    m_ratioVolatility = getVolatility(m_ratio, ui->volatilityPeriodSpinBox->value());
+    m_ratioRSI = getRSI(m_ratio, ui->rsiPeriodSpinBox->value());
+
+    QTableWidget* tw = mwui->homeTableWidget;
+    QTabWidget* tabWidget = ui->tabWidget;
+
+//    << "Ratio"
+//    << "RatioMA"
+//    << "StdDev"
+//    << "PcntFromMA"
+//    << "Corr"
+//    << "Vola"
+//    << "RSI"
+
+    double ts = dvh->timeStamp.last();
+
+    for (int i=0;i<ui->tabWidget->tabBar()->count();++i) {
+        QString tabText = tabWidget->tabText(i);
+        cp = qobject_cast<QCustomPlot*>(tabWidget->widget(i));
+
+        if (tabText == "Ratio") {
+            cp->graph(0)->addData(ts, m_ratio.last());
+            cp->replot();
+        }
+        else if (tabText == "RatioMA") {
+            cp->graph(0)->addData(ts, m_ratioMA.last());
+            cp->replot();
+        }
+        else if (tabText == "StdDev") {
+            cp->graph(0)->addData(ts, m_ratioStdDev.last());
+            cp->replot();
+        }
+        else if (tabText == "PcntFrmMean") {
+            cp->graph(0)->addData(ts, m_ratioPercentFromMean.last());
+            cp->replot();
+        }
+        else if (tabText == "Corr") {
+            cp->graph(0)->addData(ts, m_correlation.last());
+            cp->replot();
+        }
+        else if (tabText == "Vola") {
+            cp->graph(0)->addData(ts, m_ratioVolatility.last());
+            cp->replot();
+        }
+        else if (tabText == "RSI") {
+            cp->graph(0)->addData(ts, m_ratioRSI.last());
+            cp->replot();
+        }
+    }
+
+    QString sym1 = ui->pairsTabWidget->tabText(0);
+    QString sym2 = ui->pairsTabWidget->tabText(1);
+
+    int row = 0;
+
+//    << "Ratio"
+//    << "RatioMA"
+//    << "StdDev"
+//    << "PcntFromMA"
+//    << "Corr"
+//    << "Vola"
+//    << "RSI";
+
+    for (int r=0;r<tw->rowCount();++r) {
+        QTableWidgetItem* item1 = tw->item(r,0);
+        QTableWidgetItem* item2 = tw->item(r,1);
+        if (item1->text() == sym1 && item2->text() == sym2)
+            row = r;
+    }
+
+    for (int c=0;c<tw->columnCount();++c) {
+        QTableWidgetItem* headerItem = tw->horizontalHeaderItem(c);
+        if (headerItem->text() == "Ratio")
+            tw->item(row,c)->setText(QString::number(m_ratio.last()));
+        else if (headerItem->text() == "RatioMA")
+            tw->item(row,c)->setText(QString::number(m_ratioMA.last()));
+        else if (headerItem->text() == "StdDev")
+            tw->item(row,c)->setText(QString::number(m_ratioStdDev.last()));
+        else if (headerItem->text() == "PcntFromMA")
+            tw->item(row,c)->setText(QString::number(m_ratioPercentFromMean.last()));
+        else if (headerItem->text() == "Corr")
+            tw->item(row,c)->setText(QString::number(m_correlation.last()));
+        else if (headerItem->text() == "Vola")
+            tw->item(row,c)->setText(QString::number(m_ratioVolatility.last()));
+        else if (headerItem->text() == "RSI")
+            tw->item(row,c)->setText(QString::number(m_ratioRSI.last()));
+    }
+
+    m_bothPairsUpdated = true;
 }
+
 
 void PairTabPage::plotRatio()
 {
@@ -1026,6 +1381,7 @@ void PairTabPage::plotRatio()
 
 }
 
+
 void PairTabPage::plotRatioMA()
 {
     DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
@@ -1054,7 +1410,7 @@ void PairTabPage::plotRatioMA()
 
     QCustomPlot* cp = new QCustomPlot();
 
-    int tabIdx = ui->tabWidget->addTab(cp, "RatIo MA");
+    int tabIdx = ui->tabWidget->addTab(cp, "RatioMA");
     ui->tabWidget->setCurrentIndex(tabIdx);
     m_customPlotMap[tabIdx] = cp;                   // TODO: SLOT TO DELETE CUSTOMPLOTS WHEN TAB IS REMOVED
 
@@ -1089,6 +1445,7 @@ void PairTabPage::plotRatioMA()
     cp->replot();
 }
 
+
 void PairTabPage::plotRatioStdDev()
 {
     DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
@@ -1119,7 +1476,7 @@ void PairTabPage::plotRatioStdDev()
 
     QCustomPlot* cp = new QCustomPlot();
 
-    int tabIdx = ui->tabWidget->addTab(cp, "StdDev of Mean");
+    int tabIdx = ui->tabWidget->addTab(cp, "StdDev");
     ui->tabWidget->setCurrentIndex(tabIdx);
     m_customPlotMap[tabIdx] = cp;                   // TODO: SLOT TO DELETE CUSTOMPLOTS WHEN TAB IS REMOVED
 
@@ -1162,7 +1519,7 @@ void PairTabPage::plotRatioPercentFromMean()
 
     QCustomPlot* cp = new QCustomPlot();
 
-    int tabIdx = ui->tabWidget->addTab(cp, "Percent From Mean");
+    int tabIdx = ui->tabWidget->addTab(cp, "PcntFrmMA");
     ui->tabWidget->setCurrentIndex(tabIdx);
     m_customPlotMap[tabIdx] = cp;                   // TODO: SLOT TO DELETE CUSTOMPLOTS WHEN TAB IS REMOVED
 
@@ -1206,7 +1563,7 @@ void PairTabPage::plotCorrelation()
 
     QCustomPlot* cp = new QCustomPlot();
 
-    int tabIdx = ui->tabWidget->addTab(cp, "Correlation");
+    int tabIdx = ui->tabWidget->addTab(cp, "Corr");
     ui->tabWidget->setCurrentIndex(tabIdx);
     m_customPlotMap[tabIdx] = cp;                   // TODO: SLOT TO DELETE CUSTOMPLOTS WHEN TAB IS REMOVED
 
@@ -1254,7 +1611,7 @@ void PairTabPage::plotRatioVolatility()
 
     QCustomPlot* cp = new QCustomPlot();
 
-    int tabIdx = ui->tabWidget->addTab(cp, "Ratio Volatility");
+    int tabIdx = ui->tabWidget->addTab(cp, "Vola");
     ui->tabWidget->setCurrentIndex(tabIdx);
     m_customPlotMap[tabIdx] = cp;                   // TODO: SLOT TO DELETE CUSTOMPLOTS WHEN TAB IS REMOVED
 
@@ -1297,7 +1654,7 @@ void PairTabPage::plotRatioRSI()
 
     QCustomPlot* cp = new QCustomPlot();
 
-    int tabIdx = ui->tabWidget->addTab(cp, "Ratio RSI");
+    int tabIdx = ui->tabWidget->addTab(cp, "RSI");
     ui->tabWidget->setCurrentIndex(tabIdx);
     m_customPlotMap[tabIdx] = cp;                   // TODO: SLOT TO DELETE CUSTOMPLOTS WHEN TAB IS REMOVED
 
@@ -1337,6 +1694,8 @@ void PairTabPage::plotSpreadRSI()
 
 void PairTabPage::addTableRow()
 {
+    qDebug() << "[DEBUG-addTableRow]";
+
     QTableWidget* tab = mwui->homeTableWidget;
 
     Security* s1 = m_securityMap.values().at(0);
@@ -1345,41 +1704,50 @@ void PairTabPage::addTableRow()
     DataVecsHist* d1 = s1->getHistData(m_timeFrame);
     DataVecsHist* d2 = s2->getHistData(m_timeFrame);
 
-    QStringList hlables;
-    hlables << "Pair1"
-            << "Pair2"
-            << "Price1"
-            << "Price2"
-            << "Ratio"
-            << "Delta/StdDev"
-            << "Percent From Mean"
-            << "Correlation"
-            << "Cointegration"
-            << "Volatility"
-            << "Ratio RSI"
-            << "Spread RSI";
+//    m_headerLabels << "Pair1"
+//            << "Pair2"
+//            << "Price1"
+//            << "Price2"
+//            << "Ratio"
+//            << "RatioMA"
+//            << "StdDev"
+//            << "PcntFromMA"
+//            << "Corr"
+//            << "Vola"
+//            << "RSI";
+
+
+
+
 
     QStringList itemList;
     itemList << m_pair1ContractDetailsWidget->getUi()->symbolLineEdit->text()
              << m_pair2ContractDetailsWidget->getUi()->symbolLineEdit->text()
+             << m_timeFrameString
              << QString::number(d1->close.last())
              << QString::number(d2->close.last())
              << QString::number(m_ratio.last())
+             << QString::number(m_ratioMA.last())
              << QString::number(m_ratioStdDev.last())
              << QString::number(m_ratioPercentFromMean.last())
              << QString::number(m_correlation.last())
-////             << QString::number(m_cointegration.last())
-             << QString::number(-99)
              << QString::number(m_ratioVolatility.last())
              << QString::number(m_ratioRSI.last())
-////             << QString::number(m_spreadRSI.last())
                 ;
 
 //    qDebug() << "itemList:" << itemList;
-    tab->setRowCount(tab->rowCount()+1);
+    int numRows = tab->rowCount();
+
+    qDebug() << "[DEBUG-addTableRow] numRows:" << numRows;
+
+    if (numRows == 0)
+        m_homeTablePageRowIndex = 0;
+    else
+        m_homeTablePageRowIndex = numRows;
+    tab->setRowCount(m_homeTablePageRowIndex + 1);
     for (int i=0;i<itemList.size();++i) {
         QTableWidgetItem* item = new QTableWidgetItem(itemList.at(i));
-        tab->setItem(tab->rowCount()-1, i, item);
+        tab->setItem(m_homeTablePageRowIndex, i, item);
     }
     tab->repaint();
 
@@ -1480,11 +1848,6 @@ void PairTabPage::checkTradeExits()
             exitOrder();
     }
 }
-
-
-
-
-
 
 
 

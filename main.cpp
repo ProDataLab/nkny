@@ -7,14 +7,11 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    a.setOrganizationName("prodatalab");
+    a.setOrganizationDomain("prodatalab.com");
+    a.setApplicationName("nkny");
     MainWindow w;
-//    w.showMaximized();
-
-    QRect rec = QApplication::desktop()->screenGeometry();
-    QMargins mar(100,100,100,100);
-    rec -= mar;
-
-    w.setGeometry(rec);
 
     w.show();
     return a.exec();

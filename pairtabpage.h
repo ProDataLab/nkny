@@ -11,10 +11,12 @@
 #include <QMap>
 #include <QList>
 #include <QPair>
+#include <QSettings>
 
 class IBClient;
 struct Contract;
 class ContractDetailsWidget;
+class MainWindow;
 
 namespace Ui {
 class PairTabPage;
@@ -33,6 +35,22 @@ public:
     ContractDetailsWidget *getPair1ContractDetailsWidget() const;
 
     ContractDetailsWidget *getPair2ContractDetailsWidget() const;
+
+    bool reqClosePair();
+
+    QString getTabSymbol() const;
+
+    TimeFrame getTimeFrame() const;
+
+    QString getTimeFrameString() const;
+
+    void writeSettings() const;
+
+    void readSettings();
+
+    void setIbClient(IBClient *ibClient);
+
+    void setTabSymbol(const QString &tabSymbol);
 
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
@@ -54,10 +72,7 @@ private slots:
     void onActivateButtonClicked(bool);
     void onDeactivateButtonClicked(bool);
 
-    void onOrderStatus(long orderId, const QByteArray &status, int filled,
-                                        int remaining, double avgFillPrice, int permId, int parentId,
-                                        double lastFillPrice, int clientId, const QByteArray& whyHeld);
-    void onOpenOrder(long orderId, const Contract& contract, const Order& order, const OrderState& orderState);
+
 
     void onSingleShotTimer();
     void onContractDetails(int reqId, const ContractDetails & contractDetails);
@@ -68,8 +83,19 @@ private slots:
     void onCdui1SymbolTextChanged(QString text);
     void onCdui2SymbolTextChanged(QString text);
 
+//    void on_maPeriodSpinBox_valueChanged(int arg1);
+
+//    void on_rsiPeriodSpinBox_valueChanged(int arg1);
+
+//    void on_stdDevPeriodSpinBox_valueChanged(int arg1);
+
+//    void on_volatilityPeriodSpinBox_valueChanged(int arg1);
 
     void onMoreHistoricalDataNeeded();
+
+//    void on_timeFrameComboBox_currentIndexChanged(int index);
+
+//    void on_managedAccountsComboBox_currentIndexChanged(int index);
 
 
 private:
@@ -95,8 +121,6 @@ private:
     QVector<double>                         m_spreadRSI;
     QString                                 m_origButtonStyleSheet;
 
-    QVector<Order*>                         m_orders;         // replace this w/ a list of openOrders
-
     bool                                    m_ratioRSITriggerActivated;
     bool                                    m_percentFromMeanTriggerActivated;
     bool                                    m_stdDevLayer1TriggerActivated;
@@ -109,6 +133,13 @@ private:
     ContractDetailsWidget*                  m_pair1ContractDetailsWidget;
     ContractDetailsWidget*                  m_pair2ContractDetailsWidget;
     bool                                    m_gettingMoreHistoricalData;
+    int                                     m_homeTablePageRowIndex;
+    bool                                    m_bothPairsUpdated;
+    MainWindow*                             m_mainWindow;
+    QString                                 m_tabSymbol;
+    QString                                 m_timeFrameString;
+    QSettings                               m_settings;
+
 
     enum ChartType
     {
@@ -123,7 +154,7 @@ private:
     void placeOrder();
     void exitOrder();
     void showPlot(long tickerId, ChartType chartType);
-    void appendPlot(long tickerId);
+    void appendPlotsAndTable(long tickerId);
     void plotRatio();
     void plotRatioMA();
     void plotRatioStdDev();

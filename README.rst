@@ -10,7 +10,7 @@ Configuring TWS
 Install nkny
 ============
 
-1. Download nkny-installer.exe and run
+1. Download nkny_installer.exe and run
 2. For install location, click the Browse button and create a folder called "nkny" on your desktop
 3. finish the install with default by simply pressing "Next" or "Ok"
 4. Navigate to the "nkny" folder and open it
