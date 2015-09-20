@@ -477,7 +477,7 @@ void SmtpClient::socketStateChanged(QAbstractSocket::SocketState state)
 {
     Q_UNUSED(state);
 }
-c
+
 void SmtpClient::socketError(QAbstractSocket::SocketError socketError)
 {
     Q_UNUSED(socketError);
