@@ -1312,47 +1312,28 @@ void PairTabPage::placeOrder()
     m_ibClient->placeOrder(orderId2, *c2, o2);
 
 
-//    ComboLeg c1;
-//    ComboLeg c2;
+    SmtpClient smtp("smtp.gmail.com", 465, SmtpClient::SslConnection);
 
-//    Security* s1 = m_securityMap.values().at(0);
-//    Security* s2 = m_securityMap.values().at(1);
+    // We need to set the username (your email address) and the password
+    // for smtp authentification.
 
-//    c1.conId = s1->contract()->conId;
-//    c1.ratio = 1;
-//    c1.action = "SELL";
-//    c1.exchange = "SMART";
-//    c1.openClose = 0;
-//    c1.shortSaleSlot = 0;
-//    c1.designatedLocation = "";
+    smtp.setUser("vel.accel@gmail.com");
+    smtp.setPassword("#nec@eEtM4M74gA@");
 
-//    c2.conId = s2->contract()->conId;
-//    c2.ratio = 1;
-//    c2.action = "BUY";
-//    c2.exchange = "SMART";
-//    c2.openClose = 0;
-//    c2.shortSaleSlot = 0;
-//    c2.designatedLocation = "";
+    // Now we create a MimeMessage object. This will be the email.
 
-//    QList<ComboLeg*> clist;
-//    clist.append(&c1);
-//    clist.append(&c2);
+    MimeMessage message;
 
-//    Contract ct1 = *(s1->contract());
+    message.setSender(new EmailAddress("vel.accel@gmail.com", "Your Name"));
+    message.addRecipient(new EmailAddress("vel.accel@gmail.com", "Peter"));
+    message.setSubject("nkny trading platform placed an order");
 
-//    ct1.symbol = "USD";
-//    ct1.secType = "BAG";
-//    ct1.comboLegs = clist;
+    // Now add some text to the email.
+    // First we create a MimeText object.
 
-//    Order order;
-//    order.action = "BUY";
-//    order.totalQuantity = 100;
-//    order.orderType = "MKT";
+    MimeText text;
 
-//    long id = m_ibClient->getOrderId();
-//    m_ibClient->placeOrder(id, ct1, order);
-
-//    m_ibClient->placeOrder( id, contract, order);
+    text.setText("Hi,\nThis is a simple email message.\n");
 
 }
 
