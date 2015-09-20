@@ -14,7 +14,7 @@
 #include "security.h"
 #include "mainwindow.h"
 #include "stddevlayertab.h"
-#include "smtp/SmtpMime"
+
 
 #include <QDateTime>
 #include <QTime>
@@ -1313,28 +1313,7 @@ void PairTabPage::placeOrder()
     m_ibClient->placeOrder(orderId2, *c2, o2);
 
 
-    SmtpClient smtp("smtp.gmail.com", 465, SmtpClient::SslConnection);
 
-    // We need to set the username (your email address) and the password
-    // for smtp authentification.
-
-    smtp.setUser("vel.accel@gmail.com");
-    smtp.setPassword("#nec@eEtM4M74gA@");
-
-    // Now we create a MimeMessage object. This will be the email.
-
-    MimeMessage message;
-
-    message.setSender(new EmailAddress("vel.accel@gmail.com", "Your Name"));
-    message.addRecipient(new EmailAddress("vel.accel@gmail.com", "Peter"));
-    message.setSubject("nkny trading platform placed an order");
-
-    // Now add some text to the email.
-    // First we create a MimeText object.
-
-    MimeText text;
-
-    text.setText("Hi,\nThis is a simple email message.\n");
 
 }
 
