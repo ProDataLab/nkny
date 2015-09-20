@@ -5,19 +5,24 @@
 #include <QtMath>
 #include <cmath>
 
+void delay(int milliSecondsToWait);
 double getMin(const QVector<double> & vec);
 double getMax(const QVector<double> & vec);
 double getMean(const QVector<double> & vec);
 QVector<double> getMA(const QVector<double> & vec, int period);
-double getVariance(const QVector<double> & vec);
+QVector<double> getExpMA(const QVector<double> & vec, int period);
 double getStdDev(const QVector<double> & vec);
-QVector<double> getMovingStdDev(const QVector<double> & vec, int period);
+QVector<double> getStdDevVector(const QVector<double> & vec, int period);
 QVector<double> getRSI(const QVector<double> & vec, int period=14);
 QVector<double> getCorrelation(const QVector<double> & pair1, const QVector<double> & pair2);
 QVector<double> getRatio(const QVector<double> & vec1, const QVector<double> & vec2);
 QVector<double> getDiff(const QVector<double> & vec);
-QVector<double> getVolatility(const QVector<double> & vec, int period);
+QVector<double> getAbsDiff(const QVector<double> & vec);
+QVector<double> getDiff(const QVector<double> & vec1, const QVector<double> & vec2);
+QVector<double> getRatioVolatility(const QVector<double> & ratio, int period);
 QVector<double> getPercentFromMean(const QVector<double> & vec);
+int getMinSize(int s1, int s2);
+QVector<double> getVecTimesScalar(const QVector<double> & vec, double scalar);
 
 #endif // HELPERS_H
 

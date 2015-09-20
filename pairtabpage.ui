@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>900</width>
+    <width>481</width>
     <height>600</height>
    </rect>
   </property>
@@ -22,12 +22,6 @@
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="QSplitter" name="splitter">
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>16777215</height>
-      </size>
-     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -83,7 +77,7 @@
             <x>0</x>
             <y>0</y>
             <width>280</width>
-            <height>396</height>
+            <height>423</height>
            </rect>
           </property>
           <attribute name="label">
@@ -91,8 +85,8 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
-             <item>
+            <layout class="QFormLayout" name="formLayout_3">
+             <item row="0" column="0">
               <widget class="QLabel" name="timeFrameLabel_2">
                <property name="maximumSize">
                 <size>
@@ -105,7 +99,7 @@
                </property>
               </widget>
              </item>
-             <item>
+             <item row="0" column="1">
               <widget class="QComboBox" name="timeFrameComboBox">
                <property name="maximumSize">
                 <size>
@@ -183,6 +177,32 @@
                </item>
               </widget>
              </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="lookbackLabel">
+               <property name="text">
+                <string>Lookback</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QSpinBox" name="lookbackSpinBox">
+               <property name="maximumSize">
+                <size>
+                 <width>75</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+               <property name="singleStep">
+                <number>10</number>
+               </property>
+               <property name="value">
+                <number>250</number>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
@@ -251,127 +271,180 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>134</width>
-            <height>116</height>
+            <width>280</width>
+            <height>423</height>
            </rect>
           </property>
           <attribute name="label">
            <string>Configuration</string>
           </attribute>
-          <layout class="QFormLayout" name="formLayout_6">
-           <item row="0" column="0">
-            <widget class="QLabel" name="maLabel">
-             <property name="text">
-              <string>MA Period</string>
-             </property>
-             <property name="buddy">
-              <cstring>maPeriodSpinBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QSpinBox" name="maPeriodSpinBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="value">
-              <number>21</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="maLabel_2">
-             <property name="text">
-              <string>RSI Period</string>
-             </property>
-             <property name="buddy">
-              <cstring>maPeriodSpinBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="rsiPeriodSpinBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="value">
-              <number>14</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="maLabel_3">
-             <property name="text">
-              <string>StdDev Period</string>
-             </property>
-             <property name="buddy">
-              <cstring>maPeriodSpinBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="stdDevPeriodSpinBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="value">
-              <number>21</number>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="maLabel_10">
-             <property name="text">
-              <string>Volatility Period</string>
-             </property>
-             <property name="buddy">
-              <cstring>maPeriodSpinBox</cstring>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QSpinBox" name="volatilityPeriodSpinBox">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="value">
-              <number>21</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QWidget" name="layoutWidget">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>10</y>
+             <width>107</width>
+             <height>147</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>TA Lookback Periods:</string>
+              </property>
+              <property name="textFormat">
+               <enum>Qt::PlainText</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QFormLayout" name="formLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="maLabel">
+                <property name="text">
+                 <string>MA</string>
+                </property>
+                <property name="buddy">
+                 <cstring>maPeriodSpinBox</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="maPeriodSpinBox">
+                <property name="maximumSize">
+                 <size>
+                  <width>50</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+                <property name="value">
+                 <number>21</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="maLabel_2">
+                <property name="text">
+                 <string>Ratio RSI</string>
+                </property>
+                <property name="buddy">
+                 <cstring>maPeriodSpinBox</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="rsiPeriodSpinBox">
+                <property name="maximumSize">
+                 <size>
+                  <width>50</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+                <property name="value">
+                 <number>21</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="maLabel_3">
+                <property name="text">
+                 <string>StdDev</string>
+                </property>
+                <property name="buddy">
+                 <cstring>maPeriodSpinBox</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="stdDevPeriodSpinBox">
+                <property name="maximumSize">
+                 <size>
+                  <width>50</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+                <property name="value">
+                 <number>21</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="maLabel_10">
+                <property name="text">
+                 <string>Volatility</string>
+                </property>
+                <property name="buddy">
+                 <cstring>maPeriodSpinBox</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSpinBox" name="volatilityPeriodSpinBox">
+                <property name="maximumSize">
+                 <size>
+                  <width>50</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Moving Average&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+                <property name="value">
+                 <number>21</number>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string>RSI Spread</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QSpinBox" name="rsiSpreadSpinBox">
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+                <property name="value">
+                 <number>21</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
          </widget>
          <widget class="QWidget" name="page_4">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>195</width>
-            <height>205</height>
+            <width>280</width>
+            <height>423</height>
            </rect>
           </property>
           <attribute name="label">
@@ -420,13 +493,51 @@
               </widget>
              </item>
              <item row="2" column="0">
-              <widget class="QCheckBox" name="tradeEntryRSICheckBox">
+              <widget class="QCheckBox" name="overrideUnitSizeCheckBox">
                <property name="text">
-                <string>RSI</string>
+                <string>Override Unit Size</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="3" column="0">
+              <widget class="QLabel" name="pair1UnitOverrideLabel">
+               <property name="text">
+                <string>TextLabel</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QSpinBox" name="pair1UnitOverrideSpinBox">
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+               <property name="singleStep">
+                <number>1</number>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="pair2UnitOverrideLabel">
+               <property name="text">
+                <string>TextLabel</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QSpinBox" name="pair2UnitOverrideSpinBox">
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QCheckBox" name="tradeEntryRSIUpperCheckBox">
+               <property name="text">
+                <string>RSI Upper</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
               <widget class="QSpinBox" name="tradeEntryRSIUpperSpinBox">
                <property name="maximumSize">
                 <size>
@@ -439,14 +550,34 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
+             <item row="6" column="0">
+              <widget class="QCheckBox" name="tradeEntryRSILowerCheckBox">
+               <property name="text">
+                <string>RSI Lower</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QSpinBox" name="tradeEntryRSILowerSpinBox">
+               <property name="maximumSize">
+                <size>
+                 <width>50</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="value">
+                <number>70</number>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="0">
               <widget class="QCheckBox" name="tradeEntryPercentFromMeanCheckBox">
                <property name="text">
                 <string>% From Mean</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
+             <item row="7" column="1">
               <widget class="QSpinBox" name="tradeEntryPercentFromMeanSpinBox">
                <property name="maximumSize">
                 <size>
@@ -459,14 +590,14 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="0">
+             <item row="8" column="0">
               <widget class="QLabel" name="label_3">
                <property name="text">
                 <string>Num StdDev Layers</string>
                </property>
               </widget>
              </item>
-             <item row="4" column="1">
+             <item row="8" column="1">
               <widget class="QSpinBox" name="tradeEntryNumStdDevLayersSpinBox">
                <property name="maximumSize">
                 <size>
@@ -485,7 +616,7 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="0">
+             <item row="9" column="0">
               <widget class="QCheckBox" name="waitCheckBox">
                <property name="enabled">
                 <bool>false</bool>
@@ -495,7 +626,7 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="0">
+             <item row="10" column="0">
               <widget class="QCheckBox" name="layerBufferCheckBox">
                <property name="enabled">
                 <bool>false</bool>
@@ -505,7 +636,7 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
+             <item row="10" column="1">
               <widget class="QDoubleSpinBox" name="layerBufferDoubleSpinBox">
                <property name="enabled">
                 <bool>false</bool>
@@ -534,8 +665,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>167</width>
-            <height>90</height>
+            <width>280</width>
+            <height>423</height>
            </rect>
           </property>
           <attribute name="label">
@@ -582,176 +713,11 @@
              <property name="decimals">
               <number>1</number>
              </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
              <property name="value">
               <double>0.300000000000000</double>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="page">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>141</width>
-            <height>246</height>
-           </rect>
-          </property>
-          <attribute name="label">
-           <string>Data</string>
-          </attribute>
-          <layout class="QFormLayout" name="formLayout">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Ratio</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="lineEdit_3">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_8">
-             <property name="text">
-              <string>MA</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="lineEdit_4">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_9">
-             <property name="text">
-              <string>% From Mean</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLineEdit" name="lineEdit_5">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_10">
-             <property name="text">
-              <string>Std Dev</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="lineEdit_6">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_11">
-             <property name="text">
-              <string>Correlation</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QLineEdit" name="lineEdit_7">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="label_12">
-             <property name="text">
-              <string>Cointegration</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QLineEdit" name="lineEdit_8">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string>Volatility</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="1">
-            <widget class="QLineEdit" name="lineEdit_9">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="label_14">
-             <property name="text">
-              <string>RSI</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="1">
-            <widget class="QLineEdit" name="lineEdit_10">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="0">
-            <widget class="QLabel" name="label_15">
-             <property name="text">
-              <string>RSI of Ratio</string>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="1">
-            <widget class="QLineEdit" name="lineEdit_11">
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
              </property>
             </widget>
            </item>
@@ -761,11 +727,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QTabWidget" name="tabWidget">
-      <property name="currentIndex">
-       <number>-1</number>
-      </property>
-     </widget>
+     <widget class="MdiArea" name="mdiArea" native="true"/>
     </widget>
    </item>
   </layout>
@@ -775,6 +737,12 @@
    <class>ContractDetailsWidget</class>
    <extends>QWidget</extends>
    <header>contractdetailswidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MdiArea</class>
+   <extends>QWidget</extends>
+   <header>mdiarea.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

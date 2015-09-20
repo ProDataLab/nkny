@@ -61,6 +61,27 @@ void Security::appendNewBarData(TimeFrame timeFrame, double timeStamp, double op
     dvn->hasGaps += (bool)hasGaps;
 }
 
+void Security::appendMoreBarData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps)
+{
+    DataVecsMoreHist* dvmh;
+    if (!m_moreBarsDataMap.contains(timeFrame)) {
+        dvmh = new DataVecsMoreHist;
+        m_moreBarsDataMap[timeFrame] = dvmh;
+    }
+    else
+        dvmh = m_moreBarsDataMap[timeFrame];
+    dvmh->timeStamp += timeStamp;
+    dvmh->open += open;
+    dvmh->high += high;
+    dvmh->low += low;
+    dvmh->close += close;
+    dvmh->volume += (uint)volume;
+    dvmh->barCount += (uint)barCount;
+    dvmh->wap += wap;
+    dvmh->hasGaps += (bool)hasGaps;
+
+}
+
 //void Security::handleFillData(TimeFrame timeFrame)
 //{
 //    DataVecsHist* dvh = (DataVecsHist*)m_dataMap[timeFrame];
@@ -247,14 +268,20 @@ QMap<long, SecurityOrder *> Security::getSecurityOrderMap() const
 
 SecurityOrder *Security::newSecurityOrder(long orderId)
 {
-    Order* o = new Order;
-    OrderState* os = new OrderState;
     SecurityOrder* so = new SecurityOrder;
-    so->order = o;
-    so->orderState = os;
     m_securityOrderMap[orderId] = so;
     return so;
 }
+Security *Security::getPairPartner() const
+{
+    return m_pairPartner;
+}
+
+void Security::setPairPartner(Security *pairPartner)
+{
+    m_pairPartner = pairPartner;
+}
+
 
 
 

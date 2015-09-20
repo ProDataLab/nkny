@@ -8,9 +8,9 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    a.setOrganizationName("prodatalab");
-    a.setOrganizationDomain("prodatalab.com");
-    a.setApplicationName("nkny");
+    QCoreApplication::setOrganizationName("prodatalab");
+    QCoreApplication::setOrganizationDomain("prodatalab.com");
+    QCoreApplication::setApplicationName("nkny");
     MainWindow w;
 
     w.show();

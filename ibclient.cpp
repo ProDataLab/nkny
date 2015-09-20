@@ -10,7 +10,6 @@
 #include "ibsocketerrors.h"
 #include "ibtagvalue.h"
 
-#include <QTcpSocket>
 #include <QDebug>
 #include <QByteArray>
 #include <QList>
@@ -49,6 +48,8 @@ IBClient::IBClient(QObject *parent)
             this, SLOT(onConnected()));
     connect(m_socket, SIGNAL(readyRead()),
             this, SLOT(onReadyRead()));
+    connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)),
+            this, SLOT(onSocketError(QAbstractSocket::SocketError)));
 }
 
 IBClient::~IBClient() {}
@@ -292,13 +293,13 @@ void IBClient::reqMktData(TickerId tickerId, const Contract& contract,
 void IBClient::reqRealTimeBars(const long &tickerId, const Contract &contract, const int &barSize, const QByteArray &whatToShow, const bool &useRTH, const QList<TagValue *> &realTimeBarsOptions)
 {
     if (!m_connected) {
-        error(tickerId, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+      emit error(tickerId, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
         return;
     }
 
     if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
         if (!contract.tradingClass.isEmpty() || contract.conId > 0) {
-            error(tickerId, UPDATE_TWS.code(), UPDATE_TWS.msg()
+          emit error(tickerId, UPDATE_TWS.code(), UPDATE_TWS.msg()
                   + "  It does not support conId and tradingClass params in reqRealTimeBars.");
             return;
         }
@@ -356,7 +357,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     // not connected?
     if( !m_connected) {
-        error(id, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+      emit error(id, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
         return;
     }
 
@@ -365,7 +366,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     //	if( order.scaleNumComponents != UNSET_INTEGER ||
     //		order.scaleComponentSize != UNSET_INTEGER ||
     //		order.scalePriceIncrement != UNSET_DOUBLE) {
-    //		error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+    //emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
     //			"  It does not support Scale orders.");
     //		return;
     //	}
@@ -382,7 +383,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     //			assert( comboLeg);
     //			if( comboLeg->shortSaleSlot != 0 ||
     //				!comboLeg->designatedLocation.IsEmpty()) {
-    //				error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+    //		emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
     //					"  It does not support SSHORT flag for combo legs.");
     //				return;
     //			}
@@ -392,7 +393,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     //
     //if( m_serverVersion < MIN_SERVER_VER_WHAT_IF_ORDERS) {
     //	if( order.whatIf) {
-    //		error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+    //emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
     //			"  It does not support what-if orders.");
     //		return;
     //	}
@@ -400,7 +401,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_UNDER_COMP) {
         if( contract.underComp) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support delta-neutral orders.");
             return;
         }
@@ -408,7 +409,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS2) {
         if( order.scaleSubsLevelSize != UNSET_INTEGER) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support Subsequent Level Size for Scale orders.");
             return;
         }
@@ -417,7 +418,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     if( m_serverVersion < MIN_SERVER_VER_ALGO_ORDERS) {
 
         if( !IsEmpty(order.algoStrategy)) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support algo orders.");
             return;
         }
@@ -425,7 +426,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_NOT_HELD) {
         if (order.notHeld) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support notHeld parameter.");
             return;
         }
@@ -433,7 +434,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_SEC_ID_TYPE) {
         if( !IsEmpty(contract.secIdType) || !IsEmpty(contract.secId)) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support secIdType and secId parameters.");
             return;
         }
@@ -441,7 +442,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_PLACE_ORDER_CONID) {
         if( contract.conId > 0) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support conId parameter.");
             return;
         }
@@ -449,7 +450,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_SSHORTX) {
         if( order.exemptCode != -1) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support exemptCode parameter.");
             return;
         }
@@ -460,7 +461,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
             const ComboLeg* comboLeg = contract.comboLegs.at(i);
             assert( comboLeg);
             if( comboLeg->exemptCode != -1 ){
-                error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+              emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support exemptCode parameter.");
                 return;
             }
@@ -469,7 +470,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_HEDGE_ORDERS) {
         if( !IsEmpty(order.hedgeType)) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support hedge orders.");
             return;
         }
@@ -477,7 +478,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if( m_serverVersion < MIN_SERVER_VER_OPT_OUT_SMART_ROUTING) {
         if (order.optOutSmartRouting) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support optOutSmartRouting parameter.");
             return;
         }
@@ -489,7 +490,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
                 || !IsEmpty(order.deltaNeutralClearingAccount)
                 || !IsEmpty(order.deltaNeutralClearingIntent)
                 ) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support deltaNeutral parameters: ConId, SettlingFirm, ClearingAccount, ClearingIntent.");
             return;
         }
@@ -501,7 +502,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
                 || order.deltaNeutralShortSaleSlot > 0
                 || !IsEmpty(order.deltaNeutralDesignatedLocation)
                 ) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support deltaNeutral parameters: OpenClose, ShortSale, ShortSaleSlot, DesignatedLocation.");
             return;
         }
@@ -516,7 +517,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
                 || order.scaleInitPosition != UNSET_INTEGER
                 || order.scaleInitFillQty != UNSET_INTEGER
                 || order.scaleRandomPercent) {
-                error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+              emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                         "  It does not support Scale order parameters: PriceAdjustValue, PriceAdjustInterval, " +
                         "ProfitOffset, AutoReset, InitPosition, InitFillQty and RandomPercent");
                 return;
@@ -529,7 +530,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
             const OrderComboLeg* orderComboLeg = order.orderComboLegs.at(i);
             assert( orderComboLeg);
             if( orderComboLeg->price != UNSET_DOUBLE) {
-                error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+              emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support per-leg prices for order combo legs.");
                 return;
             }
@@ -538,7 +539,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_TRAILING_PERCENT) {
         if (order.trailingPercent != UNSET_DOUBLE) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support trailing percent parameter");
             return;
         }
@@ -546,7 +547,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
         if( !IsEmpty(contract.tradingClass)) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                 "  It does not support tradingClass parameter in placeOrder.");
             return;
         }
@@ -554,7 +555,7 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 
     if (m_serverVersion < MIN_SERVER_VER_SCALE_TABLE) {
         if( !IsEmpty(order.scaleTable) || !IsEmpty(order.activeStartTime) || !IsEmpty(order.activeStopTime)) {
-            error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
+          emit error(id, UPDATE_TWS.code(), UPDATE_TWS.msg() +
                     "  It does not support scaleTable, activeStartTime and activeStopTime parameters");
             return;
         }
@@ -987,7 +988,7 @@ void IBClient::reqIds(int numIds)
 
     // not connected?
     if( !m_connected) {
-        error(numIds, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+      emit error(numIds, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
         return;
     }
 
@@ -1018,8 +1019,11 @@ void IBClient::onReadyRead()
 
     m_inBuffer.append(m_socket->readAll());
 
+    if (m_socket->bytesAvailable() == 65536)
+        qFatal("[CRITICAL ERROR] Socket Buffer is too small.. increase size in registry.. (is this Windows 7)");
+
 //    qDebug() << "[DEBUG-onReadyRead] m_inBuffer.size():" << m_inBuffer.size();
-    qDebug() << "[DEBUG-onReadyRead] raw:" << m_inBuffer;
+//    qDebug() << "[DEBUG-onReadyRead] raw:" << m_inBuffer;
 
 
     while (m_inBuffer.size()) {
@@ -1978,15 +1982,7 @@ void IBClient::onReadyRead()
 
             QVector<BarData> bars;
 
-//            bool start = true;
-//            uint recordSize = 0;
-
             for( int ctr = 0; ctr < itemCount; ++ctr) {
-
-//                if (start) {
-//                    recordSize = m_begIdx;
-//                }
-
                 BarData bar;
                 decodeField(bar.date);
                 decodeField(bar.open);
@@ -1998,25 +1994,12 @@ void IBClient::onReadyRead()
                 decodeField(bar.hasGaps);
                 decodeField(bar.barCount); // ver 3 field
 
-
-//                qDebug() << "[DEBUG-HISTORICAL_DATA] bytes consumed:" << m_begIdx;
-
                 bars.push_back(bar);
-
-//                if (start) {
-//                    recordSize = m_begIdx - recordSize;
-//                    start = false;
-//                }
-//                else {
-//                    if (m_inBuffer.size() - m_begIdx < recordSize) {
-//                        bar
-//                    }
-//                }
             }
 
             //            assert( (int)bars.size() == itemCount);
 
-//            qDebug() << "[DEBUG-HISTORICAL_DATA] bar.size:" << bars.size() << "itemCount:" << itemCount;
+            qDebug() << "[DEBUG-HISTORICAL_DATA] bars.size():" << bars.size() << "itemCount:" << itemCount;
 
             for( int ctr = 0; ctr < bars.size(); ++ctr) {
 
@@ -2418,6 +2401,48 @@ void IBClient::onReadyRead()
     }
 }
 
+void IBClient::onSocketError(QAbstractSocket::SocketError socketError)
+{
+//    QAbstractSocket::ConnectionRefusedError	0	The connection was refused by the peer (or timed out).
+//    QAbstractSocket::RemoteHostClosedError	1	The remote host closed the connection. Note that the client socket (i.e., this socket) will be closed after the remote close notification has been sent.
+//    QAbstractSocket::HostNotFoundError	2	The host address was not found.
+//    QAbstractSocket::SocketAccessError	3	The socket operation failed because the application lacked the required privileges.
+//    QAbstractSocket::SocketResourceError	4	The local system ran out of resources (e.g., too many sockets).
+//    QAbstractSocket::SocketTimeoutError	5	The socket operation timed out.
+//    QAbstractSocket::DatagramTooLargeError	6	The datagram was larger than the operating system's limit (which can be as low as 8192 bytes).
+//    QAbstractSocket::NetworkError	7	An error occurred with the network (e.g., the network cable was accidentally plugged out).
+//    QAbstractSocket::AddressInUseError	8	The address specified to QAbstractSocket::bind() is already in use and was set to be exclusive.
+//    QAbstractSocket::SocketAddressNotAvailableError	9	The address specified to QAbstractSocket::bind() does not belong to the host.
+//    QAbstractSocket::UnsupportedSocketOperationError	10	The requested socket operation is not supported by the local operating system (e.g., lack of IPv6 support).
+//    QAbstractSocket::ProxyAuthenticationRequiredError	12	The socket is using a proxy, and the proxy requires authentication.
+//    QAbstractSocket::SslHandshakeFailedError	13	The SSL/TLS handshake failed, so the connection was closed (only used in QSslSocket)
+//    QAbstractSocket::UnfinishedSocketOperationError	11	Used by QAbstractSocketEngine only, The last operation attempted has not finished yet (still in progress in the background).
+//    QAbstractSocket::ProxyConnectionRefusedError	14	Could not contact the proxy server because the connection to that server was denied
+//    QAbstractSocket::ProxyConnectionClosedError	15	The connection to the proxy server was closed unexpectedly (before the connection to the final peer was established)
+//    QAbstractSocket::ProxyConnectionTimeoutError	16	The connection to the proxy server timed out or the proxy server stopped responding in the authentication phase.
+//    QAbstractSocket::ProxyNotFoundError	17	The proxy address set with setProxy() (or the application proxy) was not found.
+//    QAbstractSocket::ProxyProtocolError	18	The connection negotiation with the proxy server failed, because the response from the proxy server could not be understood.
+//    QAbstractSocket::OperationError	19	An operation was attempted while the socket was in a state that did not permit it.
+//    QAbstractSocket::SslInternalError	20	The SSL library being used reported an internal error. This is probably the result of a bad installation or misconfiguration of the library.
+//    QAbstractSocket::SslInvalidUserDataError	21	Invalid data (certificate, key, cypher, etc.) was provided and its use resulted in an error in the SSL library.
+//    QAbstractSocket::TemporaryError	22	A temporary error occurred (e.g., operation would block and socket is non-blocking).
+//    QAbstractSocket::UnknownSocketError	-1	An unidentified error occurred.
+
+    qDebug() << "[DEBUG-onSocketError] ERROR:" << socketError;
+    switch (socketError)
+    {
+    case QAbstractSocket::ConnectionRefusedError:
+        emit ibSocketError("Connection Refused");
+    default:
+        ;
+    }
+}
+QTcpSocket *IBClient::getSocket() const
+{
+    return m_socket;
+}
+
+
 
 
 void IBClient::decodeField(int &value)
@@ -2450,6 +2475,9 @@ QByteArray IBClient::decodeField()
     QByteArray ret;
     m_endIdx = m_inBuffer.indexOf('\0', m_begIdx);
     ret = m_inBuffer.mid(m_begIdx, m_endIdx - m_begIdx);
+//    qDebug() << "[DEBUG-decodeField] field:" << ret << "m_inBuffer.size():" << m_inBuffer.size() << "m_endIdx:" << m_endIdx << "m_lastEndIdx:" << m_lastEndIdx;
+
+    m_lastEndIdx = m_endIdx;
     m_begIdx = m_endIdx + 1;
 
 //    qDebug() << "[DEBUG-decodeField]" << ret;
@@ -2532,16 +2560,22 @@ void IBClient::cleanInBuffer()
 {
 //    qDebug() << "[DEBUG-cleanInBuffer]";
 
-    if (m_endIdx == m_inBuffer.size()) {
+    // m_lastEndIdx is used to fix continued parsing after raw data has actually ended
+
+    if (m_endIdx == m_inBuffer.size() - 1 || m_endIdx < m_lastEndIdx) {
         m_inBuffer.clear();
         m_begIdx = m_endIdx = 0;
+        qDebug() << "[DEBUG-cleanInBuffer] CLEAN BUFFER";
+
     }
     else {
         m_inBuffer.remove(0, m_endIdx + 1);
-        m_begIdx = 0;
+        m_begIdx = 0;        
     }
     if (!m_inBuffer.isEmpty()) {
-        qDebug() << "[DEBUG-cleanInBuffer] remnants:" << m_inBuffer;
+//        qDebug() << "[DEBUG-cleanInBuffer] remnants:" << m_inBuffer;
+        qDebug() << "[DEBUG-cleanInBuffer] remnants.. m_begIdx:" << m_begIdx << "m_endIdx:" << m_endIdx << "m_inBuffer.size():" << m_inBuffer.size();
+
     }
 }
 

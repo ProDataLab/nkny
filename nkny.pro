@@ -21,8 +21,11 @@ SOURCES += main.cpp\
     helpers.cpp \
     pairtabpage.cpp \
     stddevlayertab.cpp \
-    contractdetailswidget.cpp
-
+    contractdetailswidget.cpp \
+    mdiarea.cpp \
+    globalconfigdialog.cpp \
+    orderstablewidget.cpp \
+    datatoolboxwidget.cpp
 
 HEADERS  += mainwindow.h \
     qcustomplot.h \
@@ -45,13 +48,18 @@ HEADERS  += mainwindow.h \
     adfhelper.h \
     stddevlayertab.h \
     contractdetailswidget.h \
-    JohansenCointegration/CommonTypes.h
+    mdiarea.h \
+    globalconfigdialog.h \
+    orderstablewidget.h \
+    datatoolboxwidget.h
 
 
 FORMS    += mainwindow.ui \
     pairtabpage.ui \
     stddevlayertab.ui \
-    contractdetailswidget.ui
+    contractdetailswidget.ui \
+    globalconfigdialog.ui \
+    datatoolboxwidget.ui
 
 
 INCLUDEPATH += $$PWD/
@@ -61,15 +69,3 @@ DISTFILES += \
     README.rst
 
 
-
-
-#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/ -lnewmat-mybuild
-#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/ -lnewmat-mybuild
-
-#INCLUDEPATH += $$PWD/../newmat_10
-#DEPENDPATH += $$PWD/../newmat_10
-
-#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/libnewmat-mybuild.a
-#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/libnewmat-mybuild.a
-#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/release/newmat-mybuild.lib
-#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../build-newmat-mybuild-Desktop_Qt_5_5_0_MinGW_32bit-Debug/debug/newmat-mybuild.lib

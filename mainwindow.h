@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "globalconfigdialog.h"
+
 #include <QMainWindow>
 #include <QMap>
 #include <QStringList>
@@ -9,15 +11,20 @@
 #define TickerId long
 #define OrderId  long
 
+
+
 class IBClient;
 class PairTabPage;
 class Order;
 class OrderState;
 class Contract;
 
+
+
 namespace Ui {
 class MainWindow;
 class PairTabPage;
+class GlobalConfigDialog;
 }
 
 class MainWindow : public QMainWindow
@@ -32,6 +39,12 @@ public:
 
     QStringList getHeaderLabels() const;
 
+    QStringList getManagedAccounts() const;
+
+    GlobalConfigDialog* getGlobalConfigDialog() const;
+
+    QStringList getOrderHeaderLabels() const;
+
 protected:
     void closeEvent(QCloseEvent *event);
 
@@ -41,6 +54,7 @@ private slots:
 
     void onManagedAccounts(const QByteArray & msg);
     void onIbError(const int id, const int errorCode, const QByteArray errorString);
+    void onIbSocketError(const QString & error);
     void onNextValidId( OrderId orderId);
     void onCurrentTime(long time);
     void onTwsConnected();
@@ -51,7 +65,7 @@ private slots:
                                         double lastFillPrice, int clientId, const QByteArray& whyHeld);
     void onOpenOrder(long orderId, const Contract& contract, const Order& order, const OrderState& orderState);
 
-
+    void on_actionGlobal_Config_triggered();
 
 
 private:
@@ -61,7 +75,9 @@ private:
     QMap<int,PairTabPage*> m_pairTabPageMap;
     QStringList m_managedAccounts;
     QStringList m_headerLabels;
+    QStringList m_orderHeaderLabels;
     QSettings m_settings;
+    GlobalConfigDialog m_globalConfigDialog;
 
     void writeSettings();
     void readSettings();

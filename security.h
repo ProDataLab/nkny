@@ -60,21 +60,23 @@ struct DataVecsNewBar : public DataVecs
 
 struct DataVecsMoreHist : public DataVecsHist {};
 
-//struct DataVecsRaw : public DataVecs
-//{
-//    QVector<double> timeStamp;
-//    QVector<double> close;
-//    QVector<int>   volume;
-//};
 
 
 //#define DataVecsFill DataVecsHist
 
 struct SecurityOrder
 {
-    long orderId;
-    Order* order;
-    OrderState* orderState;
+    Order order;
+    OrderState orderState;
+    QByteArray status;
+    int filled;
+    int remaining;
+    double avgFillPrice;
+    int permId;
+    int parentId;
+    double lastFillPrice;
+    int clientId;
+    QByteArray whyHeld;
 };
 
 
@@ -94,6 +96,7 @@ public:
     void appendHistData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps);
 
     void appendNewBarData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps);
+    void appendMoreBarData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps);
 
 //    void appendData(TimeFrame timeFrame, double timeStamp, double close, int size)
 //    {
@@ -153,6 +156,9 @@ public:
 
     SecurityOrder* newSecurityOrder(long orderId);
 
+    Security *getPairPartner() const;
+    void setPairPartner(Security *pairPartner);
+
 signals:
 
 public slots:
@@ -162,6 +168,7 @@ private:
     ContractDetails                     m_contractDetails;
     QMap<TimeFrame, DataVecs*>          m_dataMap;
 //    QMap<TimeFrame, DataVecsFill*>      m_dataFillMap;
+    QMap<TimeFrame, DataVecsMoreHist*>  m_moreBarsDataMap;
     QMap<TimeFrame, DataVecsNewBar*>    m_newBarDataMap;
     bool                                m_histDataRequested;
     double                              m_lastBarsTimeStamp;
@@ -169,6 +176,7 @@ private:
 //    bool                                m_fillDataHandled;
     QTimer                              m_timer;
     QMap<long,SecurityOrder*>           m_securityOrderMap;
+    Security*                           m_pairPartner;
 };
 
 #endif // SECURITY_H

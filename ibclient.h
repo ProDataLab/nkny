@@ -4,8 +4,8 @@
 #include "ibticktype.h"
 #include "ibfadatatype.h"
 #include <QObject>
+#include <QTcpSocket>
 
-class QTcpSocket;
 struct ContractDetails;
 struct Contract;
 struct CommissionReport;
@@ -44,8 +44,11 @@ public:
     void reqContractDetails(int reqId, const Contract & contract);
     void reqIds(int numIds);
 
+    QTcpSocket *getSocket() const;
+
 signals:
     void twsConnected();
+    void ibSocketError(const QString & errorString);
 
     void tickPrice(const TickerId & tickerId, const TickType & field, const double & price, const int & canAutoExecute);
     void tickSize(const TickerId & tickerId, const TickType & field, const int & size);
@@ -112,6 +115,7 @@ public slots:
 private slots:
     void onConnected();
     void onReadyRead();
+    void onSocketError(QAbstractSocket::SocketError socketError);
 
 private:
     QTcpSocket* m_socket;
@@ -123,6 +127,7 @@ private:
     QByteArray  m_twsTime;
     int         m_begIdx;
     int         m_endIdx;
+    int         m_lastEndIdx;
     bool        m_extraAuth;
 
     QByteArray  m_debugBuffer;

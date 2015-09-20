@@ -21,7 +21,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="tabsClosable">
        <bool>true</bool>
@@ -43,6 +43,16 @@
            <bool>true</bool>
           </property>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="ordersTab">
+       <attribute name="title">
+        <string>Orders</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="OrdersTableWidget" name="ordersTableWidget"/>
         </item>
        </layout>
       </widget>
@@ -69,6 +79,7 @@
    </attribute>
    <addaction name="actionConnect_To_TWS"/>
    <addaction name="action_New"/>
+   <addaction name="actionGlobal_Config"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_New">
@@ -90,8 +101,23 @@
     <string>Connects to the TWS API server</string>
    </property>
   </action>
+  <action name="actionGlobal_Config">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Global Config</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>OrdersTableWidget</class>
+   <extends>QTableWidget</extends>
+   <header>orderstablewidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

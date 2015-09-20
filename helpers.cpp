@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QPair>
 #include <cmath>
+#include <QTime>
+#include <QCoreApplication>
 
 double getMin(const QVector<double> & vec)
 {
@@ -40,8 +42,6 @@ QVector<double> getMA(const QVector<double> & vec, int period)
 {
     QVector<double> ret;
 
-
-
     for (int i=period;i<vec.size();++i) {
         double sum = 0;
         for (int j=0; j<period;++j) {
@@ -54,30 +54,31 @@ QVector<double> getMA(const QVector<double> & vec, int period)
     return ret;
 }
 
-double getVariance(const QVector<double> & vec)
+
+QVector<double> getStdDevVector(const QVector<double> & vec, int period)
 {
-    double mean = getMean(vec);
-    QVector<double> sqdiffVec;
-
-    for (int i = 0; i < vec.size(); ++i) {
-        double val = vec.at(i);
-        sqdiffVec.append((val - mean) * (val - mean));
-    }
-    return getMean(sqdiffVec);
-
-}
-
-QVector<double> getMovingStdDev(const QVector<double> & vec, int period)
-{
+    int n = vec.size();
     QVector<double> ret;
-    for (int i=period;i<vec.size();++i) {
-        ret += qSqrt(getVariance(vec.mid(i-period, period)));
+    double sum = 0;
+    double mean = 0;
+    double final = 0;
+    double val = 0;
+
+    for (int i=period;i<n-1;++i) {
+        sum = 0;
+        mean = getMean(vec.mid(i-period, period));
+        for (int j = i-period;j<i;++j) {
+            val = vec.at(j);
+            sum += pow(val - mean, 2);
+        }
+        final = qSqrt(sum/period);
+        double newObservation = vec.at(i+1);
+        double deviation = newObservation - mean;
+
+        ret.append(deviation / final);
     }
     return ret;
 }
-
-
-
 
 
 
@@ -193,7 +194,7 @@ QVector<double> getRatio(const QVector<double> & vec1, const QVector<double> & v
     return ret;
 }
 
-QVector<double> diff(const QVector<double> & vec)
+QVector<double> getDiff(const QVector<double> & vec)
 {
     QVector<double> ret;
     for (int i=1;i<vec.size();++i) {
@@ -202,18 +203,13 @@ QVector<double> diff(const QVector<double> & vec)
     return ret;
 }
 
-QVector<double> getVolatility(const QVector<double> & vec, int period)
+QVector<double> getRatioVolatility(const QVector<double> & ratio, int period)
 {
-    QVector<double> ret(vec.size());
-    QVector<double> tmp(period);
+    QVector<double> ret;
+    QVector<double> expMA = getExpMA(getAbsDiff(getVecTimesScalar(ratio, 100)), period);
 
-    for (int i=1;i< vec.size();++i) {
-        double a = log(vec.at(i) / vec.at(i-1));
-        tmp.append(a);
-        if (i >= period) {
-            ret[i] = getStdDev(tmp);
-            tmp.removeFirst();
-        }
+    for (int i=period;i<expMA.size();++i) {
+        ret.append(((expMA.at(i) - expMA.at(i-period)) / expMA.at(i-period)) * 100);
     }
     return ret;
 }
@@ -229,7 +225,100 @@ QVector<double> getPercentFromMean(const QVector<double> & vec)
 }
 
 
+void delay(int milliSecondsToWait)
+{
+    QTime dieTime = QTime::currentTime().addMSecs( milliSecondsToWait );
+    while( QTime::currentTime() < dieTime )
+    {
+        QCoreApplication::processEvents( QEventLoop::AllEvents, 100 );
+    }
+}
+
+
+QVector<double> getDiff(const QVector<double> &vec1, const QVector<double> &vec2)
+{
+    int mid = 0;
+    int size = 0;
+    QVector<double> ret;
+    QVector<double> vec11;
+    QVector<double> vec22;
+
+    if (vec1.size() == vec2.size()) {
+        vec11 = vec1;
+        vec22 = vec2;
+        size = vec1.size();
+    }
+    else if (vec1.size() < vec2.size()) {
+        mid = vec2.size() - vec1.size();
+        vec11 = vec1;
+        vec22 = vec2.mid(mid);
+        size = vec1.size();
+    }
+    else {
+        mid = vec1.size() - vec2.size();
+        vec11 = vec1.mid(mid);
+        vec22 = vec2;
+        size = vec2.size();
+    }
+    for (int i=0;i<size;++i) {
+        ret.append(vec11.at(i) - vec22.at(i));
+    }
+    return ret;
+}
+
+
+int getMinSize(int s1, int s2)
+{
+    if (s1 < s2)
+        return s1;
+    else
+        return s2;
+}
+
+
 double getStdDev(const QVector<double> &vec)
 {
-    return qSqrt(getVariance(vec));
+    double sum = 0;
+    double mean = getMean(vec);
+
+    for (int i=0;i<vec.size();++i) {
+        sum += pow(vec.at(i) - mean, 2);
+    }
+
+    return qSqrt(sum / vec.size());
+}
+
+
+QVector<double> getExpMA(const QVector<double> &vec, int period)
+{
+    QVector<double> ret;
+
+    double expPercentage = 2 / (period + 1);
+
+
+    for (int i=period+1;i<vec.size();++i) {
+        double val = vec.at(i) * expPercentage;
+        double ma = getMean(vec.mid(i-period, i));
+        ret.append(val - (ma - (100-expPercentage)));
+    }
+    return ret;
+}
+
+QVector<double> getAbsDiff(const QVector<double> &vec)
+{
+    QVector<double> ret;
+    for (int i=1;i<vec.size();++i) {
+        ret.append(fabs(vec.at(i) - vec.at(i-1)));
+    }
+    return ret;
+}
+
+
+QVector<double> getVecTimesScalar(const QVector<double> &vec, double scalar)
+{
+    QVector<double> ret;
+    for (int i=0;i<vec.size();++i) {
+        ret.append(vec.at(i) * scalar);
+    }
+    return ret;
 }

@@ -17,6 +17,7 @@ class IBClient;
 struct Contract;
 class ContractDetailsWidget;
 class MainWindow;
+class MdiArea;
 
 namespace Ui {
 class PairTabPage;
@@ -51,6 +52,8 @@ public:
     void setIbClient(IBClient *ibClient);
 
     void setTabSymbol(const QString &tabSymbol);
+
+    QList<Security*> getSecurities();
 
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
@@ -97,6 +100,13 @@ private slots:
 
 //    void on_managedAccountsComboBox_currentIndexChanged(int index);
 
+    void onContextMenuRequest(QPoint point);
+
+    void onCascadeAct();
+    void onTiledAct();
+    void onTabbedAct();
+
+    void onOverrideCheckBoxStateChanged(int checkState);
 
 private:
     IBClient*                               m_ibClient;
@@ -118,29 +128,52 @@ private:
     QVector<double>                         m_correlation;
     QVector<double>                         m_cointegration;
     QVector<double>                         m_ratioVolatility;
-    QVector<double>                         m_spreadRSI;
+    QVector<double>                         m_pair1RSI;
+    QVector<double>                         m_pair2RSI;
+    QVector<double>                         m_rSISpread;
     QString                                 m_origButtonStyleSheet;
 
     bool                                    m_ratioRSITriggerActivated;
     bool                                    m_percentFromMeanTriggerActivated;
-    bool                                    m_stdDevLayer1TriggerActivated;
-    bool                                    m_stdDevLayer2TriggerActivated;
-    bool                                    m_stdDevLayer3TriggerActivated;
-    bool                                    m_stdDevLayer4TriggerActivated;
-    bool                                    m_stdDevLayer5TriggerActivated;
+//    bool                                    m_stdDevLayer1TriggerActivated;
+//    bool                                    m_stdDevLayer2TriggerActivated;
+//    bool                                    m_stdDevLayer3TriggerActivated;
+//    bool                                    m_stdDevLayer4TriggerActivated;
+//    bool                                    m_stdDevLayer5TriggerActivated;
     QVector<double>                         m_stdDevLayerPeaks;
 
     ContractDetailsWidget*                  m_pair1ContractDetailsWidget;
     ContractDetailsWidget*                  m_pair2ContractDetailsWidget;
-    bool                                    m_gettingMoreHistoricalData;
     int                                     m_homeTablePageRowIndex;
+    bool                                    m_gettingMoreHistoricalData;
+
     bool                                    m_bothPairsUpdated;
     MainWindow*                             m_mainWindow;
     QString                                 m_tabSymbol;
     QString                                 m_timeFrameString;
     QSettings                               m_settings;
+    bool                                    m_canSetTabWidgetCurrentIndex;
+    QAction*                                m_cascadeAct;
 
+    struct GraphInfo
+    {
+        QString                 name;
+        int                     index;
+        QCPAbstractPlottable*   graph;
+    };
 
+    enum GraphType
+    {
+        BARS,
+        COLORMAP,
+        CURVE,
+        FINANCIAL,
+        GRAPH,
+        STATISTICAL_BOX
+    };
+    
+    QMap<QCustomPlot*,QList<GraphInfo> >    m_graphMap;
+    
     enum ChartType
     {
         LINE,
@@ -153,7 +186,7 @@ private:
     void reqHistoricalData(long tickerId, QDateTime dt=QDateTime::currentDateTime());
     void placeOrder();
     void exitOrder();
-    void showPlot(long tickerId, ChartType chartType);
+    void showPlot(long tickerId);
     void appendPlotsAndTable(long tickerId);
     void plotRatio();
     void plotRatioMA();
@@ -163,11 +196,16 @@ private:
     void plotCointegration();
     void plotRatioVolatility();
     void plotRatioRSI();
-    void plotSpreadRSI();
+    void plotRSISpread();
     void addTableRow();
     void checkTradeTriggers();
     void checkTradeExits();
-//    void setupTriggers();``
+//    void setupTriggers();
+    int getPlotIndexFromSymbol(Security *s);
+    void setDefaults();
+    QCustomPlot* createPlot();
+    QCPGraph* addGraph(QCustomPlot* cp, QVector<double> x, QVector<double> y, QColor penColor=QColor(Qt::blue), bool useBrush=true);
+    
 };
 
 #endif // PAIRTABPAGE_H
