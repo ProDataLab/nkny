@@ -36,13 +36,15 @@ public:
 
     void reqHistoricalData( TickerId tickerId, const Contract &contract, const QByteArray &endDateTime, const QByteArray &durationStr, const QByteArray & barSizeSetting, const QByteArray &whatToShow, int useRTH, int formatDate, const QList<TagValue*> & chartOptions);
     void reqCurrentTime();
-    void reqMktData(TickerId tickerId, const Contract& contract, const QByteArray& genericTicks, bool snapshot, const QList<TagValue*>& mktDataOptions);
+    void reqMktData(TickerId tickerId, const Contract& contract, const QByteArray& genericTicks, bool snapshot, const QList<TagValue*>& mktDataOptions = QList<TagValue*>());
     void reqRealTimeBars(const TickerId & tickerId, const Contract & contract, const int & barSize, const QByteArray & whatToShow, const bool & useRTH, const QList<TagValue*> & realTimeBarsOptions);
     void placeOrder(OrderId id, const Contract & contract, const Order & order);
+    void reqAccountUpdates(bool subscribe, const QByteArray & acctCode);
     void reqOpenOrders();
     void reqAllOpenOrders();
     void reqContractDetails(int reqId, const Contract & contract);
     void reqIds(int numIds);
+    void cancelMktData(TickerId tickerId);
 
     QTcpSocket *getSocket() const;
 

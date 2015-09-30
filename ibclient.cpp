@@ -90,7 +90,7 @@ void IBClient::send()
 {
 //    qDebug() << "[DEBUG-send] debugBuffer" << m_debugBuffer;
     m_debugBuffer.clear();
-    qDebug() << "[DEBUG-send] rawBuffer" << m_outBuffer;
+//    qDebug() << "[DEBUG-send] rawBuffer" << m_outBuffer;
 
     int sent = m_socket->write(m_outBuffer);
 
@@ -353,7 +353,7 @@ void IBClient::reqRealTimeBars(const long &tickerId, const Contract &contract, c
 
 void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 {
-    qDebug() << "[DEBUG-placeOrder] m_serverVersion:" << m_serverVersion;
+    qDebug() << "[DEBUG-IBClient::placeOrder]";
 
     // not connected?
     if( !m_connected) {
@@ -902,6 +902,28 @@ void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
     send();
 }
 
+void IBClient::reqAccountUpdates(bool subscribe, const QByteArray &acctCode)
+{
+    // not connected?
+    if( !m_connected) {
+        error( NO_VALID_ID, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+
+    const int VERSION = 2;
+
+    // send req acct msg
+    encodeField( REQ_ACCT_DATA);
+    encodeField( VERSION);
+    encodeField( subscribe);  // TRUE = subscribe, FALSE = unsubscribe.
+
+    // Send the account code. This will only be used for FA clients
+    encodeField( acctCode); // srv v9 and above
+
+    send();
+}
+
 void IBClient::reqOpenOrders()
 {
     // not connected?
@@ -914,6 +936,23 @@ void IBClient::reqOpenOrders()
 
     // send req open orders msg
     encodeField( REQ_OPEN_ORDERS);
+    encodeField( VERSION);
+
+    send();
+}
+
+void IBClient::reqAllOpenOrders()
+{
+    // not connected?
+    if( !m_connected) {
+        emit error( NO_VALID_ID, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+    const int VERSION = 1;
+
+    // send req open orders msg
+    encodeField( REQ_ALL_OPEN_ORDERS);
     encodeField( VERSION);
 
     send();
@@ -998,6 +1037,24 @@ void IBClient::reqIds(int numIds)
     encodeField(REQ_IDS);
     encodeField(VERSION);
     encodeField(numIds);
+
+    send();
+}
+
+void IBClient::cancelMktData(long tickerId)
+{
+    // not connected?
+    if( !m_connected) {
+        emit error( tickerId, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+        return;
+    }
+
+    const int VERSION = 2;
+
+    // send cancel mkt data msg
+    encodeField( CANCEL_MKT_DATA);
+    encodeField( VERSION);
+    encodeField( tickerId);
 
     send();
 }
@@ -1089,7 +1146,7 @@ void IBClient::onReadyRead()
 
         decodeField(msgId);
 
-        qDebug() << "[DEBUG-onReadyRead] msgId:" << msgId;
+//        qDebug() << "[DEBUG-onReadyRead] msgId:" << msgId;
 
 
         switch (msgId) {
@@ -2434,9 +2491,10 @@ void IBClient::onSocketError(QAbstractSocket::SocketError socketError)
     case QAbstractSocket::ConnectionRefusedError:
         emit ibSocketError("Connection Refused");
     default:
-        ;
+        emit ibSocketError("Network Socket Error");
     }
 }
+
 QTcpSocket *IBClient::getSocket() const
 {
     return m_socket;
@@ -2565,7 +2623,7 @@ void IBClient::cleanInBuffer()
     if (m_endIdx == m_inBuffer.size() - 1 || m_endIdx < m_lastEndIdx) {
         m_inBuffer.clear();
         m_begIdx = m_endIdx = 0;
-        qDebug() << "[DEBUG-cleanInBuffer] CLEAN BUFFER";
+//        qDebug() << "[DEBUG-cleanInBuffer] CLEAN BUFFER";
 
     }
     else {
@@ -2574,7 +2632,7 @@ void IBClient::cleanInBuffer()
     }
     if (!m_inBuffer.isEmpty()) {
 //        qDebug() << "[DEBUG-cleanInBuffer] remnants:" << m_inBuffer;
-        qDebug() << "[DEBUG-cleanInBuffer] remnants.. m_begIdx:" << m_begIdx << "m_endIdx:" << m_endIdx << "m_inBuffer.size():" << m_inBuffer.size();
+//        qDebug() << "[DEBUG-cleanInBuffer] remnants.. m_begIdx:" << m_begIdx << "m_endIdx:" << m_endIdx << "m_inBuffer.size():" << m_inBuffer.size();
 
     }
 }

@@ -1,6 +1,8 @@
 #include "globalconfigdialog.h"
 #include "ui_globalconfigdialog.h"
 #include <QSettings>
+#include <QtDebug>
+#include <QKeyEvent>
 #include "mainwindow.h"
 
 GlobalConfigDialog::GlobalConfigDialog(QWidget *parent)
@@ -18,17 +20,17 @@ GlobalConfigDialog::GlobalConfigDialog(QWidget *parent)
     ui->lookbackSpinBox->setValue(s.value("lookback").toInt());
     ui->maPeriodSpinBox->setValue(s.value("maPeriod").toInt());
     ui->rsiPeriodSpinBox->setValue(s.value("rsiPeriod").toInt());
+    ui->rsiSpreadSpinBox->setValue(s.value("rsiSpreadPeriod").toInt());
     ui->stdDevPeriodSpinBox->setValue(s.value("stdDevPeriod").toInt());
     ui->volatilityPeriodSpinBox->setValue(s.value("volatilityPeriod").toInt());
-    ui->managedAccountsComboBox_2->setCurrentIndex(s.value("account").toInt());
-    ui->tradeEntryAmountSpinBox_2->setValue(s.value("amount").toInt());
+    ui->tradeEntryNumStdDevLayersSpinBox_2->setValue(s.value("numStdDevLayers").toInt());
     ui->tradeEntryRSIUpperCheckBox_2->setCheckState((Qt::CheckState)s.value("rsiUpperCheckBoxState").toInt());
     ui->tradeEntryRSIUpperSpinBox_2->setValue(s.value("rsiUpper").toInt());
     ui->tradeEntryRSILowerCheckBox_3->setCheckState((Qt::CheckState)s.value("rsiLowerCheckBoxState").toInt());
     ui->tradeEntryRSILowerSpinBox_3->setValue(s.value("rsiLower").toInt());
-    ui->tradeEntryPercentFromMeanCheckBox_2->setCheckState((Qt::CheckState)s.value("percentFromMean").toInt());
+    ui->tradeEntryPercentFromMeanCheckBox_2->setCheckState((Qt::CheckState)s.value("percentFromMeanCheckBoxState").toInt());
     ui->tradeEntryPercentFromMeanSpinBox_2->setValue(s.value("percentFromMean").toInt());
-    ui->tradeEntryAmountSpinBox_2->setValue(s.value("numStdDevLayers").toInt());
+    ui->tradeEntryAmountSpinBox_2->setValue(s.value("amount").toInt());
     ui->waitCheckBox_2->setCheckState((Qt::CheckState)s.value("waitCheckBoxState").toInt());
     ui->layerBufferCheckBox_2->setCheckState((Qt::CheckState)s.value("bufferCheckBoxState").toInt());
     ui->layerBufferDoubleSpinBox_2->setValue(s.value("buffer").toDouble());
@@ -39,11 +41,14 @@ GlobalConfigDialog::GlobalConfigDialog(QWidget *parent)
     ui->layerStdMinDoubleSpinBox->setValue(s.value("layerStdMin").toDouble());
     ui->tradeExitPercentStopLossCheckBox_2->setCheckState((Qt::CheckState)s.value("percentStopLossCheckBoxState").toInt());
     ui->tradeExitPercentStopLossSpinBox_2->setValue(s.value("percentStopLoss").toInt());
-    ui->tradeExitPercentFromMeanCheckBox_2->setCheckState((Qt::CheckState) s.value("percentFromMeanCheckBoxState").toInt());
-    ui->tradeExitPercentFromMeanSpinBox_2->setValue(s.value("percentFromMean").toInt());
+    ui->tradeExitPercentFromMeanCheckBox_2->setCheckState((Qt::CheckState) s.value("tradeExitPercentFromMeanCheckBoxState").toInt());
+    ui->tradeExitPercentFromMeanSpinBox_2->setValue(s.value("tradeExitPercentFromMean").toInt());
     ui->tradeExitStdDevCheckBox_2->setCheckState((Qt::CheckState)s.value("stdDevExitCheckBoxState").toInt());
     ui->tradeExitStdDevDoubleSpinBox_2->setValue(s.value("stdDevExit").toDouble());
     s.endGroup();
+
+    ui->lookbackLabel->setVisible(false);
+    ui->lookbackSpinBox->setVisible(false);
 }
 
 GlobalConfigDialog::~GlobalConfigDialog()
@@ -64,15 +69,17 @@ void GlobalConfigDialog::on_buttonBox_accepted()
     s.setValue("lookback", ui->lookbackSpinBox->value());
     s.setValue("maPeriod", ui->maPeriodSpinBox->value());
     s.setValue("rsiPeriod", ui->rsiPeriodSpinBox->value());
+    s.setValue("rsiSpreadPeriod", ui->rsiSpreadSpinBox->value());
     s.setValue("stdDevPeriod", ui->stdDevPeriodSpinBox->value());
     s.setValue("volatilityPeriod", ui->volatilityPeriodSpinBox->value());
     s.setValue("account", ui->managedAccountsComboBox_2->currentIndex());
+    s.setValue("accountString", ui->managedAccountsComboBox_2->currentText());
     s.setValue("amount", ui->tradeEntryAmountSpinBox_2->value());
     s.setValue("rsiUpperCheckBoxState", ui->tradeEntryRSIUpperCheckBox_2->checkState());
     s.setValue("rsiUpper", ui->tradeEntryRSIUpperSpinBox_2->value());
     s.setValue("rsiLowerCheckBoxState", ui->tradeEntryRSILowerCheckBox_3->checkState());
     s.setValue("rsiLower", ui->tradeEntryRSILowerSpinBox_3->value());
-    s.setValue("percentFromMean", ui->tradeEntryPercentFromMeanCheckBox_2->checkState());
+    s.setValue("percentFromMeanCheckBoxState", ui->tradeEntryPercentFromMeanCheckBox_2->checkState());
     s.setValue("percentFromMean", ui->tradeEntryPercentFromMeanSpinBox_2->value());
     s.setValue("numStdDevLayers", ui->tradeEntryNumStdDevLayersSpinBox_2->value());
     s.setValue("waitCheckBoxState", ui->waitCheckBox_2->checkState());
@@ -85,8 +92,8 @@ void GlobalConfigDialog::on_buttonBox_accepted()
     s.setValue("layerStdMin", ui->layerStdMinDoubleSpinBox->value());
     s.setValue("percentStopLossCheckBoxState", ui->tradeExitPercentStopLossCheckBox_2->checkState());
     s.setValue("percentStopLoss", ui->tradeExitPercentStopLossSpinBox_2->value());
-    s.setValue("percentFromMeanCheckBoxState", ui->tradeExitPercentFromMeanCheckBox_2->checkState());
-    s.setValue("percentFromMean", ui->tradeExitPercentFromMeanSpinBox_2->value());
+    s.setValue("tradeExitPercentFromMeanCheckBoxState", ui->tradeExitPercentFromMeanCheckBox_2->checkState());
+    s.setValue("tradeExitPercentFromMean", ui->tradeExitPercentFromMeanSpinBox_2->value());
     s.setValue("stdDevExitCheckBoxState", ui->tradeExitStdDevCheckBox_2->checkState());
     s.setValue("stdDevExit", ui->tradeExitStdDevDoubleSpinBox_2->value());
     s.endGroup();
@@ -96,6 +103,14 @@ void GlobalConfigDialog::closeEvent()
 {
     on_buttonBox_accepted();
 }
+
+void GlobalConfigDialog::keyPressEvent(QKeyEvent *evt)
+{
+    if(evt->key() == Qt::Key_Enter || evt->key() == Qt::Key_Return)
+        return;
+    QDialog::keyPressEvent(evt);
+
+}
 void GlobalConfigDialog::setMangagedAccounts(const QStringList &managedAccounts)
 {
     m_managedAccounts = managedAccounts;
@@ -104,7 +119,17 @@ void GlobalConfigDialog::setMangagedAccounts(const QStringList &managedAccounts)
     }
     QSettings s;
     s.beginGroup("default");
-    ui->managedAccountsComboBox_2->setCurrentIndex(s.value("account").toInt());
+//    ui->managedAccountsComboBox_2->setCurrentIndex(s.value("account").toInt());
+    //    ui->managedAccountsComboBox_2->setCurrentIndex(s.value("account").toInt());
+    qDebug() << "ACCOUNTS.SIZE:" << ui->managedAccountsComboBox_2->count();
+    for (int i=0;i<ui->managedAccountsComboBox_2->count();++i) {
+        QString txt = ui->managedAccountsComboBox_2->itemText(i);
+        qDebug() << "ACCOUNTS:" << txt;
+        if (txt == s.value("accountString").toString()) {
+            ui->managedAccountsComboBox_2->setCurrentIndex(i);
+            break;
+        }
+    }
     s.endGroup();
 }
 

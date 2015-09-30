@@ -2,26 +2,18 @@
 #include <QContextMenuEvent>
 #include <QMenu>
 
-OrdersTableWidget::OrdersTableWidget(QWidget *parent)
-    : QTableWidget(parent)
+OrdersTableWidget::OrdersTableWidget(QWidget *parent) :
+    QTableWidget(parent)
 {
+}
 
+OrdersTableWidget::~OrdersTableWidget()
+{
 }
 
 void OrdersTableWidget::contextMenuEvent(QContextMenuEvent *event)
 {
-    m_pos = event->pos();
-
-    QMenu m;
-    m.addAction("Close Order", this, SLOT(onCloseOrders()));
-    m.exec(event->globalPos());
-}
-
-void OrdersTableWidget::onCloseOrders()
-{
-//    QTableWidgetItem* i = itemAt(m_pos);
-//    int row = i->row();
-
+    emit contextMenuEventTriggered(event->pos(), event->globalPos());
 }
 
 

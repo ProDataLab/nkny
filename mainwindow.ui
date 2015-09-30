@@ -21,13 +21,13 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <property name="tabsClosable">
        <bool>true</bool>
       </property>
       <property name="movable">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
       <property name="tabBarAutoHide">
        <bool>false</bool>
@@ -53,6 +53,16 @@
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="OrdersTableWidget" name="ordersTableWidget"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="portfolioTab">
+       <attribute name="title">
+        <string>Portfolio</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="PortfolioTableWidget" name="portfolioTableWidget"/>
         </item>
        </layout>
       </widget>
@@ -116,6 +126,11 @@
    <class>OrdersTableWidget</class>
    <extends>QTableWidget</extends>
    <header>orderstablewidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PortfolioTableWidget</class>
+   <extends>QTableWidget</extends>
+   <header>portfoliotablewidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -55,6 +55,11 @@ public:
 
     QList<Security*> getSecurities();
 
+    void exitOrder();
+
+
+    uint getTimeFrameInSeconds() const;
+
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
         double low, double close, int volume, int barCount, double WAP, int hasGaps);
@@ -108,6 +113,8 @@ private slots:
 
     void onOverrideCheckBoxStateChanged(int checkState);
 
+    void onMailSent(const QString & msg);
+
 private:
     IBClient*                               m_ibClient;
     QStringList                             m_managedAccounts;
@@ -117,6 +124,7 @@ private:
     QMap<long, long>                        m_newBarMap;
     QMap<long, long>                        m_moreDataMap;
     QMap<long, long>                        m_contractDetailsMap;
+    QMap<long, Security*>                   m_rawDataMap;
     TimeFrame                               m_timeFrame;
     uint                                    m_timeFrameInSeconds;
     QMap<int, QCustomPlot*>                 m_customPlotMap;
@@ -154,6 +162,7 @@ private:
     QSettings                               m_settings;
     bool                                    m_canSetTabWidgetCurrentIndex;
     QAction*                                m_cascadeAct;
+    bool                                    m_readingSettings;
 
     struct GraphInfo
     {
@@ -184,10 +193,9 @@ private:
     };
 
     void reqHistoricalData(long tickerId, QDateTime dt=QDateTime::currentDateTime());
-    void placeOrder();
-    void exitOrder();
+    void placeOrder(TriggerType triggerType, bool reverse=false);
     void showPlot(long tickerId);
-    void appendPlotsAndTable(long tickerId);
+    void appendPlotsAndTable(long sid);
     void plotRatio();
     void plotRatioMA();
     void plotRatioStdDev();
@@ -205,7 +213,6 @@ private:
     void setDefaults();
     QCustomPlot* createPlot();
     QCPGraph* addGraph(QCustomPlot* cp, QVector<double> x, QVector<double> y, QColor penColor=QColor(Qt::blue), bool useBrush=true);
-    
 };
 
 #endif // PAIRTABPAGE_H

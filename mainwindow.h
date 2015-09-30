@@ -2,11 +2,14 @@
 #define MAINWINDOW_H
 
 #include "globalconfigdialog.h"
+#include "ibticktype.h"
+
 
 #include <QMainWindow>
 #include <QMap>
 #include <QStringList>
 #include <QSettings>
+#include <QTimer>
 
 #define TickerId long
 #define OrderId  long
@@ -18,7 +21,6 @@ class PairTabPage;
 class Order;
 class OrderState;
 class Contract;
-
 
 
 namespace Ui {
@@ -48,6 +50,10 @@ public:
 protected:
     void closeEvent(QCloseEvent *event);
 
+public slots:
+    void onOrderStatus(long orderId, const QByteArray &status, int filled,
+                                        int remaining, double avgFillPrice, int permId, int parentId,
+                                        double lastFillPrice, int clientId, const QByteArray& whyHeld);
 private slots:
     void on_action_New_triggered();
     void on_actionConnect_To_TWS_triggered();
@@ -60,13 +66,24 @@ private slots:
     void onTwsConnected();
     void onTwsConnectionClosed();
     void onTabCloseRequested(int idx);
-    void onOrderStatus(long orderId, const QByteArray &status, int filled,
-                                        int remaining, double avgFillPrice, int permId, int parentId,
-                                        double lastFillPrice, int clientId, const QByteArray& whyHeld);
+
     void onOpenOrder(long orderId, const Contract& contract, const Order& order, const OrderState& orderState);
+    void onOpenOrderEnd();
+    void onUpdatePortfolio( const Contract& contract, int position,
+       double marketPrice, double marketValue, double averageCost,
+       double unrealizedPNL, double realizedPNL, const QByteArray& accountName);
+    void onUpdateAccountTime(const QByteArray& timeStamp);
+
+    void onAccountDownloadEnd(const QByteArray & accountName);
 
     void on_actionGlobal_Config_triggered();
 
+    void onOrdersTableContextMenuEventTriggered(const QPoint & pos, const QPoint & globalPos);
+    void onCloseOrder();
+    void onHomeTabMoved(int from, int to);
+    void onSaveSettings();
+    void onTickPrice(const TickerId & tickerId, const TickType & field, const double & price, const int & canAutoExecute);
+    void onTickSize(const TickerId & tickerId, const TickType & field, const int & size);
 
 private:
     Ui::MainWindow *ui;
@@ -76,12 +93,17 @@ private:
     QStringList m_managedAccounts;
     QStringList m_headerLabels;
     QStringList m_orderHeaderLabels;
+    QStringList m_portfolioHeaderLabels;
     QSettings m_settings;
     GlobalConfigDialog m_globalConfigDialog;
+    QPoint m_ordersTableRowPoint;
+    QTimer      m_saveSettingsTimer;
 
     void writeSettings();
     void readSettings();
     void readPageSettings();
+    void updateOrdersTable(const QString & symbol, const double & last);
+
 };
 
 #endif // MAINWINDOW_H

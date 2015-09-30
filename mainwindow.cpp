@@ -10,12 +10,30 @@
 #include "ui_globalconfigdialog.h"
 #include "contractdetailswidget.h"
 #include "globalconfigdialog.h"
+#include "orderstablewidget.h"
 #include "security.h"
+#include "portfoliotablewidget.h"
+#include "helpers.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QDebug>
 #include <QDateTime>
 
+struct Info
+{
+    int row;
+    int isSym1;
+    bool isSym2;
+    bool sym2IsShort;
+    double purchasePrice1;
+    double purchasePrice2;
+    double diff1;
+    double diff2;
+
+    Info()
+        : isSym1(false)
+        , isSym2(false) {}
+};
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -23,10 +41,25 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , m_ibClient(NULL)
 {
+    connect(&m_saveSettingsTimer, SIGNAL(timeout()), this, SLOT(onSaveSettings()));
+    m_saveSettingsTimer.start(1000*60*5);
+
     ui->setupUi(this);
 
     ui->tabWidget->tabBar()->tabButton(0, QTabBar::RightSide)->setVisible(false);
     ui->tabWidget->tabBar()->tabButton(1, QTabBar::RightSide)->setVisible(false);
+    ui->tabWidget->tabBar()->tabButton(2, QTabBar::RightSide)->setVisible(false);
+
+    ui->tabWidget->setTabsClosable(true);
+
+    for (int i =0;i<ui->tabWidget->count();++i) {
+        m_pairTabPageMap[i] = NULL;
+    }
+
+    connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)),
+            this, SLOT(onTabCloseRequested(int)));
+
+    OrdersTableWidget* tab = ui->ordersTableWidget;
 
     m_orderHeaderLabels << "Pair"
                       << "Sym1"
@@ -44,15 +77,43 @@ MainWindow::MainWindow(QWidget *parent)
                       << "PercentChange1"
                       << "PercentChange2";
 
-    QTableWidget* tab = ui->ordersTableWidget;
     tab->setEnabled(true);
-    tab->setVisible(false);
+    tab->setVisible(true);
     tab->setColumnCount(m_orderHeaderLabels.size());
     tab->setHorizontalHeaderLabels(m_orderHeaderLabels);
     tab->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    tab->horizontalHeader()->setSectionsMovable(true);
     tab->setShowGrid(true);
 
-    tab = ui->homeTableWidget;
+    connect(tab, SIGNAL(contextMenuEventTriggered(QPoint,QPoint)),
+            this, SLOT(onOrdersTableContextMenuEventTriggered(QPoint,QPoint)));
+
+    PortfolioTableWidget* ptw = ui->portfolioTableWidget;
+
+
+    m_portfolioHeaderLabels
+                     << "Symbol"
+                     << "Position"
+                     << "MarketPrice"
+                     << "MarketValue"
+                     << "AverageCost"
+                     << "UnrealizedPNL"
+                     << "RealizedPNL"
+                     << "AccountName";
+
+    ptw->setEnabled(true);
+    ptw->setVisible(true);
+    ptw->setColumnCount(m_portfolioHeaderLabels.size());
+    ptw->setHorizontalHeaderLabels(m_portfolioHeaderLabels);
+    ptw->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    ptw->horizontalHeader()->setSectionsMovable(true);
+    ptw->setShowGrid(true);
+
+//    ui->portfolioTableWidget->setVisible(false);
+//    ui->portfolioTab->setVisible(false);
+
+
+    QTableWidget* homeTableWidget = ui->homeTableWidget;
 
     m_headerLabels << "Pair1"
             << "Pair2"
@@ -68,14 +129,14 @@ MainWindow::MainWindow(QWidget *parent)
             << "RSI"
             << "RSISpread";
 
-    tab->setColumnCount(m_headerLabels.size());
-    tab->setHorizontalHeaderLabels(m_headerLabels);
+    homeTableWidget->setColumnCount(m_headerLabels.size());
+    homeTableWidget->setHorizontalHeaderLabels(m_headerLabels);
 
-    tab->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    tab->setShowGrid(true);
+    homeTableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    homeTableWidget->setShowGrid(true);
 
-    connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)),
-            this, SLOT(onTabCloseRequested(int)));
+    connect(ui->tabWidget->tabBar(), SIGNAL(tabMoved(int,int)),
+            this, SLOT(onHomeTabMoved(int,int)));
 
     readSettings();
 }
@@ -90,12 +151,20 @@ void MainWindow::on_action_New_triggered()
 {
     PairTabPage* page = new PairTabPage(m_ibClient, m_managedAccounts, this);
 
-    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+//    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
 
     QString sym1 = page->getUi()->pair1ContractDetailsWidget->getUi()->symbolLineEdit->text();
     QString sym2 = page->getUi()->pair2ContractDetailsWidget->getUi()->symbolLineEdit->text();
-    page->setTabSymbol(sym1 + "/" + sym2);
-    ui->tabWidget->addTab(page, sym1 + "/" + sym2);
+    QString tabSymbol = sym1 + "/" + sym2;
+    for (int i=0;i<m_pairTabPageMap.count();++i) {
+        PairTabPage* p = m_pairTabPageMap.values().at(i);
+        if (p==NULL)
+            continue;
+        if (p->getTabSymbol() == tabSymbol)
+            return;
+    }
+    page->setTabSymbol(tabSymbol);
+    ui->tabWidget->addTab(page, tabSymbol);
     ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
     m_pairTabPageMap[ui->tabWidget->currentIndex()] = page;
 
@@ -129,6 +198,16 @@ void MainWindow::on_actionConnect_To_TWS_triggered()
             this, SLOT(onOrderStatus(long,QByteArray,int,int,double,int,int,double,int,QByteArray)));
     connect(m_ibClient, SIGNAL(openOrder(long,Contract,Order,OrderState)),
             this, SLOT(onOpenOrder(long,Contract,Order,OrderState)));
+    connect(m_ibClient, SIGNAL(openOrderEnd()),
+            this, SLOT(onOpenOrderEnd()));
+    connect(m_ibClient, SIGNAL(updatePortfolio(Contract,int,double,double,double,double,double,QByteArray)),
+            this, SLOT(onUpdatePortfolio(Contract,int,double,double,double,double,double,QByteArray)));
+    connect(m_ibClient, SIGNAL(updateAccountTime(QByteArray)),
+            this, SLOT(onUpdateAccountTime(QByteArray)));
+    connect(m_ibClient, SIGNAL(tickPrice(long,TickType,double,int)),
+            this, SLOT(onTickPrice(long,TickType,double,int)));
+//    connect(m_ibClient, SIGNAL(tickSize(long,TickType,int)),
+//            this, SLOT(onTickSize(long,TickType,int)));
 
 //    QSettings s;
 //    s.beginGroup("mainwindow");
@@ -147,14 +226,18 @@ void MainWindow::on_actionConnect_To_TWS_triggered()
 //    progress.show();
 //    //do what u want...
 //    progress.cancel();
+
 }
 
 void MainWindow::onManagedAccounts(const QByteArray &msg)
 {
     m_managedAccounts = QString(msg).split(',', QString::SkipEmptyParts);
-    qDebug() << "ManagedAccounts:" << m_managedAccounts;
-    ui->actionGlobal_Config->setEnabled(true);
+    qDebug() << "[DEBUG-onManagedAccounts]" << m_managedAccounts;
     m_globalConfigDialog.setMangagedAccounts(m_managedAccounts);
+    ui->actionGlobal_Config->setEnabled(true);
+
+    m_ibClient->reqOpenOrders();
+    m_ibClient->reqAccountUpdates(true, "DU210791");
 
     readPageSettings();
 }
@@ -177,6 +260,16 @@ void MainWindow::onIbSocketError(const QString &error)
         /*int ret =*/ msgBox.exec();
         enacted = false;
     }
+    else if (!enacted) {
+        QMessageBox msgBox;
+        msgBox.setText(error + " Please restart the application");
+        msgBox.setInformativeText("Please ensure TWS is running and accepts API calls.");
+//        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+//        msgBox.setDefaultButton(QMessageBox::Save);
+        enacted = true;
+        /*int ret =*/ msgBox.exec();
+        enacted = false;
+    }
 
 }
 
@@ -190,7 +283,7 @@ void MainWindow::onCurrentTime(long time)
 {
     QDateTime dt(QDateTime::fromTime_t(time));
 
-    qDebug() << "CurrentTime:" << dt;
+    qDebug() << "[DEBUG-OnCurrentTime]" << dt;
 }
 
 void MainWindow::onTwsConnected()
@@ -199,20 +292,22 @@ void MainWindow::onTwsConnected()
     ui->actionConnect_To_TWS->setText("TWS Connected");
     ui->action_New->setEnabled(true);
 
-    QSettings settings;
+//    QSettings settings;
 
-    int numTabPages = settings.value("numPairTabPages", 0).toInt();
+//    int numTabPages = settings.value("numPairTabPages", 0).toInt();
 
-    for (int i=0;i<numTabPages;++i) {
-        PairTabPage* p = new PairTabPage(m_ibClient, m_managedAccounts, this);
-        p->readSettings();
+//    for (int i=0;i<numTabPages;++i) {
+//        PairTabPage* p = new PairTabPage(m_ibClient, m_managedAccounts, this);
+//        p->readSettings();
 
-        QString tabSymbol = p->getTabSymbol();
+//        QString tabSymbol = p->getTabSymbol();
 
-        ui->tabWidget->addTab(p, tabSymbol);
-        ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
-        m_pairTabPageMap[ui->tabWidget->currentIndex()] = p;
-    }
+//        ui->tabWidget->addTab(p, tabSymbol);
+//        ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+//        m_pairTabPageMap[ui->tabWidget->currentIndex()] = p;
+//    }
+//    delay(3000);
+    m_ibClient->reqCurrentTime();
 }
 
 void MainWindow::onTwsConnectionClosed()
@@ -222,33 +317,28 @@ void MainWindow::onTwsConnectionClosed()
 
 void MainWindow::onTabCloseRequested(int idx)
 {
-    qDebug() << "[DEBUG-onTabCloseRequested] 1";
+    qDebug() << "[DEBUG-onTabCloseRequested]";
 
-    QString tabSymbol = ui->tabWidget->tabBar()->tabText(idx);
+    PairTabPage* p = m_pairTabPageMap.value(idx);
 
-    PairTabPage* page = NULL;
+    QMap<int, PairTabPage*> tmpMap;
 
-    for (int i=0;i<m_pairTabPageMap.size();++i) {
-        page = m_pairTabPageMap.values().at(i);
-        if (page->getTabSymbol() == tabSymbol) {
-            m_pairTabPageMap.remove(m_pairTabPageMap.keys().at(i));
-            break;
-        }
-    }
-
-    bool closeTab = page->reqClosePair();
-
-    qDebug() << "[DEBUG-onTabCloseRequested] 2";
-
-
-    if (closeTab) {
+    if (p->reqClosePair()) {
         ui->tabWidget->removeTab(idx);
-        delete page;
+        for (int i=0;i<m_pairTabPageMap.count()-1;++i) {
+            if (i<idx) {
+                tmpMap[i] = m_pairTabPageMap.value(i);
+                continue;
+            }
+            else {
+                tmpMap[i] = m_pairTabPageMap.value(i+1);
+            }
+        }
+        m_pairTabPageMap = tmpMap;
     }
 
-    qDebug() << "[DEBUG-onTabCloseRequested] 3";
 
-    // else ... POP UP WINDOW THAT THERE ARE ORDERS ACTIVE
+//    // else ... POP UP WINDOW THAT THERE ARE ORDERS ACTIVE
 }
 
 void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int filled, int remaining, double avgFillPrice,
@@ -266,114 +356,259 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
              << clientId
              << whyHeld;
 
+    // THIS IS TEMPORARY  ... FIX ME !!!!
+    if (status == "PendingCancel" || status == "Cancelled")
+        return;
+
     if (!ui->ordersTab->isEnabled())
         ui->ordersTab->setEnabled(true);
     if (!ui->ordersTab->isVisible())
         ui->ordersTab->setVisible(true);
+    if (!ui->ordersTableWidget->isEnabled())
+        ui->ordersTableWidget->setEnabled(true);
+    if (!ui->ordersTableWidget->isVisible())
+        ui->ordersTableWidget->setVisible(true);
+
+    bool isS1 = false;
+    bool isS2 = false;
+
+    PairTabPage* p = NULL;
+    Security* s1 = NULL;
+    Security* s2 = NULL;
+
+    bool isNewRow = true;
 
     int row = -1;
-    int col = -1;
-    for (int j=0;j<ui->ordersTableWidget->columnCount();++j) {
-        if (ui->ordersTableWidget->horizontalHeaderItem(j)->text() == "Pair") {
-            col = j;
+
+    QTableWidgetItem* item = NULL;
+
+    // get the page and securities
+
+    int cnt = m_pairTabPageMap.count();
+    for (int i=0;i<cnt;++i) {
+        if (m_pairTabPageMap.value(i) == NULL)
+            continue;
+        p = m_pairTabPageMap.values().at(i);
+
+//        QString tabSymbol = p->getTabSymbol();
+
+        s1 = p->getSecurities().at(0);
+        s2 = p->getSecurities().at(1);
+
+        if (s1->getSecurityOrderMap()->contains(orderId)) {
+            isS1 = true;
+            break;
+        }
+        else if (s2->getSecurityOrderMap()->contains(orderId)) {
+            isS2 = true;
             break;
         }
     }
 
-    for (int i=0;i<m_pairTabPageMap.count();++i) {
-        PairTabPage* p = m_pairTabPageMap.values().at(i);
-        Security* s1 = p->getSecurities().at(0);
-        Security* s2 = p->getSecurities().at(1);
+    // is this an order initiated from TWS interface?
+    if (!isS1 && !isS2) {
+        // FIXME.. I need to address this !!!!!!!!!!!!!!!!
+        qDebug() << "[DEBUG-onOrderStatus] WARNING: orderId (" << orderId << ") not known.. is it from TWS?";
+        return;
+    }
 
-        for (int j=0;j<ui->ordersTableWidget->rowCount();++j) {
-            if (ui->ordersTableWidget->item(j, col)->text() == p->getTabSymbol()) {
-                row = j;
-                break;
-            }
+    // is this a new row?
+    for (int r=0;r<ui->ordersTableWidget->rowCount();++r) {
+
+        for (int c=0;c<ui->ordersTableWidget->columnCount();++c) {
+            if (ui->ordersTableWidget->horizontalHeaderItem(c)->text() == "Pair")
+                item = ui->ordersTableWidget->item(r,c);
         }
 
-        if (row ==  -1)
-            ui->ordersTableWidget->setRowCount(ui->ordersTableWidget->rowCount()+1);
-
-        for (int j=0;j<ui->ordersTableWidget->columnCount();++j) {
-            if (row == -1) {
-                row = ui->ordersTableWidget->rowCount() - 1;
-                QTableWidgetItem* item = new QTableWidgetItem(QString(""));
-                ui->ordersTableWidget->setItem(ui->ordersTableWidget->rowCount()-1, j, item);
-            }
-            QString headerItemText = ui->ordersTableWidget->horizontalHeaderItem(j)->text();
-            QTableWidgetItem* item = ui->ordersTableWidget->item(row, j);
-
-            bool isS1 = s1->getSecurityOrderMap().contains(orderId);
-            double lastClose;
-
-            if (headerItemText == "Pair")
-                item->setText(p->getTabSymbol());
-            else if (headerItemText == "Sym1") {
-                if (p->getPair1ContractDetailsWidget()->getUi()->securityTypeComboBox->currentText() == QString("FUT"))
-                    item->setText(s1->contract()->symbol.toUpper()
-                                  + " [" + p->getPair1ContractDetailsWidget()->getUi()->expiryLineEdit->text() + "]");
-                else
-                    item->setText(s1->contract()->symbol.toUpper());
-            }
-            else if (headerItemText == "Sym2") {
-                if (p->getPair2ContractDetailsWidget()->getUi()->securityTypeComboBox->currentText() == QString("FUT")) {
-                    item->setText(s2->contract()->symbol.toUpper()
-                                  + " [" + p->getPair2ContractDetailsWidget()->getUi()->expiryLineEdit->text() + "]");
-                }
-            }
-                else {
-                    item->setText(s2->contract()->symbol.toUpper());
-            }
-            if (isS1) {
-                lastClose = s1->getHistData(p->getTimeFrame())->close.last();
-                if (headerItemText == "Size1")
-                    item->setText(QString::number(filled));
-                else if (headerItemText == "Cost/Unit1")
-                    item->setText(QString::number(avgFillPrice));
-                else if (headerItemText == "Last1")
-                    item->setText(QString::number(lastClose));
-                else if (headerItemText == "Diff1")
-                    item->setText(QString::number(lastClose - avgFillPrice));
-                else if (headerItemText == "TotalCost1")
-                    item->setText(QString::number(filled * avgFillPrice));
-                else if (headerItemText == "PercentChange1")
-                    item->setText(QString::number((lastClose-avgFillPrice) / avgFillPrice));
-            }
-            else {
-                lastClose = s2->getHistData(p->getTimeFrame())->close.last();
-                if (headerItemText == "Size2")
-                    item->setText(QString::number(filled));
-                else if (headerItemText == "Cost/Unit2")
-                    item->setText(QString::number(avgFillPrice));
-                else if (headerItemText == "Last2")
-                    item->setText(QString::number(lastClose));
-                else if (headerItemText == "Diff2")
-                    item->setText(QString::number(lastClose - avgFillPrice));
-                else if (headerItemText == "TotalCost2")
-                    item->setText(QString::number(filled * avgFillPrice));
-                else if (headerItemText == "PercentChange2")
-                    item->setText(QString::number((lastClose-avgFillPrice) / avgFillPrice));
-            }
-        }
-
-        for (int j=0;j<p->getSecurities().count();++j) {
-            Security* s = p->getSecurities().at(j);
-            if (!s->getSecurityOrderMap().contains(orderId))
-                continue;
-            SecurityOrder* so = s->getSecurityOrderMap()[orderId];
-            so->status = status;
-            so->filled = filled;
-            so->remaining = remaining;
-            so->avgFillPrice = avgFillPrice;
-            so->permId = permId;
-            so->parentId = parentId;
-            so->lastFillPrice = lastFillPrice;
-            so->clientId = clientId;
-            so->whyHeld = whyHeld;
+        if (p->getTabSymbol() == item->text()) {
+            isNewRow = false;
+            row = r;
+            break;
         }
     }
+
+    // create a new row if needed
+    if (isNewRow) {
+        ui->ordersTableWidget->setRowCount(ui->ordersTableWidget->rowCount()+1);
+        row = ui->ordersTableWidget->rowCount() - 1;
+        for (int c=0;c<ui->ordersTableWidget->columnCount();++c) {
+            ui->ordersTableWidget->setItem(row, c, new QTableWidgetItem);
+        }
+    }
+
+    // set orderTableWidget data
+    for (int c=0;c<ui->ordersTableWidget->columnCount();++c) {
+        item = ui->ordersTableWidget->item(row, c);
+        QString headerString = ui->ordersTableWidget->horizontalHeaderItem(c)->text();
+
+//        m_orderHeaderLabels << "Pair"
+//                          << "Sym1"
+//                          << "Sym2"
+//                          << "Size1"
+//                          << "Size2"
+//                          << "Cost/Unit1"
+//                          << "Cost/Unit2"
+//                          << "TotalCost1"
+//                          << "TotalCost2"
+//                          << "Last1"
+//                          << "Last2"
+//                          << "Diff1"
+//                          << "Diff2"
+//                          << "PercentChange1"
+//                          << "PercentChange2";
+
+        if (headerString == "Pair") {
+            QString tabSymbol = p->getTabSymbol();
+            item->setText(tabSymbol);
+        }
+        else if (headerString == "Sym1") {
+            if (isS1) {
+                QString sym1 = s1->contract()->symbol;
+                item->setText(sym1);
+            }
+            else
+                continue;
+        }
+        else if (headerString == "Sym2") {
+            if (isS2) {
+                QString sym2 = s2->contract()->symbol;
+                item->setText(sym2);
+            }
+            else
+                continue;
+        }
+        else if (headerString == "Size1") {
+            if (isS1) {
+                if (s1->getSecurityOrderMap()->count() == 2) {
+                    int size1 = item->text().toInt();
+                    if (size1 > 0)
+                        item->setText(QString::number(size1-filled));
+                    else
+                        item->setText(QString::number(size1+filled));
+                }
+                else {
+                    if (s1->getSecurityOrderMap()->values().at(0)->order.action == "SELL")
+                        item->setText(QString::number(-filled));
+                    else
+                        item->setText(QString::number(filled));
+                }
+            }
+            else
+                continue;
+        }
+        else if (headerString == "Size2") {
+            if (isS2)
+                if (s2->getSecurityOrderMap()->count() == 2) {
+                    int size2 = item->text().toInt();
+                    if (size2 > 0)
+                        item->setText(QString::number(size2-filled));
+                    else
+                        item->setText(QString::number(size2+filled));
+                }
+                else {
+                    if (s2->getSecurityOrderMap()->values().at(0)->order.action == "SELL")
+                        item->setText(QString::number(-filled));
+                    else
+                        item->setText(QString::number(filled));
+            }
+            else
+                continue;
+        }
+        else if (headerString == "Cost/Unit1") {
+            if (isS1)
+                item->setText(QString::number(avgFillPrice,'f',2));
+            else
+                continue;
+        }
+        else if (headerString == "Cost/Unit2") {
+            if (isS2)
+                item->setText(QString::number(avgFillPrice,'f',2));
+            else
+                continue;
+        }
+        else if (headerString == "TotalCost1") {
+            if (isS1)
+                item->setText(QString::number(filled * avgFillPrice,'f',2));
+            else
+                continue;
+        }
+        else if (headerString == "TotalCost2") {
+            if (isS2)
+                item->setText(QString::number(filled * avgFillPrice,'f',2));
+            else
+                continue;
+        }
+    }
+
+    // update the security's orderstate
+    Security* s;
+    if (isS1) {
+        s = s1;
+    }
+    else
+        s = s2;
+    SecurityOrder* so = (*(s->getSecurityOrderMap()))[orderId];
+    so->status = status;
+    so->filled = filled;
+    so->remaining = remaining;
+    so->avgFillPrice = avgFillPrice;
+    so->permId = permId;
+    so->parentId = parentId;
+    so->lastFillPrice = lastFillPrice;
+    so->clientId = clientId;
+    so->whyHeld = whyHeld;
+
+    // has the order been closed?
+
+    if (so->triggerType == EXIT) {
+        if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
+            ui->ordersTableWidget->removeRow(row);
+            (*(s->getSecurityOrderMap())).remove(so->referenceOrderId);
+            (*(s->getSecurityOrderMap())).remove(so->order.orderId);
+        }
+    }
+
+
+
+
+
+
+//    if (s1->getSecurityOrderMap()->count() == 2
+//            && s2->getSecurityOrderMap()->count() == 2) {
+//        int s1_0 = s1->getSecurityOrderMap()->values().at(0)->filled;
+//        int s1_1 = s1->getSecurityOrderMap()->values().at(1)->filled;
+//        int s2_0 = s2->getSecurityOrderMap()->values().at(0)->filled;
+//        int s2_1 = s2->getSecurityOrderMap()->values().at(1)->filled;
+
+//        if (s1_0 == s1_1 && s2_0 == s2_1) {
+//            s1->getSecurityOrderMap()->clear();
+//            s2->getSecurityOrderMap()->clear();
+//            ui->ordersTableWidget->removeRow(row);
+//            p->getUi()->activateButton->setEnabled(true);
+//            p->getUi()->deactivateButton->setEnabled(false);
+//            return;
+//        }
+//    }
+//    Security* s = NULL;
+//    SecurityOrder* so = NULL;
+//    bool finished = true;
+
+//    QPair<SecurityOrder* entry, SecurityOrder* exit> EE;
+//    QList<EE*> eeList;
+
+//    for (int i=0;i<2;++i) {
+//        if (i=0)
+//            s = s1;
+//        else
+//            s = s2;
+//        for (int j=0;j<s->getSecurityOrderMap()->count();++j) {
+//            EE* ee = new EE;
+//            if (s->getSecurityOrderMap()->values().at(j)->triggerType == EXIT);
+
+//        }
+//    }
 }
+
 
 void MainWindow::onOpenOrder(long orderId, const Contract &contract, const Order &order, const OrderState &orderState)
 {
@@ -386,17 +621,140 @@ void MainWindow::onOpenOrder(long orderId, const Contract &contract, const Order
              << orderState.status;
 
     for (int i=0;i<m_pairTabPageMap.count();++i) {
+        if (m_pairTabPageMap.value(i) == NULL)
+            continue;
         PairTabPage* p = m_pairTabPageMap.values().at(i);
         for (int j=0;j<p->getSecurities().count();++j) {
             Security* s = p->getSecurities().at(j);
-            if (!s->getSecurityOrderMap().contains(orderId))
+            if (!s->getSecurityOrderMap()->contains(orderId))
                 continue;
-            SecurityOrder* so = s->getSecurityOrderMap()[orderId];
+            SecurityOrder* so = (*(s->getSecurityOrderMap()))[orderId];
             so->order = order;
             so->orderState = orderState;
         }
-        QString tabSymbol = p->getTabSymbol();
+//        QString tabSymbol = p->getTabSymbol();
     }
+}
+
+void MainWindow::onOpenOrderEnd()
+{
+    qDebug() << "[DEBUG-onOpenOrderEnd]";
+}
+
+void MainWindow::onUpdatePortfolio( const Contract& contract, int position,
+                                    double marketPrice, double marketValue, double averageCost,
+                                    double unrealizedPNL, double realizedPNL, const QByteArray& accountName)
+{
+    if (position == 0)
+        return;
+
+    qDebug() << "[DEBUG-onUpdatePortfolio]"
+             << contract.symbol << " (" << contract.conId << ") "
+             << position
+             << marketPrice
+             << marketValue
+             << averageCost
+             << unrealizedPNL
+             << realizedPNL
+             << accountName;
+
+
+    // update orders table
+    QString sym(contract.symbol);
+    double last = marketPrice;
+
+    for (int i=0;i<m_pairTabPageMap.values().count();++i) {
+        PairTabPage* p = m_pairTabPageMap.values().at(i);
+        if (p==NULL)
+            continue;
+        for (int j=0;j<p->getSecurities().count();++j) {
+            Security* s = p->getSecurities().at(j);
+            if (s->contract()->symbol == sym) {
+                updateOrdersTable(sym, last);
+            }
+        }
+    }
+
+
+    // update portfolio table
+    int row = -1;
+    bool isUpdate = false;
+
+    int rowCount = ui->portfolioTableWidget->rowCount();
+    int colCount = ui->portfolioTableWidget->columnCount();
+
+    if (rowCount) {
+        for (int r=0;r<rowCount;++r) {
+            for (int c=0;c<colCount;++c) {
+                if (ui->portfolioTableWidget->horizontalHeaderItem(c)->text() == "Symbol") {
+                    if (ui->portfolioTableWidget->item(r,c)->text() == contract.symbol) {
+                        row = r;
+                        isUpdate = true;
+                    }
+                }
+            }
+        }
+    }
+
+//    << "Symbol"
+//    << "Position"
+//    << "MarketPrice"
+//    << "MarketValue"
+//    << "AverageCost"
+//    << "UnrealizedPNL"
+//    << "RealizedPNL"
+//    << "AccountName";
+
+    QTableWidgetItem* i = NULL;
+
+    if (!isUpdate) {
+        row = ui->portfolioTableWidget->rowCount();
+        ui->portfolioTableWidget->setRowCount(ui->portfolioTableWidget->rowCount()+1);
+    }
+
+
+    for (int c=0;c<ui->portfolioTableWidget->horizontalHeader()->count();++c) {
+
+        QString field = ui->portfolioTableWidget->horizontalHeaderItem(c)->text();
+
+        if (!isUpdate) {
+            i = new QTableWidgetItem;
+            ui->portfolioTableWidget->setItem(row, c, i);
+        }
+        else {
+            i = ui->portfolioTableWidget->item(row, c);
+        }
+        if (field == "Symbol")
+            i->setText(contract.symbol);
+        else if (field == "Position")
+            i->setText(QString::number(position));
+        else if (field == "MarketPrice")
+            i->setText(QString::number(marketPrice, 'f', 2));
+        else if (field == "MarketValue")
+            i->setText(QString::number(marketValue, 'f', 2));
+        else if (field == "AverageCost")
+            i->setText(QString::number(averageCost, 'f', 2));
+        else if (field == "UnrealizedPNL")
+            i->setText(QString::number(unrealizedPNL, 'f', 2));
+        else if (field == "RealizedPNL")
+            i->setText(QString::number(realizedPNL, 'f', 2));
+        else if (field == "AccountName")
+            i->setText(accountName);
+        else
+            continue;
+    }
+    qDebug() << "[DEBUG-onUpdatePortfolio] END";
+}
+
+void MainWindow::onUpdateAccountTime(const QByteArray &timeStamp)
+{
+    Q_UNUSED(timeStamp);
+//    qDebug() << "[DEBUG-onUpdateAccountTime]" << QDateTime::fromTime_t(timeStamp.toUInt()).toString("yyMMdd::hh:mm:ss");
+}
+
+void MainWindow::onAccountDownloadEnd(const QByteArray &accountName)
+{
+    qDebug() << "[DEBUG-onAccountDownloadEnd]" << accountName;
 }
 
 
@@ -409,7 +767,7 @@ void MainWindow::writeSettings()
     settings.setValue("pos", pos());
     settings.setValue("size", size());
     settings.setValue("state", saveState());
-    settings.setValue("numPairTabPages", ui->tabWidget->count());
+    settings.setValue("numPairTabPages", ui->tabWidget->count()-3);
     settings.setValue("tabWidgetCurrentIndex", ui->tabWidget->currentIndex());
     settings.setValue("ordersTabEnabled", ui->ordersTab->isEnabled());
 
@@ -422,6 +780,10 @@ void MainWindow::writeSettings()
             continue;
         }
         else if (ui->tabWidget->tabText(i) == QString("Orders")) {
+            ++subtract;
+            continue;
+        }
+        else if (ui->tabWidget->tabText(i) == QString("Portfolio")) {
             ++subtract;
             continue;
         }
@@ -440,6 +802,8 @@ void MainWindow::writeSettings()
 
 void MainWindow::readSettings()
 {
+    P_DEBUG;
+
     QSettings settings;
     settings.beginGroup("mainwindow");
 
@@ -472,6 +836,7 @@ void MainWindow::readPageSettings()
 
         s.setArrayIndex(i);
         PairTabPage* p = new PairTabPage(m_ibClient, m_managedAccounts, this);
+        m_pairTabPageMap[ui->tabWidget->count()] = p;
         QString tabSymbol = s.value("tabSymbol").toString();
         qDebug() << "[DEBUG-readPageSettings] tabSymbol" << i << ":" << tabSymbol;
         p->setTabSymbol(tabSymbol);
@@ -503,6 +868,164 @@ void MainWindow::on_actionGlobal_Config_triggered()
 {
     m_globalConfigDialog.exec();
 }
+
+void MainWindow::onOrdersTableContextMenuEventTriggered(const QPoint &pos, const QPoint &globalPos)
+{
+    m_ordersTableRowPoint = pos;
+
+    QMenu m;
+    m.addAction("Close Order", this, SLOT(onCloseOrder()));
+    m.exec(globalPos);
+}
+
+void MainWindow::onCloseOrder()
+{
+    int row = ui->ordersTableWidget->itemAt(m_ordersTableRowPoint)->row();
+
+    PairTabPage* p;
+    QString tabSymbol;
+
+    for (int c=0;c<ui->ordersTableWidget->columnCount();++c) {
+        QTableWidgetItem* hi = ui->ordersTableWidget->horizontalHeaderItem(c);
+        if ( hi->text() == QString("Pair")) {
+            tabSymbol = ui->ordersTableWidget->item(row, c)->text();
+            break;
+        }
+    }
+
+    for (int i=0;i<m_pairTabPageMap.values().size();++i) {
+        if (m_pairTabPageMap.value(i) == NULL)
+            continue;
+        p = m_pairTabPageMap.values().at(i);
+        if (p->getTabSymbol() == tabSymbol) {
+            p->exitOrder();
+        }
+    }
+}
+
+void MainWindow::onHomeTabMoved(int from, int to)
+{
+    qDebug() << "[DEBUG-onHomeTabMoved] from:" << from << "to:" << to;
+
+    QMap<int, PairTabPage*> tmpMap;
+    for (int i=0;i<m_pairTabPageMap.count();++i) {
+        if (from > to) {
+            if (i < to && i > from) {
+                tmpMap[i] = m_pairTabPageMap.value(i);
+                continue;
+            }
+            else {
+                if (i == to) {
+                    tmpMap[i] = m_pairTabPageMap.value(from);
+                    continue;
+                }
+                if (i > to) {
+                    tmpMap[i] = m_pairTabPageMap.value(i+1);
+                    continue;
+                }
+            }
+        }
+        else {
+            if (i < from && i > to) {
+                tmpMap[i] = m_pairTabPageMap.value(i);
+                continue;
+            }
+            else {
+                if (i < to) {
+                    tmpMap[i] = m_pairTabPageMap.value(i+1);
+                    continue;
+                }
+                if (i == to) {
+                    tmpMap[i] = m_pairTabPageMap.value(from);
+                    continue;
+                }
+            }
+        }
+    }
+    m_pairTabPageMap = tmpMap;
+}
+
+void MainWindow::onSaveSettings()
+{
+    writeSettings();
+}
+
+void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const double &price, const int &canAutoExecute)
+{
+    Q_UNUSED(canAutoExecute);
+
+    Security* s = NULL;
+    bool breakout = false;
+
+    for (int i=0;i<m_pairTabPageMap.count();++i) {
+        PairTabPage* p = m_pairTabPageMap.values().at(i);
+        if (p==NULL)
+            continue;
+        QList<Security*> securities = p->getSecurities();
+        for (int j=0;j<securities.size();++j) {
+            Security* ss = securities.at(j);
+            if (tickerId == ss->getRealTimeTickerId()) {
+                s = ss;
+                breakout = true;
+                break;
+            }
+        }
+        if (breakout)
+            break;
+    }
+
+    if (!s) {
+        qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
+    }
+
+    switch (field)
+    {
+    case LAST:
+//        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
+        s->appendRawPrice(price);
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::onTickSize(const long &tickerId, const TickType &field, const int &size)
+{
+    Security* s = NULL;
+    bool breakout = false;
+
+    for (int i=0;i<m_pairTabPageMap.count();++i) {
+        PairTabPage* p = m_pairTabPageMap.values().at(i);
+        if (p==NULL)
+            continue;
+        QList<Security*> securities = p->getSecurities();
+        for (int j=0;j<securities.size();++j) {
+            Security* ss = securities.at(j);
+            if (tickerId == ss->getRealTimeTickerId()) {
+                s = ss;
+                breakout = true;
+                break;
+            }
+        }
+        if (breakout)
+            break;
+    }
+
+    if (!s) {
+        qDebug() << "[ERROR]" << __PRETTY_FUNCTION__ << __LINE__ << "where is the tickerId???";
+    }
+
+    switch (field)
+    {
+    case LAST_SIZE:
+        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "SIZE:" << size;
+        s->appendRawSize(size);
+        break;
+    default:
+        break;
+    }
+}
+
 QStringList MainWindow::getOrderHeaderLabels() const
 {
     return m_orderHeaderLabels;
@@ -519,5 +1042,136 @@ QStringList MainWindow::getManagedAccounts() const
 {
     return m_managedAccounts;
 }
+
+
+void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
+{
+    P_DEBUG;
+
+    OrdersTableWidget* tw = ui->ordersTableWidget;
+
+//    m_orderHeaderLabels << "Pair"
+//                      << "Sym1"
+//                      << "Sym2"
+//                      << "Size1"
+//                      << "Size2"
+//                      << "Cost/Unit1"
+//                      << "Cost/Unit2"
+//                      << "TotalCost1"
+//                      << "TotalCost2"
+//                      << "Last1"
+//                      << "Last2"
+//                      << "Diff1"
+//                      << "Diff2"
+//                      << "PercentChange1"
+//                      << "PercentChange2";
+
+
+
+    QList<Info*> infoList;
+
+    for (int r=0;r<tw->rowCount();++r) {
+        Info *info = new Info;
+        info->isSym1 = false;
+        info->isSym2 = false;
+        for (int c=0;c<tw->columnCount();++c) {
+            QString field = tw->horizontalHeaderItem(c)->text();
+            QString text = tw->item(r,c)->text();
+            if (field == "Sym1" && text == symbol)
+                info->isSym1 = true;
+            else if (field == "Sym2" && text == symbol)
+                info->isSym2 = true;
+            else if (field == "Cost/Unit1") {
+                info->purchasePrice1 = text.toDouble();
+                info->diff1 = last - info->purchasePrice1;
+            }
+            else if (field == "Cost/Unit2") {
+                info->purchasePrice2 = text.toDouble();
+                info->diff2 = last - info->purchasePrice2;
+            }
+            else if (field == "Size2" && text.toInt() < 0)
+                info->sym2IsShort = true;
+
+        }
+        infoList.append(info);
+    }
+
+    for (int r=0;r<tw->rowCount();++r) {
+        Info* info = infoList.at(r);
+        if (!(info->isSym1 || info->isSym2))
+            continue;
+        for (int c=0;c<tw->columnCount();++c) {
+            QString field = tw->horizontalHeaderItem(c)->text();
+            QTableWidgetItem* item = tw->item(r,c);
+            if (info->isSym1) {
+                if (field == "Last1")
+                    item->setText(QString::number(last, 'f', 2));
+                if (field == "Diff1") {
+                    item->setText(QString::number(info->diff1,'f',2));
+                }
+                if (field == "PercentChange1") {
+                    double ret = info->diff1 / info->purchasePrice1 * 100;
+                    if (!info->sym2IsShort) {
+                        item->setText(QString::number(-ret,'f',2));
+                    }
+                    else {
+                        item->setText(QString::number(ret,'f',2));
+                    }
+                }
+            }
+            else if (info->isSym2) {
+                if (field == "Last2")
+                    item->setText(QString::number(last, 'f', 2));
+                if (field == "Diff2")
+                    item->setText(QString::number(info->diff2,'f',2));
+                if (field == "PercentChange2") {
+                    double ret = info->diff2 / info->purchasePrice2 * 100;
+                    if (info->sym2IsShort)
+                        item->setText(QString::number(-ret,'f',2));
+                    else
+                        item->setText(QString::number(ret,'f',2));
+                }
+            }
+        }
+    }
+    qDeleteAll(infoList);
+    qDebug() << "[DEBUG-updateOrdersTable] END";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -95,19 +95,18 @@ QVector<double> getRSI(const QVector<double> & vec, int period)
     double rsi = 0;
     QVector<double> ret;
 
-
     for (int i=1;i<vec.size();++i) {
         double diff = vec.at(i) - vec.at(i-1);
         if (diff > 0)
             gainSum += diff;
         else if (diff < 0)
             lossSum += diff * -1;
-        if (i==period-1) {
-            gainAvg = gainSum / period;
-            lossAvg = lossSum / period;
+        if (i==period) {
+            prevGainAvg = gainSum / period;
+            prevLossAvg = lossSum / period;
             gainSum = lossSum = 0;
         }
-        else if (i >= period) {
+        else if (i > period) {
             gainAvg = (prevGainAvg * (period-1) + gainSum) / period;
             lossAvg = (prevLossAvg * (period-1) + lossSum) / period;
             prevGainAvg = gainAvg;
@@ -119,7 +118,6 @@ QVector<double> getRSI(const QVector<double> & vec, int period)
             rsi = 100 - (100 / (1 + rs));
             ret.append(rsi);
         }
-
     }
     return ret;
 }
@@ -184,11 +182,11 @@ QVector<double> getRatio(const QVector<double> & vec1, const QVector<double> & v
         vec22 = vec2;
     }
 
-    QVector<double> ret(size);
+    QVector<double> ret;
 
 
     for (int i=0; i<size;++i) {
-        ret[i] = (vec11.at(i) / vec22.at(i));
+        ret.append(vec11.at(i) / vec22.at(i));
     }
 
     return ret;

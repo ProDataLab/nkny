@@ -24,9 +24,10 @@ SOURCES += main.cpp\
     contractdetailswidget.cpp \
     mdiarea.cpp \
     globalconfigdialog.cpp \
-    orderstablewidget.cpp \
     datatoolboxwidget.cpp \
-    smtp.cpp
+    smtp.cpp \
+    orderstablewidget.cpp \
+    portfoliotablewidget.cpp
 
 HEADERS  += mainwindow.h \
     qcustomplot.h \
@@ -51,9 +52,10 @@ HEADERS  += mainwindow.h \
     contractdetailswidget.h \
     mdiarea.h \
     globalconfigdialog.h \
-    orderstablewidget.h \
     datatoolboxwidget.h \
-    smtp.h
+    smtp.h \
+    orderstablewidget.h \
+    portfoliotablewidget.h
 
 
 

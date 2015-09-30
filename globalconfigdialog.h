@@ -26,6 +26,7 @@ private slots:
 
 protected:
     void closeEvent();
+    void keyPressEvent(QKeyEvent * evt);
 
 private:
     Ui::GlobalConfigDialog *ui;

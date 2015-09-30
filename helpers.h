@@ -4,6 +4,8 @@
 #include <QVector>
 #include <QtMath>
 #include <cmath>
+#include <QtDebug>
+#include <QString>
 
 void delay(int milliSecondsToWait);
 double getMin(const QVector<double> & vec);
@@ -23,6 +25,8 @@ QVector<double> getRatioVolatility(const QVector<double> & ratio, int period);
 QVector<double> getPercentFromMean(const QVector<double> & vec);
 int getMinSize(int s1, int s2);
 QVector<double> getVecTimesScalar(const QVector<double> & vec, double scalar);
+
+#define P_DEBUG qDebug() << "[DEBUG]" << /*__PRETTY_FUNCTION__*/ __func__ << __LINE__
 
 #endif // HELPERS_H
 

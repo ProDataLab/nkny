@@ -13,6 +13,9 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("nkny");
     MainWindow w;
 
+//    QSettings s;
+//    s.clear();
+
     w.show();
     return a.exec();
 }

@@ -21,11 +21,8 @@ public:
 
 private slots:
     void on_symbolLineEdit_textEdited(const QString &arg1);
-    void on_primaryExchangeLineEdit_textEdited(const QString &arg1);
 
     void on_securityTypeComboBox_currentIndexChanged(const QString &arg1);
-
-    void on_localSymbolLineEdit_textChanged(const QString &arg1);
 
     void on_exchangeLineEdit_textChanged(const QString &arg1);
 

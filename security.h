@@ -61,8 +61,27 @@ struct DataVecsNewBar : public DataVecs
 struct DataVecsMoreHist : public DataVecsHist {};
 
 
+struct DataVecsRaw : public DataVecs
+{
+    QVector<double> timeStamp;
+    QVector<double> price;
+    QVector<int>    size;
+};
 
 //#define DataVecsFill DataVecsHist
+
+enum TriggerType
+{
+    LAYER_1=0,
+    LAYER_2,
+    LAYER_3,
+    LAYER_4,
+    LAYER_5,
+    RSI,
+    PCNT,
+    EXIT,
+    TEST
+};
 
 struct SecurityOrder
 {
@@ -77,7 +96,13 @@ struct SecurityOrder
     double lastFillPrice;
     int clientId;
     QByteArray whyHeld;
+    TriggerType triggerType;                   // used to distiguish various orders by layer
+    long referenceOrderId;
 };
+
+
+class PairTabPage;
+
 
 
 class Security : public QObject
@@ -88,8 +113,8 @@ public:
     Security(const long & tickerId, QObject* parent=0);
     ~Security();
 
-    void setTickerId(const long & tickerId) { m_tickerId = tickerId; }
-    long tickerId() const { return m_tickerId; }
+    void setHistoricalTickerId(const long & tickerId) { m_historicalTickerId = tickerId; }
+    long getHistoricalTickerId() const { return m_historicalTickerId; }
     Contract* contract() { return &(m_contractDetails.summary); }
     bool histDataRequested() const { return m_histDataRequested; }
     void setHistDataRequested() { m_histDataRequested = true; }
@@ -97,42 +122,8 @@ public:
 
     void appendNewBarData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps);
     void appendMoreBarData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps);
-
-//    void appendData(TimeFrame timeFrame, double timeStamp, double close, int size)
-//    {
-//        DataVecsRaw* dvr;
-//        if (!m_dataMap.contains(timeFrame)) {
-//            dvr = new DataVecsRaw;
-//            m_dataMap[timeFrame] = dvr;
-//        }
-//        else
-//            dvr = (DataVecsRaw*)m_dataMap[timeFrame];
-
-//        dvr->timeStamp += timeStamp;
-//        dvr->close += close;
-//        dvr->volume += size;
-//    }
-
-//    void appendFillData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps)
-//    {
-//        DataVecsFill* dvf;
-//        if (!m_dataFillMap.contains(timeFrame)) {
-//            dvf = new DataVecsFill;
-//            m_dataMap[timeFrame] = dvf;
-//        }
-//        else
-//            dvf = (DataVecsHist*)m_dataMap[timeFrame];
-
-//        dvf->timeStamp += timeStamp;
-//        dvf->open += open;
-//        dvf->high += high;
-//        dvf->low += low;
-//        dvf->close += close;
-//        dvf->volume += (uint)volume;
-//        dvf->barCount += (uint)barCount;
-//        dvf->wap += wap;
-//        dvf->hasGaps += (bool)hasGaps;
-//    }
+    void appendRawPrice(const double & price);
+    void appendRawSize(const int & size);
 
 //    DataVecsRaw* getRawData() { return (DataVecsRaw*)m_dataMap[RAW]; }
     DataVecsHist* getHistData(TimeFrame timeFrame) { return (DataVecsHist*)m_dataMap[timeFrame]; }
@@ -147,29 +138,36 @@ public:
     void handleNewBarData(TimeFrame timeFrame);
     QTimer* getTimer() { return &m_timer; }
 
-    void fixHistDataSize(TimeFrame timeFrame);
+    void fixHistDataSize(TimeFrame timeFrame, int size);
 
     ContractDetails* getContractDetails();
     void setContractDetails(const ContractDetails &contractDetails);
 
-    QMap<long, SecurityOrder *> getSecurityOrderMap() const;
+    QMap<long, SecurityOrder *>* getSecurityOrderMap();
 
     SecurityOrder* newSecurityOrder(long orderId);
 
     Security *getPairPartner() const;
     void setPairPartner(Security *pairPartner);
 
+    long getRealTimeTickerId() const;
+    void setRealTimeTickerId(long realTimeTickerId);
+
+    void handleRawBarData();
+
 signals:
 
 public slots:
 
 private:
-    long                                m_tickerId;
+    long                                m_historicalTickerId;
+    long                                m_realTimeTickerId;
     ContractDetails                     m_contractDetails;
     QMap<TimeFrame, DataVecs*>          m_dataMap;
 //    QMap<TimeFrame, DataVecsFill*>      m_dataFillMap;
     QMap<TimeFrame, DataVecsMoreHist*>  m_moreBarsDataMap;
     QMap<TimeFrame, DataVecsNewBar*>    m_newBarDataMap;
+    QMap<TimeFrame, DataVecsRaw*>       m_rawDataMap;
     bool                                m_histDataRequested;
     double                              m_lastBarsTimeStamp;
 //    bool                                m_gettingRealTimeData;
@@ -177,6 +175,7 @@ private:
     QTimer                              m_timer;
     QMap<long,SecurityOrder*>           m_securityOrderMap;
     Security*                           m_pairPartner;
+    PairTabPage*                        m_pairTabPage;
 };
 
 #endif // SECURITY_H

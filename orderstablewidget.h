@@ -1,27 +1,32 @@
-#ifndef ORDERSTABLEWIDGET_H
-#define ORDERSTABLEWIDGET_H
+#ifndef ORDERSTABLEWIDGET2_H
+#define ORDERSTABLEWIDGET2_H
 
 #include <QTableWidget>
 #include <QPoint>
 
+
+
 class OrdersTableWidget : public QTableWidget
 {
     Q_OBJECT
+
 public:
     explicit OrdersTableWidget(QWidget *parent = 0);
+    ~OrdersTableWidget();
+
+signals:
+    void contextMenuEventTriggered(const QPoint & pos, const QPoint & globalPos);
+
+
+public slots:
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event) Q_DECL_OVERRIDE;
 
-signals:
-
-public slots:
-
-private slots:
-    void onCloseOrders();
 
 private:
     QPoint m_pos;
+
 };
 
-#endif // ORDERSTABLEWIDGET_H
+#endif // ORDERSTABLEWIDGET2_H
