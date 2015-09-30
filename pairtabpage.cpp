@@ -1855,7 +1855,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
             tw->item(row,c)->setText(QString::number(m_ratioRSI.last(),'f',4));
     }
 
-    tw->repaint();
+//    tw->repaint();
 
     m_bothPairsUpdated = true;
 
@@ -2035,6 +2035,8 @@ void PairTabPage::plotRatioRSI()
     QCustomPlot* cp = createPlot();
     addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioRSI);
 
+    cp->yAxis->setRange(0, 100);
+
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
     sw->setWindowTitle("RSI");
@@ -2165,7 +2167,7 @@ void PairTabPage::addTableRow()
         QTableWidgetItem* item = new QTableWidgetItem(itemList.at(i));
         tab->setItem(m_homeTablePageRowIndex, i, item);
     }
-    tab->repaint();
+//    tab->repaint();
 
     qDebug() << "[DEBUG-addTableRow] leaving";
 }
@@ -2440,6 +2442,9 @@ QCPGraph *PairTabPage::addGraph(QCustomPlot *cp, QVector<double> x, QVector<doub
     double max = getMax(y);
 
     cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
+
+    cp->yAxis->setNumberFormat("f");
+    cp->yAxis->setNumberPrecision(2);
 
     cp->replot();
     return g;
