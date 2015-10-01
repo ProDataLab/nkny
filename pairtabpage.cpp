@@ -1034,6 +1034,8 @@ void PairTabPage::onCascadeAct()
 {
     ui->mdiArea->setViewMode(QMdiArea::SubWindowView);
     ui->mdiArea->cascadeSubWindows();
+    m_mdiCascade = true;
+    m_mdiTile = f
     QMdiSubWindow* w;
     foreach(w, ui->mdiArea->subWindowList())
         w->resize(ui->mdiArea->subWindowWidth(), ui->mdiArea->subWindowHeight());
@@ -1140,6 +1142,21 @@ void PairTabPage::writeSettings() const
         s.setValue("expiryYear", c->expiryYearSpinBox->value());
     }
     s.endArray();
+    s.beginGroup("mdi");
+    s.setValue("viewMode", ui->mdiArea->viewMode());
+    s.setValue("mdiCascade", m_mdiCascade);
+    s.setValue("mdiTile", m_mdiTile);
+    s.beginWriteArray("subwindows");
+    int size = ui->mdiArea->subWindowList().size();
+    for (int i=0;i<size;++i) {
+        s.setArrayIndex(i);
+        QMdiSubWindow* w = ui->mdiArea->subWindowList().at(i);
+        s.setValue("size", w->size());
+        s.setValue("position", w->pos());
+        
+    }
+    s.endArray();
+    s.endGroup();
     s.endGroup();
 
     s.beginGroup(m_tabSymbol + "/configPage");
@@ -1159,7 +1176,7 @@ void PairTabPage::writeSettings() const
     s.setValue("rsiUpperCheckState", ui->tradeEntryRSIUpperCheckBox->checkState());
     s.setValue("rsiUpper", ui->tradeEntryRSIUpperSpinBox->value());
     s.setValue("percentFromMeanCheckState", ui->tradeEntryPercentFromMeanCheckBox->checkState());
-    s.setValue("percentFromMean", ui->tradeEntryPercentFromMeanSpinBox->value());
+    s.setValue("percentFromMean", ui->tradeEntryPercentFromMeanDoubleSpinBox->value());
     s.setValue("numStdDevLayers", ui->tradeEntryNumStdDevLayersSpinBox->value());
     s.setValue("waitCheckBoxEnabled", ui->waitCheckBox->isEnabled());
     s.setValue("waitCheckBoxState", ui->waitCheckBox->checkState());
@@ -1184,9 +1201,9 @@ void PairTabPage::writeSettings() const
 
     s.beginGroup(m_tabSymbol + "/tradeExit");
     s.setValue("percentStopLossCheckBoxState", ui->tradeExitPercentStopLossCheckBox->checkState());
-    s.setValue("percentStopLoss", ui->tradeExitPercentStopLossSpinBox->value());
+    s.setValue("percentStopLoss", ui->tradeExitPercentStopLossDoubleSpinBox->value());
     s.setValue("percentFromMeanCheckState", ui->tradeExitPercentFromMeanCheckBox->checkState());
-    s.setValue("percentFromMean", ui->tradeExitPercentFromMeanSpinBox->value());
+    s.setValue("percentFromMean", ui->tradeExitPercentFromMeanDoubleSpinBox->value());
     s.setValue("stdDevCheckBox", ui->tradeExitStdDevCheckBox->checkState());
     s.setValue("stdDev", ui->tradeExitStdDevDoubleSpinBox->value());
     s.endGroup();
@@ -1303,6 +1320,26 @@ void PairTabPage::readSettings()
         }
     }
     s.endArray();
+    s.beginGroup("mdi");
+    ui->mdiArea->setViewMode((QMdiArea::ViewMode)s.value("viewMode").toInt());
+    bool isTiled = s.value("mdiTile").toBool();
+    bool isCascade = s.value("mdiCascade").toBool();
+    if (ui->mdiArea->viewMode() == QMdiArea::SubWindowView) {
+        if (isTiled)
+            ui->mdiArea->tileSubWindows();
+        if (isCascade)
+            ui->mdiArea->cascadeSubWindows();
+    }
+    s.beginWriteArray("subwindows");
+    int size = ui->mdiArea->subWindowList().size();
+    for (int i=0;i<size;++i) {
+        s.setArrayIndex(i);
+        QMdiSubWindow* w = ui->mdiArea->subWindowList().at(i);
+        w->resize(s.value("size").toSize());
+        w->move(s.value("position").toPoint());
+    }
+    s.endArray();
+    s.endGroup();
     s.endGroup();
 
     s.beginGroup(m_tabSymbol + "/tradeEntry");
@@ -1333,7 +1370,7 @@ void PairTabPage::readSettings()
     ui->tradeEntryRSIUpperCheckBox->setCheckState((Qt::CheckState)s.value("rsiUpperCheckState").toInt());
     ui->tradeEntryRSIUpperSpinBox->setValue(s.value("rsiUpper").toInt());
     ui->tradeEntryPercentFromMeanCheckBox->setCheckState((Qt::CheckState)s.value("percentFromMeanCheckState").toInt());
-    ui->tradeEntryPercentFromMeanSpinBox->setValue(s.value("percentFromMean").toInt());
+    ui->tradeEntryPercentFromMeanDoubleSpinBox->setValue(s.value("percentFromMean").Double());
     ui->tradeEntryNumStdDevLayersSpinBox->setValue(s.value("numStdDevLayers").toInt());
     for (int i=0;i<ui->layersTabWidget->count();++i)
         ui->layersTabWidget->removeTab(i);
@@ -1367,10 +1404,10 @@ void PairTabPage::readSettings()
 
     s.beginGroup(m_tabSymbol + "/tradeExit");
     ui->tradeExitPercentStopLossCheckBox->setCheckState((Qt::CheckState)s.value("percentStopLossCheckBoxState").toInt());
-    ui->tradeExitPercentStopLossSpinBox->setValue(s.value("percentStopLoss").toInt());
+    ui->tradeExitPercentStopLossDoubleSpinBox->setValue(s.value("percentStopLoss").toDouble());
     ui->tradeExitPercentFromMeanCheckBox->setCheckState((Qt::CheckState)s.value("percentFromMeanCheckBoxState").toInt());
-    ui->tradeExitPercentFromMeanSpinBox->setValue(s.value("percentFromMean").toInt());
-    ui->tradeExitStdDevCheckBox->setCheckState((Qt::CheckState)s.value("stdDevCheckBox").toInt());
+    ui->tradeExitPercentFromMeanDoubleSpinBox->setValue(s.value("percentFromMean").toInt());
+    ui->tradeExitStdDevCheckBox->setCheckState((Qt::CheckState)s.value("stdDevCheckBox").toDouble());
     ui->tradeExitStdDevDoubleSpinBox->setValue(s.value("stdDev").toDouble());
     s.endGroup();
 
@@ -1737,9 +1774,9 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     m_ratioMA = getMA(m_ratio, ui->maPeriodSpinBox->value());
     m_ratioStdDev = getStdDevVector(m_ratio, ui->stdDevPeriodSpinBox->value());
-    m_ratioPercentFromMean = getPercentFromMean(m_ratio);
+    m_ratioPercentFromMean = getPercentFromMA(m_ratio, ui->maPeriodSpinBox->value());
     m_correlation = getCorrelation(dvh1->close, dvh2->close);
-    m_ratioVolatility = getRatioVolatility(m_ratio, ui->volatilityPeriodSpinBox->value());
+    m_ratioVolatility = getRatioVolatility(getRatio(dvh1->high,dvh2->high), getRatio(dvh1->low,dvh2->low), ui->volatilityPeriodSpinBox->value());
     m_ratioRSI = getRSI(m_ratio, ui->rsiPeriodSpinBox->value());
 
     QTableWidget* tw = mwui->homeTableWidget;
@@ -1898,16 +1935,16 @@ void PairTabPage::plotRatio()
     int period = qMin(ui->maPeriodSpinBox->value(), qMin(dvh1->timeStamp.size(), dvh2->timeStamp.size()));
     m_ratioMA = getMA(m_ratio, period);
 
-//    int diff;
+    int diff;
 
-//    diff = ts.size() - m_ratioMA.size();
+    diff = ts.size() - m_ratioMA.size();
 
     // Ratio
-//    addGraph(cp, ts.mid(diff), m_ratio.mid(diff));
-    addGraph(cp, ts, m_ratio);
+    addGraph(cp, ts.mid(diff), m_ratio.mid(diff));
+//    addGraph(cp, ts, m_ratio);
 
     // MA
-//    addGraph(cp, ts.mid(diff), m_ratioMA, Qt::red, false);
+    addGraph(cp, ts.mid(diff), m_ratioMA, Qt::red, false);
 
 
     QMdiArea* ma = ui->mdiArea;
@@ -1964,7 +2001,7 @@ void PairTabPage::plotRatioPercentFromMean()
 {
     DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
 
-    m_ratioPercentFromMean = getPercentFromMean(m_ratio);
+    m_ratioPercentFromMean = getPercentFromMA(m_ratio, ui->maPeriodSpinBox->value());
 
     int diff = dvh1->timeStamp.size() - m_ratioPercentFromMean.size();
 
@@ -1989,6 +2026,7 @@ void PairTabPage::plotCorrelation()
     int diff = dvh1->timeStamp.size() - m_correlation.size();
 
     QCustomPlot* cp = createPlot();
+    cp->yAxis->setRange(-1.0, 1.0);
     addGraph(cp, dvh1->timeStamp.mid(diff), m_correlation);
 
     QMdiArea* ma = ui->mdiArea;
@@ -2008,10 +2046,11 @@ void PairTabPage::plotCointegration()
 void PairTabPage::plotRatioVolatility()
 {
     DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
+    DataVecsHist* dvh2 = m_securityMap.values().at(1)->getHistData(m_timeFrame);
 
     int period = qMin(ui->volatilityPeriodSpinBox->value(), m_ratio.size());
 
-    m_ratioVolatility = getRatioVolatility(m_ratio, period);
+    m_ratioVolatility = getRatioVolatility(getRatio(dvh1->high,dvh2->high), getRatio(dvh1->low,dvh2->low), period);
 
     int diff = dvh1->timeStamp.size() - m_ratioVolatility.size();
 
@@ -2036,9 +2075,9 @@ void PairTabPage::plotRatioRSI()
     int diff = dvh1->timeStamp.size() - m_ratioRSI.size();
 
     QCustomPlot* cp = createPlot();
-    addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioRSI);
-
     cp->yAxis->setRange(0, 100);
+
+    addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioRSI);
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
@@ -2193,7 +2232,7 @@ void PairTabPage::checkTradeTriggers()
 
     if (!m_percentFromMeanTriggerActivated && ui->tradeEntryPercentFromMeanCheckBox->checkState() == Qt::Checked) {
         double lastPofM = m_ratioPercentFromMean.last();
-        if (fabs(lastPofM) > ui->tradeEntryPercentFromMeanSpinBox->value()) {
+        if (fabs(lastPofM) > ui->tradeEntryPercentFromMeanDoubleSpinBox->value()) {
             if (numLayers == 0) {
                 if (lastPofM > 0)
                     placeOrder(PCNT);
@@ -2328,7 +2367,7 @@ void PairTabPage::checkTradeExits()
 
     if (ui->tradeExitPercentFromMeanCheckBox->checkState() == Qt::Checked) {
         double lastPercentFromMean = m_ratioPercentFromMean.last();
-        double trigger = ui->tradeExitPercentFromMeanSpinBox->value();
+        double trigger = ui->tradeExitPercentFromMeanDoubleSpinBox->value();
         if (lastPercentFromMean < trigger)
             exitOrder();
 
@@ -2383,7 +2422,7 @@ void PairTabPage::setDefaults()
     ui->tradeEntryRSIUpperCheckBox->setChecked(dui->tradeEntryRSIUpperCheckBox_2->isChecked());
     ui->tradeEntryRSIUpperSpinBox->setValue(dui->tradeEntryRSIUpperSpinBox_2->value());
     ui->tradeEntryPercentFromMeanCheckBox->setChecked(dui->tradeEntryPercentFromMeanCheckBox_2->isChecked());
-    ui->tradeEntryPercentFromMeanSpinBox->setValue(dui->tradeEntryPercentFromMeanSpinBox_2->value());
+    ui->tradeEntryPercentFromMeanDoubleSpinBox->setValue(dui->tradeEntryPercentFromMeanDoubleSpinBox_2->value());
     ui->tradeEntryNumStdDevLayersSpinBox->setValue(dui->tradeEntryNumStdDevLayersSpinBox_2->value());
     ui->waitCheckBox->setChecked(dui->waitCheckBox_2->isChecked());
     ui->layerBufferCheckBox->setChecked(dui->layerBufferCheckBox_2->isChecked());
@@ -2398,9 +2437,9 @@ void PairTabPage::setDefaults()
         t->getUi()->layerStdMinDoubleSpinBox->setValue(dui->layerStdMinDoubleSpinBox->value());
     }
     ui->tradeExitPercentStopLossCheckBox->setChecked(dui->tradeExitPercentStopLossCheckBox_2->isChecked());
-    ui->tradeExitPercentStopLossSpinBox->setValue(dui->tradeExitPercentStopLossSpinBox_2->value());
+    ui->tradeExitPercentStopLossDoubleSpinBox->setValue(dui->tradeExitPercentStopLossDoubleSpinBox_2->value());
     ui->tradeExitPercentFromMeanCheckBox->setChecked(dui->tradeExitPercentFromMeanCheckBox_2->isChecked());
-    ui->tradeExitPercentFromMeanSpinBox->setValue(dui->tradeExitPercentFromMeanSpinBox_2->value());
+    ui->tradeExitPercentFromMeanDoubleSpinBox->setValue(dui->tradeExitPercentFromMeanDoubleSpinBox_2->value());
     ui->tradeExitStdDevCheckBox->setChecked(dui->tradeExitStdDevCheckBox_2->isChecked());
     ui->tradeExitStdDevDoubleSpinBox->setValue(dui->tradeExitStdDevDoubleSpinBox_2->value());
 }

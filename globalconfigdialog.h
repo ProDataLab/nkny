@@ -25,8 +25,8 @@ private slots:
     void on_buttonBox_accepted();
 
 protected:
-    void closeEvent();
-    void keyPressEvent(QKeyEvent * evt);
+    virtual void closeEvent(QCloseEvent* evt);
+    virtual void keyPressEvent(QKeyEvent * evt);
 
 private:
     Ui::GlobalConfigDialog *ui;

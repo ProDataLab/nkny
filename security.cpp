@@ -354,47 +354,83 @@ void Security::setRealTimeTickerId(long realTimeTickerId)
 }
 
 void Security::handleRawBarData()
-{
-//qDebug() << "[DEBUG-" << __func__ << "] m_lastBarsTimeStamp:" << (uint)m_lastBarsTimeStamp;
+{        
+    static bool isFirstRun = true;
 
     DataVecsRaw* dvr = m_rawDataMap.values().at(0);
     DataVecsHist* dvh = (DataVecsHist*)m_dataMap.values().at(0);
 
-    double newBarsTimeStamp = m_lastBarsTimeStamp + m_pairTabPage->getTimeFrameInSeconds();
+    double firstTimeStamp;
+    double newBarsTimeStamp;
 
-//    for (int i=0;i<dvr->timeStamp.size();++i) {
-//        double price = dvr->price.at(i);
-//        double timeStamp = dvr->timeStamp.at(i);
-//        QString ts = QString::number(timeStamp, 'f');
-//        qDebug() << "[DEBUG" << __func__ << "] ts:" << ts << "price:" << price;
-//    }
+    if (isFirstRun) {
+        QDateTime dt(QDateTime::fromTime_t((uint)m_lastBarsTimeStamp));
+        QDateTime now = QDateTime::currentDateTime();
+        while (dt < now) {
+            dt = now.addSecs(m_pairTabPage->getTimeFrameInSeconds());
+        }
 
+        firstTimeStamp = (double)dt.addSecs(-m_pairTabPage->getTimeFrameInSeconds()).toTime_t();
+        newBarsTimeStamp = (double)dt.toTime_t();
+
+        isFirstRun = false;
+    }
+    else {
+        firstTimeStamp = m_lastBarsTimeStamp;
+        newBarsTimeStamp = m_lastBarsTimeStamp + m_pairTabPage->getTimeFrameInSeconds();
+    }
 
     if (dvr->timeStamp.isEmpty()) {
         dvh->close.append(dvh->close.last());
+        dvh->high.append(dvh->high.last());
+        dvh->low.append(dvh->low.last());
+        dvh->open.append(dvh->open.last());
     }
     else {
-        double close = 0;
         double timeStamp = 0;
+        double open = 0;
+        double high = 0;
+        double low = 999999;
+        double close = 0;
+
+        double price = 0;
 
         for (int i=0;i<dvr->timeStamp.size();++i) {
             timeStamp = dvr->timeStamp.at(i);
-            qDebug() << "[DEBUG-" << __func__ << "] timeStamp:" << QString::number((uint)timeStamp) << "price:" << dvr->price.at(i);
-            if (timeStamp < m_lastBarsTimeStamp) {
-                qDebug() << "CRAPCRAPCRAPCRAPCRAPCRAP";
+
+//            qDebug() << "[DEBUG-" << __func__ << "] price:" << dvr->price.at(i);
+            if (timeStamp < firstTimeStamp)
                 continue;
             }
             if (timeStamp < newBarsTimeStamp) {
-                close = dvr->price.at(i);
-                qDebug() << "FUCKFUCKFUCKFUCKFUCK";
+                price = dvr->price.at(i);
+                close = price;
+
+                if (open == 0)
+                    open = price;
+
+                if (price > high)
+                    high = price;
+
+                if (price < low)
+                    low = price;
+
                 dvr->price.remove(i);
                 dvr->timeStamp.remove(i);
             }
         }
-        if (close != 0)
+        if (close != 0) {
+            dvh->open.append(open);
+            dvh->high.append(high);
+            dvh->low.append(low);
             dvh->close.append(close);
-        else
+        }
+        else {
+            dvh->open.append(dvh->open.last());
+            dvh->high.append(dvh->high.last());
+            dvh->low.append(dvh->low.last());
             dvh->close.append(dvh->close.last());
+        }
     }
 
     qDebug() << "[DEBUG-" << __func__ << "]" << QDateTime::fromTime_t((uint)m_lastBarsTimeStamp);

@@ -76,8 +76,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>273</width>
-            <height>423</height>
+            <width>276</width>
+            <height>357</height>
            </rect>
           </property>
           <attribute name="label">
@@ -271,8 +271,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>100</width>
-            <height>30</height>
+            <width>276</width>
+            <height>357</height>
            </rect>
           </property>
           <attribute name="label">
@@ -283,8 +283,8 @@
             <rect>
              <x>0</x>
              <y>10</y>
-             <width>107</width>
-             <height>147</height>
+             <width>141</width>
+             <height>205</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -443,224 +443,211 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>210</width>
-            <height>306</height>
+            <width>262</width>
+            <height>411</height>
            </rect>
           </property>
           <attribute name="label">
            <string>Trade Entry</string>
           </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <layout class="QFormLayout" name="formLayout_2">
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_4">
-               <property name="text">
-                <string>Account:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QComboBox" name="managedAccountsComboBox"/>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>Amount $</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QSpinBox" name="tradeEntryAmountSpinBox">
-               <property name="minimumSize">
-                <size>
-                 <width>75</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="showGroupSeparator" stdset="0">
-                <bool>true</bool>
-               </property>
-               <property name="maximum">
-                <number>10000000</number>
-               </property>
-               <property name="singleStep">
-                <number>1</number>
-               </property>
-               <property name="value">
-                <number>10000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QCheckBox" name="overrideUnitSizeCheckBox">
-               <property name="text">
-                <string>Override Unit Size</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="pair1UnitOverrideLabel">
-               <property name="text">
-                <string>TextLabel</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QSpinBox" name="pair1UnitOverrideSpinBox">
-               <property name="maximum">
-                <number>1000000</number>
-               </property>
-               <property name="singleStep">
-                <number>1</number>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="pair2UnitOverrideLabel">
-               <property name="text">
-                <string>TextLabel</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QSpinBox" name="pair2UnitOverrideSpinBox">
-               <property name="maximum">
-                <number>1000000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QCheckBox" name="tradeEntryRSIUpperCheckBox">
-               <property name="text">
-                <string>RSI Upper</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="1">
-              <widget class="QSpinBox" name="tradeEntryRSIUpperSpinBox">
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="maximum">
-                <number>999</number>
-               </property>
-               <property name="value">
-                <number>70</number>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="0">
-              <widget class="QCheckBox" name="tradeEntryRSILowerCheckBox">
-               <property name="text">
-                <string>RSI Lower</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
-              <widget class="QSpinBox" name="tradeEntryRSILowerSpinBox">
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="maximum">
-                <number>999</number>
-               </property>
-               <property name="value">
-                <number>70</number>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0">
-              <widget class="QCheckBox" name="tradeEntryPercentFromMeanCheckBox">
-               <property name="text">
-                <string>% From Mean</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="1">
-              <widget class="QSpinBox" name="tradeEntryPercentFromMeanSpinBox">
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="maximum">
-                <number>999</number>
-               </property>
-               <property name="value">
-                <number>25</number>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>Num StdDev Layers</string>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QSpinBox" name="tradeEntryNumStdDevLayersSpinBox">
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-               <property name="readOnly">
-                <bool>false</bool>
-               </property>
-               <property name="maximum">
-                <number>5</number>
-               </property>
-              </widget>
-             </item>
-             <item row="9" column="0">
-              <widget class="QCheckBox" name="waitCheckBox">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>Wait</string>
-               </property>
-              </widget>
-             </item>
-             <item row="10" column="0">
-              <widget class="QCheckBox" name="layerBufferCheckBox">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>Buffer</string>
-               </property>
-              </widget>
-             </item>
-             <item row="10" column="1">
-              <widget class="QDoubleSpinBox" name="layerBufferDoubleSpinBox">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>50</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-            </layout>
+          <layout class="QFormLayout" name="formLayout_2">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Account:</string>
+             </property>
+            </widget>
            </item>
-           <item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="managedAccountsComboBox"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Amount $</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="tradeEntryAmountSpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>75</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>10000000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>10000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="overrideUnitSizeCheckBox">
+             <property name="text">
+              <string>Override Unit Size</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="pair1UnitOverrideLabel">
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="pair1UnitOverrideSpinBox">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="pair2UnitOverrideLabel">
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="pair2UnitOverrideSpinBox">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QCheckBox" name="tradeEntryRSIUpperCheckBox">
+             <property name="text">
+              <string>RSI Upper</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSpinBox" name="tradeEntryRSIUpperSpinBox">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="maximum">
+              <number>999</number>
+             </property>
+             <property name="value">
+              <number>70</number>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QCheckBox" name="tradeEntryRSILowerCheckBox">
+             <property name="text">
+              <string>RSI Lower</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QSpinBox" name="tradeEntryRSILowerSpinBox">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="maximum">
+              <number>999</number>
+             </property>
+             <property name="value">
+              <number>70</number>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QCheckBox" name="tradeEntryPercentFromMeanCheckBox">
+             <property name="text">
+              <string>% From Mean</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QDoubleSpinBox" name="tradeEntryPercentFromMeanDoubleSpinBox">
+             <property name="maximum">
+              <double>999.990000000000009</double>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Num StdDev Layers</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QSpinBox" name="tradeEntryNumStdDevLayersSpinBox">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>false</bool>
+             </property>
+             <property name="maximum">
+              <number>5</number>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QCheckBox" name="waitCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Wait</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QCheckBox" name="layerBufferCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Buffer</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QDoubleSpinBox" name="layerBufferDoubleSpinBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
             <widget class="QTabWidget" name="layersTabWidget">
              <property name="currentIndex">
               <number>-1</number>
@@ -674,14 +661,14 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>167</width>
-            <height>90</height>
+            <width>276</width>
+            <height>357</height>
            </rect>
           </property>
           <attribute name="label">
            <string>Trade Exit</string>
           </attribute>
-          <layout class="QFormLayout" name="formLayout_9">
+          <layout class="QFormLayout" name="formLayout_4">
            <item row="0" column="0">
             <widget class="QCheckBox" name="tradeExitPercentStopLossCheckBox">
              <property name="text">
@@ -690,25 +677,17 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QSpinBox" name="tradeExitPercentStopLossSpinBox">
-             <property name="value">
-              <number>10</number>
-             </property>
-            </widget>
+            <widget class="QDoubleSpinBox" name="tradeExitPercentStopLossDoubleSpinBox"/>
            </item>
            <item row="1" column="0">
             <widget class="QCheckBox" name="tradeExitPercentFromMeanCheckBox">
              <property name="text">
-              <string>% From Mean</string>
+              <string>% From MA</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QSpinBox" name="tradeExitPercentFromMeanSpinBox">
-             <property name="value">
-              <number>5</number>
-             </property>
-            </widget>
+            <widget class="QDoubleSpinBox" name="tradeExitPercentFromMeanDoubleSpinBox"/>
            </item>
            <item row="2" column="0">
             <widget class="QCheckBox" name="tradeExitStdDevCheckBox">

@@ -14,6 +14,10 @@
 #include "security.h"
 #include "portfoliotablewidget.h"
 #include "helpers.h"
+
+#include "ui_welcomedialog.h"
+#include "welcomedialog.h"
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -41,6 +45,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , m_ibClient(NULL)
 {
+    QTimer::singleShot(0, this, SLOT(onWelcome()));
+
     connect(&m_saveSettingsTimer, SIGNAL(timeout()), this, SLOT(onSaveSettings()));
     m_saveSettingsTimer.start(1000*60*5);
 
@@ -1026,6 +1032,33 @@ void MainWindow::onTickSize(const long &tickerId, const TickType &field, const i
     default:
         break;
     }
+}
+
+void MainWindow::onWelcome()
+{
+    QTimer t;
+    connect(&t, SIGNAL(timeout()), this, SLOT(onWelcomeTimeout()));
+    t.start(1000);
+    m_welcomeDialog = new WelcomeDialog;
+    connect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
+    m_welcomeDialog->exec();
+}
+
+void MainWindow::onWelcomeTimeout()
+{
+    static int t = 3;
+    if (t==1) {
+        m_welcomeDialog->close();
+        delete m_welcomeDialog;
+        return;
+    }
+    m_welcomeDialog->getUi()->countDownLabel->setText(QString::number(--t));
+}
+
+void MainWindow::onClearSettings()
+{
+    QSettings s;
+    s.clear();
 }
 
 QStringList MainWindow::getOrderHeaderLabels() const

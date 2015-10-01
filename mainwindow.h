@@ -18,9 +18,10 @@
 
 class IBClient;
 class PairTabPage;
-class Order;
-class OrderState;
-class Contract;
+struct Order;
+struct OrderState;
+struct Contract;
+class WelcomeDialog;
 
 
 namespace Ui {
@@ -84,6 +85,9 @@ private slots:
     void onSaveSettings();
     void onTickPrice(const TickerId & tickerId, const TickType & field, const double & price, const int & canAutoExecute);
     void onTickSize(const TickerId & tickerId, const TickType & field, const int & size);
+    void onWelcome();
+    void onWelcomeTimeout();
+    void onClearSettings();
 
 private:
     Ui::MainWindow *ui;
@@ -98,12 +102,12 @@ private:
     GlobalConfigDialog m_globalConfigDialog;
     QPoint m_ordersTableRowPoint;
     QTimer      m_saveSettingsTimer;
+    WelcomeDialog* m_welcomeDialog;
 
     void writeSettings();
     void readSettings();
     void readPageSettings();
     void updateOrdersTable(const QString & symbol, const double & last);
-
 };
 
 #endif // MAINWINDOW_H
