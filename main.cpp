@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("prodatalab");
     QCoreApplication::setOrganizationDomain("prodatalab.com");
     QCoreApplication::setApplicationName("nkny");
+
     MainWindow w;
 
 //    QSettings s;

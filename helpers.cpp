@@ -201,25 +201,52 @@ QVector<double> getDiff(const QVector<double> & vec)
     return ret;
 }
 
-QVector<double> getRatioVolatility(const QVector<double> & ratio, int period)
+QVector<double> getRatioVolatility(const QVector<double> & ratioOfHighs, const QVector<double> & ratioOfLows, int period)
 {
-    QVector<double> ret;
-    QVector<double> expMA = getExpMA(getAbsDiff(getVecTimesScalar(ratio, 100)), period);
+//    http://ta.mql4.com/indicators/oscillators/chaikin_volatility
+//    H-L (i) = HIGH (i) - LOW (i)
+//    H-L (i - 10) = HIGH (i - 10) - LOW (i - 10)
+//    CHV = (EMA (H-L (i), 10) - EMA (H-L (i - 10), 10)) / EMA (H-L (i - 10), 10) * 100
 
-    for (int i=period;i<expMA.size();++i) {
-        ret.append(((expMA.at(i) - expMA.at(i-period)) / expMA.at(i-period)) * 100);
+    QVector<double> ret;
+    QVector<double> hl;
+    QVector<double> ema;
+
+    hl = getDiff(ratioOfHighs, ratioOfLows);
+    ema = getExpMA(hl, period);
+
+    for (int i=period;i<hl.size();++i) {
+        ret.append((ema.at(i) - ema.at(i-period)) / ema(i-period) * 100);
     }
+
     return ret;
+
+//    QVector<double> expMA = getExpMA(getAbsDiff(getVecTimesScalar(ratio, 100)), period);
+
+//    for (int i=period;i<expMA.size();++i) {
+//        ret.append(((expMA.at(i) - expMA.at(i-period)) / expMA.at(i-period)) * 100);
+//    }
+//    return ret;
 }
 
-QVector<double> getPercentFromMean(const QVector<double> & vec)
+QVector<double> getPercentFromMA(const QVector<double> & vec, int period)
 {
-    double mean = getMean(vec);
-    QVector<double> ret(vec.size());
-    for (int i = 0;i<vec.size();++i) {
-        ret[i] = vec.at(i) / mean * 100;
+    QVector<double> ma = getMA(vec, period);
+    QVector<double> ret;
+
+    QVector<double> vec1 = vec.mid(vec.size()-ma.size());
+
+    for (int i=0;i<vec1.size();++i) {
+        ret.append(vec1.at(i) / ma.at(i) * 100);
     }
     return ret;
+
+//    double mean = getMean(vec);
+//    QVector<double> ret(vec.size());
+//    for (int i = 0;i<vec.size();++i) {
+//        ret[i] = vec.at(i) / mean * 100;
+//    }
+//    return ret;
 }
 
 

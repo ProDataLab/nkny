@@ -29,7 +29,7 @@ GlobalConfigDialog::GlobalConfigDialog(QWidget *parent)
     ui->tradeEntryRSILowerCheckBox_3->setCheckState((Qt::CheckState)s.value("rsiLowerCheckBoxState").toInt());
     ui->tradeEntryRSILowerSpinBox_3->setValue(s.value("rsiLower").toInt());
     ui->tradeEntryPercentFromMeanCheckBox_2->setCheckState((Qt::CheckState)s.value("percentFromMeanCheckBoxState").toInt());
-    ui->tradeEntryPercentFromMeanSpinBox_2->setValue(s.value("percentFromMean").toInt());
+    ui->tradeEntryPercentFromMeanDoubleSpinBox_2->setValue(s.value("percentFromMean").toDouble());
     ui->tradeEntryAmountSpinBox_2->setValue(s.value("amount").toInt());
     ui->waitCheckBox_2->setCheckState((Qt::CheckState)s.value("waitCheckBoxState").toInt());
     ui->layerBufferCheckBox_2->setCheckState((Qt::CheckState)s.value("bufferCheckBoxState").toInt());
@@ -40,9 +40,9 @@ GlobalConfigDialog::GlobalConfigDialog(QWidget *parent)
     ui->layerStdMinCheckBox->setCheckState((Qt::CheckState)s.value("layerStdMinCheckBoxState").toInt());
     ui->layerStdMinDoubleSpinBox->setValue(s.value("layerStdMin").toDouble());
     ui->tradeExitPercentStopLossCheckBox_2->setCheckState((Qt::CheckState)s.value("percentStopLossCheckBoxState").toInt());
-    ui->tradeExitPercentStopLossSpinBox_2->setValue(s.value("percentStopLoss").toInt());
+    ui->tradeExitPercentStopLossDoubleSpinBox_2->setValue(s.value("percentStopLoss").toDouble());
     ui->tradeExitPercentFromMeanCheckBox_2->setCheckState((Qt::CheckState) s.value("tradeExitPercentFromMeanCheckBoxState").toInt());
-    ui->tradeExitPercentFromMeanSpinBox_2->setValue(s.value("tradeExitPercentFromMean").toInt());
+    ui->tradeExitPercentFromMeanDoubleSpinBox_2->setValue(s.value("tradeExitPercentFromMean").toDouble());
     ui->tradeExitStdDevCheckBox_2->setCheckState((Qt::CheckState)s.value("stdDevExitCheckBoxState").toInt());
     ui->tradeExitStdDevDoubleSpinBox_2->setValue(s.value("stdDevExit").toDouble());
     s.endGroup();
@@ -80,7 +80,7 @@ void GlobalConfigDialog::on_buttonBox_accepted()
     s.setValue("rsiLowerCheckBoxState", ui->tradeEntryRSILowerCheckBox_3->checkState());
     s.setValue("rsiLower", ui->tradeEntryRSILowerSpinBox_3->value());
     s.setValue("percentFromMeanCheckBoxState", ui->tradeEntryPercentFromMeanCheckBox_2->checkState());
-    s.setValue("percentFromMean", ui->tradeEntryPercentFromMeanSpinBox_2->value());
+    s.setValue("percentFromMean", ui->tradeEntryPercentFromMeanDoubleSpinBox_2->value());
     s.setValue("numStdDevLayers", ui->tradeEntryNumStdDevLayersSpinBox_2->value());
     s.setValue("waitCheckBoxState", ui->waitCheckBox_2->checkState());
     s.setValue("bufferCheckBoxState", ui->layerBufferCheckBox_2->checkState());
@@ -91,17 +91,18 @@ void GlobalConfigDialog::on_buttonBox_accepted()
     s.setValue("layerStdMinCheckBoxState", ui->layerStdMinCheckBox->checkState());
     s.setValue("layerStdMin", ui->layerStdMinDoubleSpinBox->value());
     s.setValue("percentStopLossCheckBoxState", ui->tradeExitPercentStopLossCheckBox_2->checkState());
-    s.setValue("percentStopLoss", ui->tradeExitPercentStopLossSpinBox_2->value());
+    s.setValue("percentStopLoss", ui->tradeExitPercentStopLossDoubleSpinBox_2->value());
     s.setValue("tradeExitPercentFromMeanCheckBoxState", ui->tradeExitPercentFromMeanCheckBox_2->checkState());
-    s.setValue("tradeExitPercentFromMean", ui->tradeExitPercentFromMeanSpinBox_2->value());
+    s.setValue("tradeExitPercentFromMean", ui->tradeExitPercentFromMeanDoubleSpinBox_2->value());
     s.setValue("stdDevExitCheckBoxState", ui->tradeExitStdDevCheckBox_2->checkState());
     s.setValue("stdDevExit", ui->tradeExitStdDevDoubleSpinBox_2->value());
     s.endGroup();
 }
 
-void GlobalConfigDialog::closeEvent()
+void GlobalConfigDialog::closeEvent(QCloseEvent *evt)
 {
     on_buttonBox_accepted();
+    QDialog::closeEvent(evt);
 }
 
 void GlobalConfigDialog::keyPressEvent(QKeyEvent *evt)

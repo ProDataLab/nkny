@@ -21,8 +21,8 @@ QVector<double> getRatio(const QVector<double> & vec1, const QVector<double> & v
 QVector<double> getDiff(const QVector<double> & vec);
 QVector<double> getAbsDiff(const QVector<double> & vec);
 QVector<double> getDiff(const QVector<double> & vec1, const QVector<double> & vec2);
-QVector<double> getRatioVolatility(const QVector<double> & ratio, int period);
-QVector<double> getPercentFromMean(const QVector<double> & vec);
+QVector<double> getRatioVolatility(const QVector<double> & ratioOfHighs, const QVector<double> &ratioOfLows, int period);
+QVector<double> getPercentFromMA(const QVector<double> & vec, int period);
 int getMinSize(int s1, int s2);
 QVector<double> getVecTimesScalar(const QVector<double> & vec, double scalar);
 
