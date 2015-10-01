@@ -97,7 +97,7 @@ void IBClient::send()
     if (sent == m_outBuffer.size())
         m_outBuffer.clear();
     else {
-        qDebug() << "[WARNING !!!] NOT ALL DATA IN THE OUT BUFFER WAS SENT... PREPENDING TO NEXT MESSAGE";
+//qDebug() << "[WARNING !!!] NOT ALL DATA IN THE OUT BUFFER WAS SENT... PREPENDING TO NEXT MESSAGE";
         m_outBuffer.remove(0, sent + 1);
     }
 }
@@ -353,7 +353,7 @@ void IBClient::reqRealTimeBars(const long &tickerId, const Contract &contract, c
 
 void IBClient::placeOrder(long id, const Contract &contract, const Order &order)
 {
-    qDebug() << "[DEBUG-IBClient::placeOrder]";
+//qDebug() << "[DEBUG-IBClient::placeOrder]";
 
     // not connected?
     if( !m_connected) {
@@ -1023,7 +1023,7 @@ void IBClient::reqContractDetails(int reqId, const Contract &contract)
 
 void IBClient::reqIds(int numIds)
 {
-    qDebug() << "[DEBUG-reqIds]";
+//qDebug() << "[DEBUG-reqIds]";
 
     // not connected?
     if( !m_connected) {
@@ -1061,7 +1061,7 @@ void IBClient::cancelMktData(long tickerId)
 
 void IBClient::onConnected()
 {
-    qDebug() << "TWS is connected";
+//qDebug() << "TWS is connected";
 //    m_socket->setSocketOption(QAbstractSocket::ReceiveBufferSizeSocketOption, 16384);
 //    /*qDebug*/() << "[DEBUG-onConnected] socketRecvBufferSize:" << m_socket->socketOption(QAbstractSocket::ReceiveBufferSizeSocketOption).toInt();
 //    qDebug() << "[DEBUG-onConnected] readBufferSize:" << m_socket->readBufferSize();
@@ -1090,13 +1090,13 @@ void IBClient::onReadyRead()
     // I'M GETTING EMPTY MESSAGES.. IS THIS THE CORRECT WAY TO HANDLE THIS ???
 
     if (m_inBuffer.isEmpty()) {
-        qDebug() << "Received empty onReadyRead message.. ignoring it..";
+//qDebug() << "Received empty onReadyRead message.. ignoring it..";
         return;
     }
 
     // WHY ARE MESSAGES FROM TWS SARTING WITH A '\0' ??? ... IS THIS THE CORRECT WAY TO HANDLE IT?
     if (m_inBuffer.startsWith('\0')) {
-        qDebug() << "[DEBUG] onReadyRead message started with a \'\0\' ??? wtf, I'm removing it";
+//qDebug() << "[DEBUG] onReadyRead message started with a \'\0\' ??? wtf, I'm removing it";
         m_inBuffer.remove(0, 1);
     }
 
@@ -2056,7 +2056,7 @@ void IBClient::onReadyRead()
 
             //            assert( (int)bars.size() == itemCount);
 
-            qDebug() << "[DEBUG-HISTORICAL_DATA] bars.size():" << bars.size() << "itemCount:" << itemCount;
+//qDebug() << "[DEBUG-HISTORICAL_DATA] bars.size():" << bars.size() << "itemCount:" << itemCount;
 
             for( int ctr = 0; ctr < bars.size(); ++ctr) {
 
@@ -2444,7 +2444,7 @@ void IBClient::onReadyRead()
 
         default:
         {
-            qDebug() << "[CRITICAL] UNKNOWN_ID:" << msgId;
+//qDebug() << "[CRITICAL] UNKNOWN_ID:" << msgId;
             emit error( msgId, UNKNOWN_ID.code(), UNKNOWN_ID.msg());
             disconnectTWS();
             emit connectionClosed();
@@ -2485,7 +2485,7 @@ void IBClient::onSocketError(QAbstractSocket::SocketError socketError)
 //    QAbstractSocket::TemporaryError	22	A temporary error occurred (e.g., operation would block and socket is non-blocking).
 //    QAbstractSocket::UnknownSocketError	-1	An unidentified error occurred.
 
-    qDebug() << "[DEBUG-onSocketError] ERROR:" << socketError;
+//qDebug() << "[DEBUG-onSocketError] ERROR:" << socketError;
     switch (socketError)
     {
     case QAbstractSocket::ConnectionRefusedError:

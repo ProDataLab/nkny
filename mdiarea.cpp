@@ -32,7 +32,7 @@ void MdiArea::onTiledAct()
 
 void MdiArea::contextMenuEvent(QContextMenuEvent *event)
 {
-    qDebug() << "[DEBUG-contextMenuEvent]";
+//qDebug() << "[DEBUG-contextMenuEvent]";
     QMenu menu(this);
     if (viewMode() == QMdiArea::SubWindowView) {
         menu.addAction("Cascade View", this, SLOT(onCascadeAct()));

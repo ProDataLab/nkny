@@ -155,6 +155,8 @@ public:
 
     void handleRawBarData();
 
+    double getLastBarsTimeStamp() const;
+
 signals:
 
 public slots:
