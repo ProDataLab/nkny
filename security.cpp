@@ -399,7 +399,7 @@ void Security::handleRawBarData()
             timeStamp = dvr->timeStamp.at(i);
 
 //            qDebug() << "[DEBUG-" << __func__ << "] price:" << dvr->price.at(i);
-            if (timeStamp < firstTimeStamp)
+            if (timeStamp < firstTimeStamp) {
                 continue;
             }
             if (timeStamp < newBarsTimeStamp) {

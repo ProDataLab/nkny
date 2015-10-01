@@ -71,13 +71,13 @@
          <property name="currentIndex">
           <number>0</number>
          </property>
-         <widget class="QWidget" name="pair1Tab">
+         <widget class="QWidget" name="pairsPage">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>276</width>
-            <height>357</height>
+            <width>273</width>
+            <height>396</height>
            </rect>
           </property>
           <attribute name="label">
@@ -210,69 +210,91 @@
              <property name="currentIndex">
               <number>0</number>
              </property>
-             <widget class="QWidget" name="tab_2">
+             <widget class="QWidget" name="pair1Tab">
               <attribute name="title">
                <string>Tab 1</string>
               </attribute>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
-               <item>
-                <widget class="QPushButton" name="pair1ShowButton">
-                 <property name="enabled">
-                  <bool>true</bool>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>75</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Show</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="ContractDetailsWidget" name="pair1ContractDetailsWidget" native="true"/>
-               </item>
-              </layout>
+              <widget class="ContractDetailsWidget" name="pair1ContractDetailsWidget" native="true">
+               <property name="geometry">
+                <rect>
+                 <x>9</x>
+                 <y>152</y>
+                 <width>238</width>
+                 <height>137</height>
+                </rect>
+               </property>
+              </widget>
+              <widget class="QPushButton" name="pair1ShowButton">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>10</y>
+                 <width>75</width>
+                 <height>23</height>
+                </rect>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>75</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Show</string>
+               </property>
+              </widget>
              </widget>
              <widget class="QWidget" name="pair2Tab">
               <attribute name="title">
                <string>Tab 2</string>
               </attribute>
-              <layout class="QVBoxLayout" name="verticalLayout_5">
-               <item>
-                <widget class="QPushButton" name="pair2ShowButton">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>75</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Show</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="ContractDetailsWidget" name="pair2ContractDetailsWidget" native="true"/>
-               </item>
-              </layout>
+              <widget class="ContractDetailsWidget" name="pair2ContractDetailsWidget" native="true">
+               <property name="geometry">
+                <rect>
+                 <x>9</x>
+                 <y>152</y>
+                 <width>238</width>
+                 <height>137</height>
+                </rect>
+               </property>
+              </widget>
+              <widget class="QPushButton" name="pair2ShowButton">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="geometry">
+                <rect>
+                 <x>10</x>
+                 <y>10</y>
+                 <width>75</width>
+                 <height>23</height>
+                </rect>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>75</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Show</string>
+               </property>
+              </widget>
              </widget>
             </widget>
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="page_2">
+         <widget class="QWidget" name="configurationPage">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>276</width>
-            <height>357</height>
+            <width>273</width>
+            <height>396</height>
            </rect>
           </property>
           <attribute name="label">
@@ -438,13 +460,13 @@
            </layout>
           </widget>
          </widget>
-         <widget class="QWidget" name="page_4">
+         <widget class="QWidget" name="tradeEntryPage">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>262</width>
-            <height>411</height>
+            <width>273</width>
+            <height>396</height>
            </rect>
           </property>
           <attribute name="label">
@@ -530,6 +552,9 @@
            </item>
            <item row="5" column="0">
             <widget class="QCheckBox" name="tradeEntryRSIUpperCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="text">
               <string>RSI Upper</string>
              </property>
@@ -537,6 +562,9 @@
            </item>
            <item row="5" column="1">
             <widget class="QSpinBox" name="tradeEntryRSIUpperSpinBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="maximumSize">
               <size>
                <width>50</width>
@@ -553,6 +581,9 @@
            </item>
            <item row="6" column="0">
             <widget class="QCheckBox" name="tradeEntryRSILowerCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="text">
               <string>RSI Lower</string>
              </property>
@@ -560,6 +591,9 @@
            </item>
            <item row="6" column="1">
             <widget class="QSpinBox" name="tradeEntryRSILowerSpinBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="maximumSize">
               <size>
                <width>50</width>
@@ -656,13 +690,13 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="page_5">
+         <widget class="QWidget" name="tradeExitPage">
           <property name="geometry">
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>276</width>
-            <height>357</height>
+            <width>273</width>
+            <height>396</height>
            </rect>
           </property>
           <attribute name="label">
@@ -711,6 +745,19 @@
            </item>
           </layout>
          </widget>
+         <widget class="DataToolBoxWidget" name="chartDataPage">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>273</width>
+            <height>396</height>
+           </rect>
+          </property>
+          <attribute name="label">
+           <string>ChartData</string>
+          </attribute>
+         </widget>
         </widget>
        </item>
       </layout>
@@ -731,6 +778,12 @@
    <class>MdiArea</class>
    <extends>QWidget</extends>
    <header>mdiarea.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DataToolBoxWidget</class>
+   <extends>QWidget</extends>
+   <header>datatoolboxwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

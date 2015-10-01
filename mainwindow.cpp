@@ -1042,6 +1042,8 @@ void MainWindow::onWelcome()
     m_welcomeDialog = new WelcomeDialog;
     connect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
     m_welcomeDialog->exec();
+    t.stop();
+//    disconnect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
 }
 
 void MainWindow::onWelcomeTimeout()
@@ -1065,6 +1067,7 @@ QStringList MainWindow::getOrderHeaderLabels() const
 {
     return m_orderHeaderLabels;
 }
+
 
 GlobalConfigDialog *MainWindow::getGlobalConfigDialog() const
 {

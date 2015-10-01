@@ -96,11 +96,24 @@ QVector<double> getRSI(const QVector<double> & vec, int period)
     QVector<double> ret;
 
     for (int i=1;i<vec.size();++i) {
-        double diff = vec.at(i) - vec.at(i-1);
-        if (diff > 0)
-            gainSum += diff;
-        else if (diff < 0)
-            lossSum += diff * -1;
+        double lval = vec.at(i-1);
+        double val  = vec.at(i);
+        double diff = val - lval;
+        if (diff > 0) {
+            if (val < 1 && lval < 1) {
+                gainSum += diff;
+            }
+            else
+                lossSum += diff;
+        }
+        else {
+            if (val < 1 && lval < 1) {
+                lossSum += diff * -1;
+            }
+            else {
+                gainSum += diff * -1;
+            }
+        }
         if (i==period) {
             prevGainAvg = gainSum / period;
             prevLossAvg = lossSum / period;
@@ -216,7 +229,7 @@ QVector<double> getRatioVolatility(const QVector<double> & ratioOfHighs, const Q
     ema = getExpMA(hl, period);
 
     for (int i=period;i<hl.size();++i) {
-        ret.append((ema.at(i) - ema.at(i-period)) / ema(i-period) * 100);
+        ret.append((ema.at(i) - ema.at(i-period)) / ema.at(i-period) * 100);
     }
 
     return ret;
