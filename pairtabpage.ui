@@ -76,8 +76,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>273</width>
-            <height>396</height>
+            <width>276</width>
+            <height>322</height>
            </rect>
           </property>
           <attribute name="label">
@@ -214,75 +214,53 @@
               <attribute name="title">
                <string>Tab 1</string>
               </attribute>
-              <widget class="ContractDetailsWidget" name="pair1ContractDetailsWidget" native="true">
-               <property name="geometry">
-                <rect>
-                 <x>9</x>
-                 <y>152</y>
-                 <width>238</width>
-                 <height>137</height>
-                </rect>
-               </property>
-              </widget>
-              <widget class="QPushButton" name="pair1ShowButton">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="geometry">
-                <rect>
-                 <x>10</x>
-                 <y>10</y>
-                 <width>75</width>
-                 <height>23</height>
-                </rect>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>75</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Show</string>
-               </property>
-              </widget>
+              <layout class="QVBoxLayout" name="verticalLayout">
+               <item>
+                <widget class="QPushButton" name="pair1ShowButton">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>75</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Show</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ContractDetailsWidget" name="pair1ContractDetailsWidget" native="true"/>
+               </item>
+              </layout>
              </widget>
              <widget class="QWidget" name="pair2Tab">
               <attribute name="title">
                <string>Tab 2</string>
               </attribute>
-              <widget class="ContractDetailsWidget" name="pair2ContractDetailsWidget" native="true">
-               <property name="geometry">
-                <rect>
-                 <x>9</x>
-                 <y>152</y>
-                 <width>238</width>
-                 <height>137</height>
-                </rect>
-               </property>
-              </widget>
-              <widget class="QPushButton" name="pair2ShowButton">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="geometry">
-                <rect>
-                 <x>10</x>
-                 <y>10</y>
-                 <width>75</width>
-                 <height>23</height>
-                </rect>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>75</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Show</string>
-               </property>
-              </widget>
+              <layout class="QVBoxLayout" name="verticalLayout_4">
+               <item>
+                <widget class="QPushButton" name="pair2ShowButton">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>75</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Show</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ContractDetailsWidget" name="pair2ContractDetailsWidget" native="true"/>
+               </item>
+              </layout>
              </widget>
             </widget>
            </item>
@@ -293,8 +271,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>273</width>
-            <height>396</height>
+            <width>276</width>
+            <height>322</height>
            </rect>
           </property>
           <attribute name="label">
@@ -465,8 +443,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>273</width>
-            <height>396</height>
+            <width>262</width>
+            <height>411</height>
            </rect>
           </property>
           <attribute name="label">
@@ -695,8 +673,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>273</width>
-            <height>396</height>
+            <width>276</width>
+            <height>322</height>
            </rect>
           </property>
           <attribute name="label">
@@ -750,8 +728,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>273</width>
-            <height>396</height>
+            <width>276</width>
+            <height>322</height>
            </rect>
           </property>
           <attribute name="label">
