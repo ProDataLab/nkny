@@ -238,7 +238,7 @@ void MainWindow::on_actionConnect_To_TWS_triggered()
 void MainWindow::onManagedAccounts(const QByteArray &msg)
 {
     m_managedAccounts = QString(msg).split(',', QString::SkipEmptyParts);
-    qDebug() << "[DEBUG-onManagedAccounts]" << m_managedAccounts;
+//qDebug() << "[DEBUG-onManagedAccounts]" << m_managedAccounts;
     m_globalConfigDialog.setMangagedAccounts(m_managedAccounts);
     ui->actionGlobal_Config->setEnabled(true);
 
@@ -281,7 +281,7 @@ void MainWindow::onIbSocketError(const QString &error)
 
 void MainWindow::onNextValidId(long orderId)
 {
-    qDebug() << "[DEBUG-onNextValidId] orderId:" << orderId;
+//qDebug() << "[DEBUG-onNextValidId] orderId:" << orderId;
     m_ibClient->setOrderId(orderId);
 }
 
@@ -289,7 +289,7 @@ void MainWindow::onCurrentTime(long time)
 {
     QDateTime dt(QDateTime::fromTime_t(time));
 
-    qDebug() << "[DEBUG-OnCurrentTime]" << dt;
+//qDebug() << "[DEBUG-OnCurrentTime]" << dt;
 }
 
 void MainWindow::onTwsConnected()
@@ -323,7 +323,7 @@ void MainWindow::onTwsConnectionClosed()
 
 void MainWindow::onTabCloseRequested(int idx)
 {
-    qDebug() << "[DEBUG-onTabCloseRequested]";
+//qDebug() << "[DEBUG-onTabCloseRequested]";
 
     PairTabPage* p = m_pairTabPageMap.value(idx);
 
@@ -350,17 +350,17 @@ void MainWindow::onTabCloseRequested(int idx)
 void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int filled, int remaining, double avgFillPrice,
                                 int permId, int parentId, double lastFillPrice, int clientId, const QByteArray &whyHeld)
 {
-    qDebug() << "[DEBUG-onOrderStatus]"
-             << orderId
-             << status
-             << filled
-             << remaining
-             << avgFillPrice
-             << permId
-             << parentId
-             << lastFillPrice
-             << clientId
-             << whyHeld;
+//qDebug() << "[DEBUG-onOrderStatus]"
+//             << orderId
+//             << status
+//             << filled
+//             << remaining
+//             << avgFillPrice
+//             << permId
+//             << parentId
+//             << lastFillPrice
+//             << clientId
+//             << whyHeld;
 
     // THIS IS TEMPORARY  ... FIX ME !!!!
     if (status == "PendingCancel" || status == "Cancelled")
@@ -414,7 +414,7 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     // is this an order initiated from TWS interface?
     if (!isS1 && !isS2) {
         // FIXME.. I need to address this !!!!!!!!!!!!!!!!
-        qDebug() << "[DEBUG-onOrderStatus] WARNING: orderId (" << orderId << ") not known.. is it from TWS?";
+//qDebug() << "[DEBUG-onOrderStatus] WARNING: orderId (" << orderId << ") not known.. is it from TWS?";
         return;
     }
 
@@ -618,13 +618,14 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
 
 void MainWindow::onOpenOrder(long orderId, const Contract &contract, const Order &order, const OrderState &orderState)
 {
-    qDebug() << "[DEBUG-onOpenOrder]"
-             << orderId
-             << contract.symbol
-             << order.action
-             << orderState.initMargin
-             << orderState.maintMargin
-             << orderState.status;
+    Q_UNUSED(contract);
+//qDebug() << "[DEBUG-onOpenOrder]"
+//             << orderId
+//             << contract.symbol
+//             << order.action
+//             << orderState.initMargin
+//             << orderState.maintMargin
+//             << orderState.status;
 
     for (int i=0;i<m_pairTabPageMap.count();++i) {
         if (m_pairTabPageMap.value(i) == NULL)
@@ -644,7 +645,7 @@ void MainWindow::onOpenOrder(long orderId, const Contract &contract, const Order
 
 void MainWindow::onOpenOrderEnd()
 {
-    qDebug() << "[DEBUG-onOpenOrderEnd]";
+//qDebug() << "[DEBUG-onOpenOrderEnd]";
 }
 
 void MainWindow::onUpdatePortfolio( const Contract& contract, int position,
@@ -654,15 +655,15 @@ void MainWindow::onUpdatePortfolio( const Contract& contract, int position,
     if (position == 0)
         return;
 
-    qDebug() << "[DEBUG-onUpdatePortfolio]"
-             << contract.symbol << " (" << contract.conId << ") "
-             << position
-             << marketPrice
-             << marketValue
-             << averageCost
-             << unrealizedPNL
-             << realizedPNL
-             << accountName;
+//qDebug() << "[DEBUG-onUpdatePortfolio]"
+//             << contract.symbol << " (" << contract.conId << ") "
+//             << position
+//             << marketPrice
+//             << marketValue
+//             << averageCost
+//             << unrealizedPNL
+//             << realizedPNL
+//             << accountName;
 
 
     // update orders table
@@ -749,7 +750,7 @@ void MainWindow::onUpdatePortfolio( const Contract& contract, int position,
         else
             continue;
     }
-    qDebug() << "[DEBUG-onUpdatePortfolio] END";
+//qDebug() << "[DEBUG-onUpdatePortfolio] END";
 }
 
 void MainWindow::onUpdateAccountTime(const QByteArray &timeStamp)
@@ -760,13 +761,14 @@ void MainWindow::onUpdateAccountTime(const QByteArray &timeStamp)
 
 void MainWindow::onAccountDownloadEnd(const QByteArray &accountName)
 {
-    qDebug() << "[DEBUG-onAccountDownloadEnd]" << accountName;
+    Q_UNUSED(accountName);
+//qDebug() << "[DEBUG-onAccountDownloadEnd]" << accountName;
 }
 
 
 void MainWindow::writeSettings()
 {
-    qDebug() << "[DEBUG-MainWindow::writeSettings]";
+//qDebug() << "[DEBUG-MainWindow::writeSettings]";
 
     QSettings settings;
     settings.beginGroup("mainwindow");
@@ -798,7 +800,7 @@ void MainWindow::writeSettings()
         if (!page)
             continue;
         QString tabSymbol = page->getTabSymbol();
-        qDebug() << "[DEBUG-MainWindow::writeSettings] tabSymbol" << i << ":" << tabSymbol;
+//qDebug() << "[DEBUG-MainWindow::writeSettings] tabSymbol" << i << ":" << tabSymbol;
         settings.setValue("tabSymbol", tabSymbol);
         page->writeSettings();
     }
@@ -836,7 +838,7 @@ void MainWindow::readPageSettings()
     s.beginGroup("mainwindow");
     int size = s.beginReadArray("pages");
 
-    qDebug() << "[DEBUG-readPageSettings] size" << size;
+//qDebug() << "[DEBUG-readPageSettings] size" << size;
 
     for (int i=0;i<size;++i) {
 
@@ -844,7 +846,7 @@ void MainWindow::readPageSettings()
         PairTabPage* p = new PairTabPage(m_ibClient, m_managedAccounts, this);
         m_pairTabPageMap[ui->tabWidget->count()] = p;
         QString tabSymbol = s.value("tabSymbol").toString();
-        qDebug() << "[DEBUG-readPageSettings] tabSymbol" << i << ":" << tabSymbol;
+//qDebug() << "[DEBUG-readPageSettings] tabSymbol" << i << ":" << tabSymbol;
         p->setTabSymbol(tabSymbol);
         p->readSettings();
 
@@ -911,7 +913,7 @@ void MainWindow::onCloseOrder()
 
 void MainWindow::onHomeTabMoved(int from, int to)
 {
-    qDebug() << "[DEBUG-onHomeTabMoved] from:" << from << "to:" << to;
+//qDebug() << "[DEBUG-onHomeTabMoved] from:" << from << "to:" << to;
 
     QMap<int, PairTabPage*> tmpMap;
     for (int i=0;i<m_pairTabPageMap.count();++i) {
@@ -981,7 +983,7 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
     }
 
     if (!s) {
-        qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
+//qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
     }
 
     switch (field)
@@ -1018,13 +1020,13 @@ void MainWindow::onTickSize(const long &tickerId, const TickType &field, const i
     }
 
     if (!s) {
-        qDebug() << "[ERROR]" << __PRETTY_FUNCTION__ << __LINE__ << "where is the tickerId???";
+//qDebug() << "[ERROR]" << __PRETTY_FUNCTION__ << __LINE__ << "where is the tickerId???";
     }
 
     switch (field)
     {
     case LAST_SIZE:
-        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "SIZE:" << size;
+//qDebug() << "[DEBUG]" << __func__ << __LINE__ << "SIZE:" << size;
         s->appendRawSize(size);
         break;
     default:
@@ -1040,6 +1042,8 @@ void MainWindow::onWelcome()
     m_welcomeDialog = new WelcomeDialog;
     connect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
     m_welcomeDialog->exec();
+    t.stop();
+//    disconnect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
 }
 
 void MainWindow::onWelcomeTimeout()
@@ -1063,6 +1067,7 @@ QStringList MainWindow::getOrderHeaderLabels() const
 {
     return m_orderHeaderLabels;
 }
+
 
 GlobalConfigDialog *MainWindow::getGlobalConfigDialog() const
 {
@@ -1168,7 +1173,7 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
         }
     }
     qDeleteAll(infoList);
-    qDebug() << "[DEBUG-updateOrdersTable] END";
+//qDebug() << "[DEBUG-updateOrdersTable] END";
 }
 
 

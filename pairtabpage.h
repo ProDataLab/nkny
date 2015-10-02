@@ -138,7 +138,7 @@ private:
     QVector<double>                         m_ratioVolatility;
     QVector<double>                         m_pair1RSI;
     QVector<double>                         m_pair2RSI;
-    QVector<double>                         m_rSISpread;
+    QVector<double>                         m_rsiSpread;
     QString                                 m_origButtonStyleSheet;
 
     bool                                    m_ratioRSITriggerActivated;
@@ -163,6 +163,10 @@ private:
     bool                                    m_canSetTabWidgetCurrentIndex;
     QAction*                                m_cascadeAct;
     bool                                    m_readingSettings;
+    bool                                    m_mdiCascade;
+    bool                                    m_mdiTile;
+    bool                                    m_pair1ShowButtonClickedAlready;
+    bool                                    m_pair2ShowButtonClickedAlready;
 
     struct GraphInfo
     {

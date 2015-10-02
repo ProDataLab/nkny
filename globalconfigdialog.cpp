@@ -122,10 +122,10 @@ void GlobalConfigDialog::setMangagedAccounts(const QStringList &managedAccounts)
     s.beginGroup("default");
 //    ui->managedAccountsComboBox_2->setCurrentIndex(s.value("account").toInt());
     //    ui->managedAccountsComboBox_2->setCurrentIndex(s.value("account").toInt());
-    qDebug() << "ACCOUNTS.SIZE:" << ui->managedAccountsComboBox_2->count();
+//qDebug() << "ACCOUNTS.SIZE:" << ui->managedAccountsComboBox_2->count();
     for (int i=0;i<ui->managedAccountsComboBox_2->count();++i) {
         QString txt = ui->managedAccountsComboBox_2->itemText(i);
-        qDebug() << "ACCOUNTS:" << txt;
+//qDebug() << "ACCOUNTS:" << txt;
         if (txt == s.value("accountString").toString()) {
             ui->managedAccountsComboBox_2->setCurrentIndex(i);
             break;

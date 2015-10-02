@@ -15,6 +15,8 @@ public:
     explicit DataToolBoxWidget(QWidget *parent = 0);
     ~DataToolBoxWidget();
 
+    Ui::DataToolBoxWidget *getUi() const;
+
 private:
     Ui::DataToolBoxWidget *ui;
 };

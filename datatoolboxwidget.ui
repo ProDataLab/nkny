@@ -22,12 +22,15 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QLineEdit" name="lineEdit_3">
+    <widget class="QLineEdit" name="lastRatioLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -39,29 +42,35 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="QLineEdit" name="lineEdit_4">
+    <widget class="QLineEdit" name="lastMaLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="label_9">
      <property name="text">
-      <string>% From Mean</string>
+      <string>% From MA</string>
      </property>
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="QLineEdit" name="lineEdit_5">
+    <widget class="QLineEdit" name="lastPcntFromMaLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -73,12 +82,15 @@
     </widget>
    </item>
    <item row="3" column="1">
-    <widget class="QLineEdit" name="lineEdit_6">
+    <widget class="QLineEdit" name="lastStdDevLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -90,12 +102,15 @@
     </widget>
    </item>
    <item row="4" column="1">
-    <widget class="QLineEdit" name="lineEdit_7">
+    <widget class="QLineEdit" name="lastCorrelationLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -107,12 +122,15 @@
     </widget>
    </item>
    <item row="5" column="1">
-    <widget class="QLineEdit" name="lineEdit_8">
+    <widget class="QLineEdit" name="lastCointegrationLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -124,46 +142,55 @@
     </widget>
    </item>
    <item row="6" column="1">
-    <widget class="QLineEdit" name="lineEdit_9">
+    <widget class="QLineEdit" name="lastVolatilityLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
    <item row="7" column="0">
     <widget class="QLabel" name="label_14">
      <property name="text">
-      <string>RSI</string>
+      <string> RSI of Ratio</string>
      </property>
     </widget>
    </item>
    <item row="7" column="1">
-    <widget class="QLineEdit" name="lineEdit_10">
+    <widget class="QLineEdit" name="lastRsiOfRatioLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
    <item row="8" column="0">
     <widget class="QLabel" name="label_15">
      <property name="text">
-      <string>RSI of Ratio</string>
+      <string>RSI Spread</string>
      </property>
     </widget>
    </item>
    <item row="8" column="1">
-    <widget class="QLineEdit" name="lineEdit_11">
+    <widget class="QLineEdit" name="lastRsiSpreadLineEdit">
      <property name="maximumSize">
       <size>
        <width>50</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </item>

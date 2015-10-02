@@ -1,6 +1,7 @@
 #include "security.h"
 #include "helpers.h"
 #include "pairtabpage.h"
+#include <QCoreApplication>
 
 Security::Security(const long &tickerId, QObject *parent)
     : QObject(parent)
@@ -32,15 +33,17 @@ void Security::appendHistData(TimeFrame timeFrame, double timeStamp, double open
     else
         dvh = (DataVecsHist*)m_dataMap.value(timeFrame);
 
-    dvh->timeStamp += timeStamp;
-    dvh->open += open;
-    dvh->high += high;
-    dvh->low += low;
-    dvh->close += close;
-    dvh->volume += (uint)volume;
-    dvh->barCount += (uint)barCount;
-    dvh->wap += wap;
-    dvh->hasGaps += (bool)hasGaps;
+    dvh->timeStamp.append(timeStamp);
+    dvh->open.append(open);
+    dvh->high.append(high);
+    dvh->low.append(low);
+    dvh->close.append(close);
+    dvh->volume.append((uint)volume);
+    dvh->barCount.append((uint)barCount);
+    dvh->wap.append(wap);
+    dvh->hasGaps.append((bool)hasGaps);
+
+    m_lastBarsTimeStamp = timeStamp;
 }
 
 void Security::appendNewBarData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps)
@@ -53,15 +56,17 @@ void Security::appendNewBarData(TimeFrame timeFrame, double timeStamp, double op
     else
         dvn = m_newBarDataMap.value(timeFrame);
 
-    dvn->timeStamp += timeStamp;
-    dvn->open += open;
-    dvn->high += high;
-    dvn->low += low;
-    dvn->close += close;
-    dvn->volume += (uint)volume;
-    dvn->barCount += (uint)barCount;
-    dvn->wap += wap;
-    dvn->hasGaps += (bool)hasGaps;
+    dvn->timeStamp.append(timeStamp);
+    dvn->open.append(open);
+    dvn->high.append(high);
+    dvn->low.append(low);
+    dvn->close.append(close);
+    dvn->volume.append((uint)volume);
+    dvn->barCount.append((uint)barCount);
+    dvn->wap.append(wap);
+    dvn->hasGaps.append((bool)hasGaps);
+
+    m_lastBarsTimeStamp = timeStamp;
 }
 
 void Security::appendMoreBarData(TimeFrame timeFrame, double timeStamp, double open, double high, double low, double close, int volume, int barCount, double wap, int hasGaps)
@@ -105,11 +110,11 @@ void Security::appendRawSize(const int &size)
             dvr->size[dvr->size.size()-1] = size;
         }
         else {
-            qDebug() << "[DEBUG-appendRawSize] duplicate size data for a single price datum";
+//qDebug() << "[DEBUG-appendRawSize] duplicate size data for a single price datum";
         }
     }
     else {
-        qDebug() << "[ERROR-appendRawSize] size is coming in before price";
+//qDebug() << "[ERROR-appendRawSize] size is coming in before price";
     }
 }
 
@@ -232,7 +237,7 @@ void Security::handleNewBarData(TimeFrame timeFrame)
 
     DataVecsNewBar* dvn = m_newBarDataMap.value(timeFrame);
 
-    qDebug() << "[DEBUG-handleNewBarData] numNewBars:" << dvn->timeStamp.size();
+//    qDebug() << "[DEBUG-handleNewBarData] numNewBars:" << dvn->timeStamp.size();
 
     DataVecsHist*   dvh =(DataVecsHist*) m_dataMap.value(timeFrame);
 
@@ -257,7 +262,7 @@ void Security::handleNewBarData(TimeFrame timeFrame)
 
         if (dt > lbdt) {
 
-            qDebug() << "[DEBUG-Security::handleNewBarData] appending timeStamp:" << dt.toString("yyMMdd/hh:mm:ss");
+//qDebug() << "[DEBUG-Security::handleNewBarData] appending timeStamp:" << (uint)dvn->timeStamp.at(i);
 
             dvh->timeStamp.append(dt.toTime_t());
             dvh->open.append(dvn->open.at(i));
@@ -270,13 +275,15 @@ void Security::handleNewBarData(TimeFrame timeFrame)
             dvh->hasGaps.append(dvn->hasGaps.at(i));
 
             m_lastBarsTimeStamp = (double)dt.toTime_t();
+
+            qDebug() << "[DEBUG-" << __func__ << "] m_lastBarsTimeStamp:" << (uint)m_lastBarsTimeStamp;
         }
     }
 
     m_newBarDataMap.remove(timeFrame);
     isFirstTime = false;
 
-    qDebug() << "[DEBUG-handleNewBarData] leaving";
+//qDebug() << "[DEBUG-handleNewBarData] leaving";
 }
 
 
@@ -349,6 +356,7 @@ void Security::setRealTimeTickerId(long realTimeTickerId)
 void Security::handleRawBarData()
 {        
     static bool isFirstRun = true;
+
     DataVecsRaw* dvr = m_rawDataMap.values().at(0);
     DataVecsHist* dvh = (DataVecsHist*)m_dataMap.values().at(0);
 
@@ -389,9 +397,11 @@ void Security::handleRawBarData()
 
         for (int i=0;i<dvr->timeStamp.size();++i) {
             timeStamp = dvr->timeStamp.at(i);
+
 //            qDebug() << "[DEBUG-" << __func__ << "] price:" << dvr->price.at(i);
-            if (timeStamp < firstTimeStamp)
+            if (timeStamp < firstTimeStamp) {
                 continue;
+            }
             if (timeStamp < newBarsTimeStamp) {
                 price = dvr->price.at(i);
                 close = price;
@@ -423,8 +433,9 @@ void Security::handleRawBarData()
         }
     }
 
-    qDebug() << "[DEBUG-" << __func__ << "] newBarsTimeStamp:" << QString::number((uint)newBarsTimeStamp);
-    qDebug() << "[DEBUG-" << __func__ << "] new close:" << dvh->close.last();
+    qDebug() << "[DEBUG-" << __func__ << "]" << QDateTime::fromTime_t((uint)m_lastBarsTimeStamp);
+    qDebug() << "[DEBUG-" << __func__ << "] lastBarsTimeStamp:" << QString::number((uint)m_lastBarsTimeStamp) << "newBarsTimeStamp:" << QString::number((uint)newBarsTimeStamp);
+//qDebug() << "[DEBUG-" << __func__ << "] new close:" << dvh->close.last();
 
     dvh->timeStamp.append(newBarsTimeStamp);
     m_lastBarsTimeStamp = newBarsTimeStamp;
@@ -433,7 +444,14 @@ void Security::handleRawBarData()
 //    dvr->price.clear();
 //    dvr->timeStamp.clear();
     dvr->size.clear();
+
+//    qApp->exit();
 }
+double Security::getLastBarsTimeStamp() const
+{
+    return m_lastBarsTimeStamp;
+}
+
 
 
 

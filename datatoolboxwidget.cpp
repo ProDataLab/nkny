@@ -12,3 +12,8 @@ DataToolBoxWidget::~DataToolBoxWidget()
 {
     delete ui;
 }
+Ui::DataToolBoxWidget *DataToolBoxWidget::getUi() const
+{
+    return ui;
+}
+

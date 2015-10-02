@@ -48,6 +48,7 @@ public:
 
     QStringList getOrderHeaderLabels() const;
 
+
 protected:
     void closeEvent(QCloseEvent *event);
 
