@@ -158,10 +158,10 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
             this, SLOT(onContractDetailsEnd(int)));
     connect(ui->overrideUnitSizeCheckBox, SIGNAL(stateChanged(int)),
             this, SLOT(onOverrideCheckBoxStateChanged(int)));
-    connect(ui->pair1ResetButton, SIGNAL(pressed()),
-            this, SLOT(onPair1ResetButtonClicked()));
-    connect(ui->pair2ResetButton, SIGNAL(pressed()),
-            this, SLOT(onPair2ResetButtonClicked()));
+//    connect(ui->pair1ResetButton, SIGNAL(pressed()),
+//            this, SLOT(onPair1ResetButtonClicked()));
+//    connect(ui->pair2ResetButton, SIGNAL(pressed()),
+//            this, SLOT(onPair2ResetButtonClicked()));
 
 }
 
@@ -381,7 +381,7 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
 void PairTabPage::on_pair1ShowButton_clicked()
 {
     ui->pair2Tab->setVisible(true);
-    ui->pair1ResetButton->setVisible(true);
+//    ui->pair1ResetButton->setVisible(true);
 
     if (m_securityMap.keys().size() >= 2) {
 //qDebug() << "[DEBUG-on_pair1ShowButton_clicked()] secKeys:" << m_securityMap.keys();
@@ -431,7 +431,7 @@ void PairTabPage::on_pair1ShowButton_clicked()
 void PairTabPage::on_pair2ShowButton_clicked()
 {
     ui->pair2ShowButton->setEnabled(false);
-    ui->pair2ResetButton->setVisible(true);
+//    ui->pair2ResetButton->setVisible(true);
 
     if (m_securityMap.keys().size() >= 2)
         return;
