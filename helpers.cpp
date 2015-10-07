@@ -222,15 +222,36 @@ QVector<double> getRatioVolatility(const QVector<double> & ratioOfHighs, const Q
 //    CHV = (EMA (H-L (i), 10) - EMA (H-L (i - 10), 10)) / EMA (H-L (i - 10), 10) * 100
 
     QVector<double> ret;
+    QVector<double> highs;
+    QVector<double> lows;
+    QVector<double> hl1;
     QVector<double> hl;
     QVector<double> ema;
-
+    double vol;
+//    qDebug() << "ratioOfHighs:" << ratioOfHighs;
+//    qDebug() << "";
     hl = getDiff(ratioOfHighs, ratioOfLows);
+//    qDebug() << "high:low diff:" << hl;
+//    qDebug() << "";
     ema = getExpMA(hl, period);
+//    qDebug() << "ema" << ema;
+//    qDebug() << "";
 
-    for (int i=period;i<hl.size();++i) {
-        ret.append((ema.at(i) - ema.at(i-period)) / ema.at(i-period) * 100);
+    highs = ratioOfHighs.mid(ratioOfHighs.size()-ema.size());
+    lows = ratioOfLows.mid(ratioOfLows.size()-ema.size());
+    hl1 = hl.mid(hl1.size()-ema.size());
+
+    for (int i=period;i<ema.size();++i) {
+        vol = (ema.at(i) - ema.at(i-period)) / ema.at(i-period) * 100;
+        if (qIsNaN(vol) || qIsInf(vol))
+            vol = ret.last();
+        ret.append(vol);
+
+        qDebug() << "high:" << highs.at(i) << "lows:" << lows.at(i) << "hl:" << hl1.at(i) << "ema:" << ema.at(i)
+                 << "vol:" << vol;
     }
+//    qDebug() << ret;
+//    qApp->exit();
 
     return ret;
 
@@ -250,8 +271,12 @@ QVector<double> getPercentFromMA(const QVector<double> & vec, int period)
     QVector<double> vec1 = vec.mid(vec.size()-ma.size());
 
     for (int i=0;i<vec1.size();++i) {
-        ret.append(vec1.at(i) / ma.at(i) * 100);
+        double ratio = vec1.at(i) / ma.at(i);
+        double pct = (ratio * 100) - 100;
+//        qDebug() << vec1.at(i) << ma.at(i) << ratio << pct;
+        ret.append(pct);
     }
+
     return ret;
 
 //    double mean = getMean(vec);
@@ -330,16 +355,25 @@ double getStdDev(const QVector<double> &vec)
 QVector<double> getExpMA(const QVector<double> &vec, int period)
 {
     QVector<double> ret;
-
-    double expPercentage = 2 / (period + 1);
-
+    double k = (2 / (period + 1)) / 100;
 
     for (int i=period+1;i<vec.size();++i) {
-        double val = vec.at(i) * expPercentage;
-        double ma = getMean(vec.mid(i-period, i));
-        ret.append(val - (ma - (100-expPercentage)));
+        double yesterdaysMa = getMean(vec.mid(i-1-period,i-1));
+        double val = ((k * vec.at(i)) + (yesterdaysMa * (1-k)));
+        ret.append(val);
     }
+//    qDebug
     return ret;
+
+//    double expPercentage = 2 / (period + 1);
+
+
+//    for (int i=period+1;i<vec.size();++i) {
+//        double val = vec.at(i) * expPercentage;
+//        double ma = getMean(vec.mid(i-period, i));
+//        ret.append(val - (ma - (100-expPercentage)));
+//    }
+//    return ret;
 }
 
 QVector<double> getAbsDiff(const QVector<double> &vec)
@@ -359,4 +393,13 @@ QVector<double> getVecTimesScalar(const QVector<double> &vec, double scalar)
         ret.append(vec.at(i) * scalar);
     }
     return ret;
+}
+
+
+double getSum(const QVector<double> &vec)
+{
+    double sum = 0;
+    for (int i=0;i<vec.size();++i)
+        sum += vec.at(i);
+    return sum;
 }

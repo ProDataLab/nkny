@@ -126,10 +126,10 @@ public:
     void appendRawSize(const int & size);
 
 //    DataVecsRaw* getRawData() { return (DataVecsRaw*)m_dataMap[RAW]; }
-    DataVecsHist* getHistData(TimeFrame timeFrame) { return (DataVecsHist*)m_dataMap[timeFrame]; }
-    DataVecsNewBar* getNewBarData(TimeFrame timeFrame) { return (DataVecsNewBar*)m_dataMap[timeFrame]; }
+    DataVecsHist* getHistData(TimeFrame timeFrame) { return (DataVecsHist*)m_dataMap.value(timeFrame); }
+    DataVecsNewBar* getNewBarData(TimeFrame timeFrame) { return (DataVecsNewBar*)m_dataMap.value(timeFrame); }
 
-    double lastBarsTimeStamp() const { return m_lastBarsTimeStamp; }
+    double getLastBarsTimeStamp() const { return m_lastBarsTimeStamp; }
     void setLastBarsTimeStamp(double timeStamp) { m_lastBarsTimeStamp = timeStamp; }
 
 //    void handleFillData(TimeFrame timeFrame);
@@ -154,8 +154,6 @@ public:
     void setRealTimeTickerId(long realTimeTickerId);
 
     void handleRawBarData();
-
-    double getLastBarsTimeStamp() const;
 
 signals:
 

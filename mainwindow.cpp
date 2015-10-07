@@ -20,8 +20,10 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QDebug>
+#include <QtDebug>
 #include <QDateTime>
+
+#include <iostream>
 
 struct Info
 {
@@ -66,6 +68,8 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(onTabCloseRequested(int)));
 
     OrdersTableWidget* tab = ui->ordersTableWidget;
+    tab->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    tab->horizontalHeader()->setStretchLastSection(true);
 
     m_orderHeaderLabels << "Pair"
                       << "Sym1"
@@ -95,7 +99,8 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(onOrdersTableContextMenuEventTriggered(QPoint,QPoint)));
 
     PortfolioTableWidget* ptw = ui->portfolioTableWidget;
-
+    ptw->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ptw->horizontalHeader()->setStretchLastSection(true);
 
     m_portfolioHeaderLabels
                      << "Symbol"
@@ -120,10 +125,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     QTableWidget* homeTableWidget = ui->homeTableWidget;
+    homeTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    homeTableWidget->horizontalHeader()->setStretchLastSection(true);
 
-    m_headerLabels << "Pair1"
-            << "Pair2"
-            << "TimeFrame"
+
+    m_headerLabels << "Pair"
             << "Price1"
             << "Price2"
             << "Ratio"
@@ -169,7 +175,7 @@ void MainWindow::on_action_New_triggered()
         if (p->getTabSymbol() == tabSymbol)
             return;
     }
-    page->setTabSymbol(tabSymbol);
+    page->setTabSymbol();
     ui->tabWidget->addTab(page, tabSymbol);
     ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
     m_pairTabPageMap[ui->tabWidget->currentIndex()] = page;
@@ -250,7 +256,8 @@ void MainWindow::onManagedAccounts(const QByteArray &msg)
 
 void MainWindow::onIbError(const int id, const int errorCode, const QByteArray errorString)
 {
-    qDebug() << "IbError:" << id << errorCode << errorString;
+
+    qDebug() << "IbError:" << id << errorCode << errorString.data();
 }
 
 void MainWindow::onIbSocketError(const QString &error)
@@ -330,6 +337,7 @@ void MainWindow::onTabCloseRequested(int idx)
     QMap<int, PairTabPage*> tmpMap;
 
     if (p->reqClosePair()) {
+        QWidget* w = ui->tabWidget->widget(idx);
         ui->tabWidget->removeTab(idx);
         for (int i=0;i<m_pairTabPageMap.count()-1;++i) {
             if (i<idx) {
@@ -340,6 +348,7 @@ void MainWindow::onTabCloseRequested(int idx)
                 tmpMap[i] = m_pairTabPageMap.value(i+1);
             }
         }
+        delete w;
         m_pairTabPageMap = tmpMap;
     }
 
@@ -768,7 +777,7 @@ void MainWindow::onAccountDownloadEnd(const QByteArray &accountName)
 
 void MainWindow::writeSettings()
 {
-//qDebug() << "[DEBUG-MainWindow::writeSettings]";
+//    qDebug() << "[DEBUG-MainWindow::writeSettings]";
 
     QSettings settings;
     settings.beginGroup("mainwindow");
@@ -806,11 +815,12 @@ void MainWindow::writeSettings()
     }
     settings.endArray();
     settings.endGroup();
+//    qDebug() << "[DEBUG-" << __func__ << "] leaving";
 }
 
 void MainWindow::readSettings()
 {
-    P_DEBUG;
+//    P_DEBUG;
 
     QSettings settings;
     settings.beginGroup("mainwindow");
@@ -1084,7 +1094,7 @@ QStringList MainWindow::getManagedAccounts() const
 
 void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
 {
-    P_DEBUG;
+    pDebug("");
 
     OrdersTableWidget* tw = ui->ordersTableWidget;
 

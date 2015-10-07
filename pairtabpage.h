@@ -53,6 +53,8 @@ public:
 
     void setTabSymbol(const QString &tabSymbol);
 
+    void setTabSymbol();
+
     QList<Security*> getSecurities();
 
     void exitOrder();
@@ -115,6 +117,10 @@ private slots:
 
     void onMailSent(const QString & msg);
 
+    void on_timeFrameComboBox_currentIndexChanged(const QString &arg1);
+
+    void removeTableRow();
+
 private:
     IBClient*                               m_ibClient;
     QStringList                             m_managedAccounts;
@@ -132,7 +138,7 @@ private:
     QVector<double>                         m_ratioStdDev;
     QVector<double>                         m_ratioMA;
     QVector<double>                         m_ratioRSI;
-    QVector<double>                         m_ratioPercentFromMean;
+    QVector<double>                         m_ratioPercentFromMA;
     QVector<double>                         m_correlation;
     QVector<double>                         m_cointegration;
     QVector<double>                         m_ratioVolatility;
@@ -158,6 +164,7 @@ private:
     bool                                    m_bothPairsUpdated;
     MainWindow*                             m_mainWindow;
     QString                                 m_tabSymbol;
+    QString                                 m_oldTabSymbol;
     QString                                 m_timeFrameString;
     QSettings                               m_settings;
     bool                                    m_canSetTabWidgetCurrentIndex;
@@ -217,6 +224,8 @@ private:
     void setDefaults();
     QCustomPlot* createPlot();
     QCPGraph* addGraph(QCustomPlot* cp, QVector<double> x, QVector<double> y, QColor penColor=QColor(Qt::blue), bool useBrush=true);
+    bool isTrading(Security *s);
+    bool reqDeletePlotsAndTableRow();
 };
 
 #endif // PAIRTABPAGE_H

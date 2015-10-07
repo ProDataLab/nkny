@@ -7,6 +7,8 @@
 #include <QtDebug>
 #include <QString>
 
+#include <iostream>
+
 void delay(int milliSecondsToWait);
 double getMin(const QVector<double> & vec);
 double getMax(const QVector<double> & vec);
@@ -25,8 +27,9 @@ QVector<double> getRatioVolatility(const QVector<double> & ratioOfHighs, const Q
 QVector<double> getPercentFromMA(const QVector<double> & vec, int period);
 int getMinSize(int s1, int s2);
 QVector<double> getVecTimesScalar(const QVector<double> & vec, double scalar);
+double getSum(const QVector<double> & vec);
 
-#define P_DEBUG qDebug() << "[DEBUG]" << /*__PRETTY_FUNCTION__*/ __func__ << __LINE__
+#define pDebug(errStr) qDebug() << "[DEBUG-" << __func__ << __LINE__ << "]" << (errStr)
 
 #endif // HELPERS_H
 

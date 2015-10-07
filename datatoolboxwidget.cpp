@@ -6,6 +6,8 @@ DataToolBoxWidget::DataToolBoxWidget(QWidget *parent) :
     ui(new Ui::DataToolBoxWidget)
 {
     ui->setupUi(this);
+    ui->lastCointigrationLabel->setVisible(false);
+    ui->lastCointegrationLineEdit->setVisible(false);
 }
 
 DataToolBoxWidget::~DataToolBoxWidget()

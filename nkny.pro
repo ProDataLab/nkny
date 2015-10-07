@@ -25,7 +25,6 @@ SOURCES += main.cpp\
     mdiarea.cpp \
     globalconfigdialog.cpp \
     datatoolboxwidget.cpp \
-    smtp.cpp \
     orderstablewidget.cpp \
     portfoliotablewidget.cpp \
     welcomedialog.cpp
@@ -54,7 +53,6 @@ HEADERS  += mainwindow.h \
     mdiarea.h \
     globalconfigdialog.h \
     datatoolboxwidget.h \
-    smtp.h \
     orderstablewidget.h \
     portfoliotablewidget.h \
     welcomedialog.h

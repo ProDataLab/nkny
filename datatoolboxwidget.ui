@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>141</width>
-    <height>246</height>
+    <width>139</width>
+    <height>268</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,13 +15,27 @@
   </property>
   <layout class="QFormLayout" name="formLayout">
    <item row="0" column="0">
+    <widget class="QLabel" name="timeLabel">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Time</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
     <widget class="QLabel" name="label_2">
      <property name="text">
       <string>Ratio</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
+   <item row="1" column="1">
     <widget class="QLineEdit" name="lastRatioLineEdit">
      <property name="maximumSize">
       <size>
@@ -34,14 +48,14 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="2" column="0">
     <widget class="QLabel" name="label_8">
      <property name="text">
       <string>MA</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="2" column="1">
     <widget class="QLineEdit" name="lastMaLineEdit">
      <property name="maximumSize">
       <size>
@@ -54,14 +68,14 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="3" column="0">
     <widget class="QLabel" name="label_9">
      <property name="text">
       <string>% From MA</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
+   <item row="3" column="1">
     <widget class="QLineEdit" name="lastPcntFromMaLineEdit">
      <property name="maximumSize">
       <size>
@@ -74,14 +88,14 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
+   <item row="4" column="0">
     <widget class="QLabel" name="label_10">
      <property name="text">
       <string>Std Dev</string>
      </property>
     </widget>
    </item>
-   <item row="3" column="1">
+   <item row="4" column="1">
     <widget class="QLineEdit" name="lastStdDevLineEdit">
      <property name="maximumSize">
       <size>
@@ -94,14 +108,14 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
+   <item row="5" column="0">
     <widget class="QLabel" name="label_11">
      <property name="text">
       <string>Correlation</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="1">
+   <item row="5" column="1">
     <widget class="QLineEdit" name="lastCorrelationLineEdit">
      <property name="maximumSize">
       <size>
@@ -114,14 +128,14 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_12">
+   <item row="6" column="0">
+    <widget class="QLabel" name="lastCointigrationLabel">
      <property name="text">
       <string>Cointegration</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="1">
+   <item row="6" column="1">
     <widget class="QLineEdit" name="lastCointegrationLineEdit">
      <property name="maximumSize">
       <size>
@@ -134,14 +148,14 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
+   <item row="7" column="0">
     <widget class="QLabel" name="label_13">
      <property name="text">
       <string>Volatility</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
+   <item row="7" column="1">
     <widget class="QLineEdit" name="lastVolatilityLineEdit">
      <property name="maximumSize">
       <size>
@@ -154,14 +168,14 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0">
+   <item row="8" column="0">
     <widget class="QLabel" name="label_14">
      <property name="text">
-      <string> RSI of Ratio</string>
+      <string>RSI of Ratio</string>
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
+   <item row="8" column="1">
     <widget class="QLineEdit" name="lastRsiOfRatioLineEdit">
      <property name="maximumSize">
       <size>
@@ -174,14 +188,14 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="0">
+   <item row="9" column="0">
     <widget class="QLabel" name="label_15">
      <property name="text">
       <string>RSI Spread</string>
      </property>
     </widget>
    </item>
-   <item row="8" column="1">
+   <item row="9" column="1">
     <widget class="QLineEdit" name="lastRsiSpreadLineEdit">
      <property name="maximumSize">
       <size>
