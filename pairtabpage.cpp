@@ -468,6 +468,7 @@ void PairTabPage::on_pair2ShowButton_clicked()
         ui->pair1ShowButton->click();
     }
 
+
     if (m_securityMap.keys().size() >= 2)
         return;
     long tickerId = m_ibClient->getTickerId();

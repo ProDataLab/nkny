@@ -76,8 +76,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>273</width>
-            <height>396</height>
+            <width>276</width>
+            <height>322</height>
            </rect>
           </property>
           <attribute name="label">
@@ -438,8 +438,13 @@
            <rect>
             <x>0</x>
             <y>0</y>
+<<<<<<< HEAD
             <width>226</width>
             <height>304</height>
+=======
+            <width>262</width>
+            <height>411</height>
+>>>>>>> 2dd12ce294fbd9e436b0d549ee73da5c9a020b17
            </rect>
           </property>
           <attribute name="label">
@@ -668,8 +673,13 @@
            <rect>
             <x>0</x>
             <y>0</y>
+<<<<<<< HEAD
             <width>160</width>
             <height>90</height>
+=======
+            <width>276</width>
+            <height>322</height>
+>>>>>>> 2dd12ce294fbd9e436b0d549ee73da5c9a020b17
            </rect>
           </property>
           <attribute name="label">
@@ -723,8 +733,13 @@
            <rect>
             <x>0</x>
             <y>0</y>
+<<<<<<< HEAD
             <width>100</width>
             <height>30</height>
+=======
+            <width>276</width>
+            <height>322</height>
+>>>>>>> 2dd12ce294fbd9e436b0d549ee73da5c9a020b17
            </rect>
           </property>
           <attribute name="label">
