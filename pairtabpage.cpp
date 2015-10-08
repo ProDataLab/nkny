@@ -1936,7 +1936,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
         else if (tabText == "StdDev") {
             cp->graph(0)->addData(ts, m_ratioStdDev.last());
         }
-        else if (tabText == "PcntFrmMean") {
+        else if (tabText == "PcntFromMA") {
             cp->graph(0)->addData(ts, m_ratioPercentFromMA.last());
         }
         else if (tabText == "Corr") {
@@ -1945,9 +1945,11 @@ void PairTabPage::appendPlotsAndTable(long sid)
         else if (tabText == "Vola") {
             cp->graph(0)->addData(ts, m_ratioVolatility.last());
         }
-        else if (tabText == "RSI") {
+        else if (tabText == "RatioRSI") {
             cp->graph(0)->addData(ts, m_ratioRSI.last());
         }
+        else if (tabText == "RSISpread")
+            cp->graph(0)->addData(ts, m_rsiSpread.last());
         cp->xAxis->setRangeUpper(timeStampLast);
         cp->replot();
     }
@@ -2004,8 +2006,10 @@ void PairTabPage::appendPlotsAndTable(long sid)
             tw->item(row,c)->setText(QString::number(m_correlation.last(),'f',2));
         else if (headerItem->text() == "Vola")
             tw->item(row,c)->setText(QString::number(m_ratioVolatility.last(),'f',2));
-        else if (headerItem->text() == "RSI")
+        else if (headerItem->text() == "RatioRSI")
             tw->item(row,c)->setText(QString::number(m_ratioRSI.last(),'f',2));
+        else if (headerItem->text() == "SpreadRSI")
+            tw->item(row,c)->setText(QString::number(m_rsiSpread.last(),'f',2));
     }
 
     tw->update();

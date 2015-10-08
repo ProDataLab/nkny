@@ -578,10 +578,15 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     if (so->triggerType == EXIT) {
         if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
             ui->ordersTableWidget->removeRow(row);
+            if (ui->portfolioTableWidget->rowCount() == 2) {
+                ui->portfolioTableWidget->removeRow(0);
+                ui->portfolioTableWidget->removeRow(1);
+            }
             (*(s->getSecurityOrderMap())).remove(so->referenceOrderId);
             (*(s->getSecurityOrderMap())).remove(so->order.orderId);
         }
     }
+
 
 
 
