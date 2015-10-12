@@ -31,6 +31,8 @@
 #include <QMdiArea>
 #include <QMdiSubWindow>
 #include <QTimeZone>
+#include <QCoreApplication>
+#include <QCursor>
 
 
 PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts, QWidget *parent)
@@ -40,7 +42,7 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
     , ui(new Ui::PairTabPage)
     , m_ratioRSITriggerActivated(false)
     , m_percentFromMeanTriggerActivated(false)
-    , m_homeTablePageRowIndex(0)
+    , m_homeTablePageRowIndex(-1)
     , m_gettingMoreHistoricalData(false)
     , m_bothPairsUpdated(true)
     , m_tabSymbol(QString())
@@ -254,8 +256,8 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
                 s->getTimer()->start(m_timeFrameInSeconds * 1000);
 
 
-//qDebug() << "[DEBUG-onHistoricalData] NUM BARS RECEIVED:" << dvh->timeStamp.size()
-//                         << "Last timestamp:" << QDateTime::fromTime_t( (int)dvh->timeStamp.last()).toString("yyMMdd::hh:mm:ss");
+qDebug() << "[DEBUG-onHistoricalData] NUM BARS RECEIVED:" << dvh->timeStamp.size()
+                         << "Last timestamp:" << QDateTime::fromTime_t( (int)dvh->timeStamp.last()).toString("yyMMdd::hh:mm:ss");
 
 //                if (dvh->timeStamp.size() < ui->lookbackSpinBox->value()) {
 ////                    // FIXME: I need more bars (1 HOUR BARS)
@@ -312,6 +314,8 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
                 removeTableRow();
                 addTableRow();
 
+                pDebug("done with plots");
+
                 if (m_canSetTabWidgetCurrentIndex) {
                     QSettings s;
                     s.beginGroup(m_tabSymbol);
@@ -341,6 +345,7 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
     }
     else {
         if (date.startsWith("finished")) {
+            pDebug("isNewDataRequest");
             s->handleNewBarData(m_timeFrame);
             if (ui->activateButton->isEnabled()) {
                 checkTradeTriggers();
@@ -409,6 +414,7 @@ void PairTabPage::on_pair1ShowButton_clicked()
     }
     ui->pair2Tab->setVisible(true);
 //    ui->pair1ResetButton->setVisible(true);
+    ui->pair2ShowButton->setEnabled(true);
 
     if (m_securityMap.keys().size() >= 2) {
 //qDebug() << "[DEBUG-on_pair1ShowButton_clicked()] secKeys:" << m_securityMap.keys();
@@ -460,6 +466,8 @@ void PairTabPage::on_pair1ShowButton_clicked()
 
 void PairTabPage::on_pair2ShowButton_clicked()
 {
+    pDebug("");
+
 //    ui->pair2ShowButton->setEnabled(false);
 //    ui->pair2ResetButton->setVisible(true);
 
@@ -510,6 +518,8 @@ void PairTabPage::on_pair2ShowButton_clicked()
     m_ibClient->reqContractDetails(reqId, *contract);
 
     m_pair2ShowButtonClickedAlready = true;
+
+    pDebug("leaving");
 }
 
 //void PairTabPage::on_pair1PrimaryExchangeLineEdit_textEdited(const QString &arg1)
@@ -594,7 +604,7 @@ void PairTabPage::onActivateButtonClicked(bool)
     }
 
     // THIS IS ONLY FOR TESTING REMOVE
-    placeOrder(TEST);
+//    placeOrder(TEST);
 
 //    QTimer::singleShot(10000, this, SLOT(onSingleShotTimer()));
 
@@ -1087,8 +1097,9 @@ void PairTabPage::onContextMenuRequest(QPoint point)
         menu.addAction("Tabbed View", ui->mdiArea, SLOT(onTabbedAct()));
         menu.addAction("Tiled View", ui->mdiArea, SLOT(onTiledAct()));
     }
+    menu.addAction("Reset Plot", this, SLOT(onResetPlot()));
 
-    menu.exec(point);
+    menu.exec(mapToGlobal(point));
 }
 
 void PairTabPage::onCascadeAct()
@@ -1349,7 +1360,7 @@ void PairTabPage::writeSettings() const
 
 void PairTabPage::readSettings()
 {
-//    pDebug("1");
+    pDebug("1");
 
     m_readingSettings = true;
 
@@ -1564,7 +1575,7 @@ void PairTabPage::readSettings()
 
     m_readingSettings = false;
 
-//    pDebug("7");
+    pDebug("7");
 }
 
 TimeFrame PairTabPage::getTimeFrame() const
@@ -1785,28 +1796,14 @@ void PairTabPage::showPlot(long tickerId)
 
 void PairTabPage::appendPlotsAndTable(long sid)
 {
-//    qDebug() << "[DEBUG-appendPlotsAndTable]";
+//    pDebug("");
 
     Security* s = m_securityMap.value(sid);
 
+//    bool isS1 = m_securityMap.keys().indexOf(sid) == 0;
+//    bool isS2 = m_securityMap.keys().indexOf(sid) == 1;
+
     DataVecsHist* dvh = s->getHistData(m_timeFrame);
-
-
-//    int ilbts = dvh->timeStamp.indexOf(s->lastBarsTimeStamp());
-
-//    for (int i=ilbts+1;i<dvh->timeStamp.size();++i) {
-//        qDebug() << "[DEBUG-appendPlotsAndTable]"
-//                 << i << ")"
-//                << tickerId
-//                << QDateTime::fromTime_t(dvh->timeStamp.at(i)).toString("yy-MM-dd/hh:mm:ss")
-//                << dvh->open.at(i)
-//                << dvh->high.at(i)
-//                << dvh->low.at(i)
-//                << "[" + QString::number(dvh->close.at(i)) + "]"
-//                << dvh->barCount.at(i)
-//                << dvh->wap.at(i)
-//                << dvh->hasGaps.at(i);
-//    }
 
     s->setLastBarsTimeStamp(dvh->timeStamp.last());
 
@@ -1815,54 +1812,16 @@ void PairTabPage::appendPlotsAndTable(long sid)
     double timeStampLast = dvh->timeStamp.last();
     double closeLast     = dvh->close.last();
 
-//    qDebug() << "[DEBUG-" << __func__ << "] timeStampLast:" << (uint)dvh->timeStamp.last() << "closeLast:" << dvh->close.last();
-
     cp->graph()->addData(timeStampLast, closeLast);
     cp->xAxis->setRangeUpper(timeStampLast);
     cp->replot();
 
-//    QString sym1 = ui->pairsTabWidget->tabText(0);
-//    QString sym2 = ui->pairsTabWidget->tabText(1);
-
-//    QTableWidget* tw = mwui->homeTableWidget;
-
-//    Security* s1 = m_securityMap.values().at(0);
-//    Security* s2 = m_securityMap.values().at(1);
-
-//    DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
-//    DataVecsHist* dvh2 = s2->getHistData(m_timeFrame);
-
-//    double ts = dvh->timeStamp.last();
-
-//    int row = 0;
-
-//    for (int r=0;r<tw->rowCount();++r) {
-//        QTableWidgetItem* item1 = tw->item(r,0);
-//        QTableWidgetItem* item2 = tw->item(r,1);
-//        if (item1->text() == sym1 && item2->text() == sym2)
-//            row = r;
-//    }
-
-//    for (int c=0;c<tw->columnCount();++c) {
-//        QTableWidgetItem* headerItem = tw->horizontalHeaderItem(c);
-
-//        if (headerItem->text() == s->contract()->symbol) {
-//            if (s == s1) {
-//                tw->item(row,c)->setText(QString::number(dvh->close.last(), 'f', 2));
-//            }
-//        }
-//        else if (headerItem->text() == s->contract()->symbol) {
-//            if (s == s2) {
-//                tw->item(row, c)->setText(QString::number(dvh->close.last(), 'f', 2));
-//            }
-//        }
-//    }
-
     if (m_bothPairsUpdated) {
-        if (m_securityMap.size() > 1 && m_securityMap.values().at(1) == s)
+        if (m_securityMap.size() > 1 && m_securityMap.values().at(1) == s) {
             m_bothPairsUpdated = false;
-//qDebug() << "[DEBUG-appendPlotsAndTable]" << "both pairs updated.... leaving";
-        return;
+//            pDebug("returning early");
+            return;
+        }
     }
 
     Security* s1 = m_securityMap.values().at(0);
@@ -1873,14 +1832,17 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     m_ratio = getRatio(dvh1->close, dvh2->close);
 
-//qDebug() << "M_RATIO LAST:" << m_ratio.last();
-
     m_ratioMA = getMA(m_ratio, ui->maPeriodSpinBox->value());
     m_ratioStdDev = getStdDevVector(m_ratio, ui->stdDevPeriodSpinBox->value());
     m_ratioPercentFromMA = getPercentFromMA(m_ratio, ui->maPeriodSpinBox->value());
     m_correlation = getCorrelation(dvh1->close, dvh2->close);
-    m_ratioVolatility = getRatioVolatility(getRatio(dvh1->high,dvh2->high), getRatio(dvh1->low,dvh2->low), ui->volatilityPeriodSpinBox->value());
+//    m_ratioVolatility = getRatioVolatility(getRatio(dvh1->high,dvh2->high), getRatio(dvh1->low,dvh2->low), ui->volatilityPeriodSpinBox->value());
+    m_ratioVolatility = getRatioVolatility(getRatio(getDiff(dvh1->high,dvh1->low), getDiff(dvh2->high, dvh2->low)), ui->volatilityPeriodSpinBox->value());
     m_ratioRSI = getRSI(m_ratio, ui->rsiPeriodSpinBox->value());
+    int period = ui->rsiSpreadSpinBox->value();
+    m_pair1RSI = getRSI(dvh1->close, period);
+    m_pair2RSI = getRSI(dvh2->close, period);
+    m_rsiSpread = getDiff(m_pair1RSI, m_pair2RSI);
 
     // update chart data page
     Ui::DataToolBoxWidget* w = ui->chartDataPage->getUi();
@@ -1894,103 +1856,208 @@ void PairTabPage::appendPlotsAndTable(long sid)
     w->lastStdDevLineEdit->setText(QString::number(m_ratioStdDev.last(),'f',2));
     w->lastVolatilityLineEdit->setText(QString::number(m_ratioVolatility.last(),'f',2));
 
-
-    QTableWidget* tw = mwui->homeTableWidget;
-
-//    << "Ratio"
-//    << "RatioMA"
-//    << "StdDev"
-//    << "PcntFromMA"
-//    << "Corr"
-//    << "Vola"
-//    << "RSI"
-
     double ts = dvh->timeStamp.last();
+
+    double min = 0;
+    double max = 0;
 
     for (int i=0;i<ui->mdiArea->subWindowList().size();++i) {
         QMdiSubWindow* w = ui->mdiArea->subWindowList().at(i);
         QString tabText = w->windowTitle();
         cp = qobject_cast<QCustomPlot*>(w->widget());
 
-//        if (tabText == s1->contract()->symbol) {
-//            if (s == s1) {
-//                cp->graph(0)->addData(ts, dvh->close.last());
-//                cp->replot();
-//            }
-//        }
-//        else if (tabText == s2->contract()->symbol) {
-//            if (s == s2) {
-//                cp->graph(0)->addData(ts, dvh->close.last());
-//                cp->replot();
-//            }
-//        }
+        if (tabText == s->contract()->symbol) {
+            cp->graph(0)->addData(ts, dvh->close.last());
+            min = getMin(dvh->close);
+            max = getMax(dvh->close);
+            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
 
+        }
         if (tabText == "Ratio") {
             cp->graph(0)->addData(ts, m_ratio.last());
             cp->graph(1)->addData(ts, m_ratioMA.last());
+            min = getMin(m_ratio);
+            max = getMax(m_ratio);
+            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
+
         }
-//        else if (tabText == "RatioMA") {
-//            cp->graph(0)->addData(ts, m_ratioMA.last());
-//            cp->replot();
-//        }
-        else if (tabText == "StdDev") {
+        else if (tabText == "RatioStdDev") {
             cp->graph(0)->addData(ts, m_ratioStdDev.last());
+            min = getMin(m_ratioStdDev);
+            max = getMax(m_ratioStdDev);
+            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
+
         }
-        else if (tabText == "PcntFromMA") {
+        else if (tabText == "PcntFromRatioMA") {
             cp->graph(0)->addData(ts, m_ratioPercentFromMA.last());
+            min = getMin(m_ratioPercentFromMA);
+            max = getMax(m_ratioPercentFromMA);
+            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
+
         }
-        else if (tabText == "Corr") {
+        else if (tabText == "Correlation") {
             cp->graph(0)->addData(ts, m_correlation.last());
+            min = getMin(m_correlation);
+            max = getMax(m_correlation);
+            cp->yAxis->setRange(-1.0,1.0);
+
         }
-        else if (tabText == "Vola") {
+        else if (tabText == "RatioVolatility") {
             cp->graph(0)->addData(ts, m_ratioVolatility.last());
+            min = getMin(m_ratioVolatility);
+            max = getMax(m_ratioVolatility);
+//            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
+
         }
         else if (tabText == "RatioRSI") {
             cp->graph(0)->addData(ts, m_ratioRSI.last());
+            min = getMin(m_ratioRSI);
+            max = getMax(m_ratioRSI);
+            cp->yAxis->setRange(0,100);
+
         }
-        else if (tabText == "RSISpread")
+        else if (tabText == "RSISpread") {
             cp->graph(0)->addData(ts, m_rsiSpread.last());
+            min = getMin(m_rsiSpread);
+            max = getMax(m_rsiSpread);
+            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
+        }
+
         cp->xAxis->setRangeUpper(timeStampLast);
         cp->replot();
     }
 
-    QString sym1 = ui->pairsTabWidget->tabText(0);
-    QString sym2 = ui->pairsTabWidget->tabText(1);
+//    QString sym1 = ui->pairsTabWidget->tabText(0);
+//    QString sym2 = ui->pairsTabWidget->tabText(1);
 
-    int row = 0;
+    QTableWidget* tw = mwui->homeTableWidget;
 
-////    << "Ratio"
-////    << "RatioMA"
-////    << "StdDev"
-////    << "PcntFromMA"
-////    << "Corr"
-////    << "Vola"
-////    << "RSI";
+    int row = -1;
 
     for (int r=0;r<tw->rowCount();++r) {
-        QTableWidgetItem* item1 = tw->item(r,0);
-        QTableWidgetItem* item2 = tw->item(r,1);
-        if (item1->text() == sym1 && item2->text() == sym2)
+        bool isTheRow = false;
+        for (int c=0;c<tw->columnCount();++c) {
+            QTableWidgetItem* hItem = tw->horizontalHeaderItem(c);
+            QString hItemText = hItem->text();
+            QTableWidgetItem* item = tw->item(r,c);
+            QString itemText = item->text();
+
+//            m_headerLabels << "Pair"
+//                    << "Price1"
+//                    << "Price2"
+//                    << "Ratio"
+//                    << "RatioMA"
+//                    << "RatioStdDev"
+//                    << "PcntFromRatioMA"
+//                    << "Correlation"
+//                    << "RatioVolatility"
+//                    << "RatioRSI"
+//                    << "RSISpread";
+
+            if (hItemText == "Pair") {
+                if (itemText == m_tabSymbol) {
+                    isTheRow = true;
+                    break;
+                }
+//              continue;
+            }
+//            if (hItemText == "Price1" && isS1) {
+//                QString val = QString::number(dvh->close.at(dvh->close.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "Price2" && isS2) {
+//                QString val =  QString::number(dvh->close.at(dvh->close.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "Ratio") {
+//                QString val =QString::number(m_ratio.at(m_ratio.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "RatioMA") {
+//                QString val =  QString::number(m_ratioMA.at(m_ratioMA.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "RatioStdDev") {
+//                QString val = QString::number(m_ratioStdDev.at(m_ratioStdDev.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "PcntFromRatioMA") {
+//                if (itemText != QString::number(m_ratioPercentFromMA.at(m_ratioPercentFromMA.size()-2),'f',2)) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "Correlation") {
+//                QString val = QString::number(m_correlation.at(m_correlation.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "RatioVolatility") {
+//                QString val = QString::number(m_ratioVolatility.at(m_ratioVolatility.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "RatioRSI") {
+//                QString val = QString::number(m_ratioRSI.at(m_ratioRSI.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+//            if (hItemText == "RSISpread") {
+//                QString val =  QString::number(m_rsiSpread.at(m_rsiSpread.size()-2),'f',2);
+//                if (itemText != val) {
+//                    isTheRow = false;
+//                    break;
+//                }
+//                continue;
+//            }
+        }
+        if (isTheRow) {
             row = r;
+        }
+//        else {
+//            pDebug("FUCK FUCK FUCK");
+//        }
     }
 
     for (int c=0;c<tw->columnCount();++c) {
         QTableWidgetItem* headerItem = tw->horizontalHeaderItem(c);
-
-//        qDebug() << "HEADER ITEM TEXT:" << headerItem->text();
-//        qDebug() << "SYM:" << s->contract()->symbol;
-
         if (headerItem->text() == "Price1") {
-//qDebug() << "...............1";
             if (s == s1) {
-//qDebug() << "..............2";
                 tw->item(row,c)->setText(QString::number(dvh->close.last(), 'f', 2));
             }
         }
         else if (headerItem->text() == "Price2") {
-//qDebug() << "...............3";
             if (s == s2) {
-//qDebug() << "............4";
                 tw->item(row, c)->setText(QString::number(dvh->close.last(), 'f', 2));
             }
         }
@@ -1998,13 +2065,13 @@ void PairTabPage::appendPlotsAndTable(long sid)
             tw->item(row,c)->setText(QString::number(m_ratio.last(),'f',2));
         else if (headerItem->text() == "RatioMA")
             tw->item(row,c)->setText(QString::number(m_ratioMA.last(),'f',2));
-        else if (headerItem->text() == "StdDev")
+        else if (headerItem->text() == "RatioStdDev")
             tw->item(row,c)->setText(QString::number(m_ratioStdDev.last(),'f',2));
-        else if (headerItem->text() == "PcntFromMA")
+        else if (headerItem->text() == "PcntFromRatioMA")
             tw->item(row,c)->setText(QString::number(m_ratioPercentFromMA.last(),'f',2));
-        else if (headerItem->text() == "Corr")
+        else if (headerItem->text() == "Correlation")
             tw->item(row,c)->setText(QString::number(m_correlation.last(),'f',2));
-        else if (headerItem->text() == "Vola")
+        else if (headerItem->text() == "RatioVolatility")
             tw->item(row,c)->setText(QString::number(m_ratioVolatility.last(),'f',2));
         else if (headerItem->text() == "RatioRSI")
             tw->item(row,c)->setText(QString::number(m_ratioRSI.last(),'f',2));
@@ -2113,7 +2180,7 @@ void PairTabPage::plotRatioStdDev()
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
-    sw->setWindowTitle("StdDev");
+    sw->setWindowTitle("RatioStdDev");
     sw->maximumSize();
     cp->show();
 }
@@ -2132,7 +2199,7 @@ void PairTabPage::plotRatioPercentFromMean()
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
-    sw->setWindowTitle("PcntFromMA");
+    sw->setWindowTitle("PcntFromRatioMA");
     sw->maximumSize();
     cp->show();
 }
@@ -2154,7 +2221,7 @@ void PairTabPage::plotCorrelation()
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
-    sw->setWindowTitle("Corr");
+    sw->setWindowTitle("Correlation");
     sw->maximumSize();
     cp->show();
 
@@ -2170,14 +2237,18 @@ void PairTabPage::plotCointegration()
 
 void PairTabPage::plotRatioVolatility()
 {
-//    P_DEBUG;
+    pDebug("");
 
     DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
     DataVecsHist* dvh2 = m_securityMap.values().at(1)->getHistData(m_timeFrame);
 
     int period = qMin(ui->volatilityPeriodSpinBox->value(), m_ratio.size());
 
-    m_ratioVolatility = getRatioVolatility(getRatio(dvh1->high,dvh2->high), getRatio(dvh1->low,dvh2->low), period);
+//    m_ratioVolatility = getRatioVolatility(getRatio(dvh1->high,dvh2->high), getRatio(dvh1->low,dvh2->low), period);
+    QVector<double> d1 = getDiff(dvh1->high,dvh1->low);
+    QVector<double> d2  = getDiff(dvh2->high,dvh2->low);
+    QVector<double> r   = getRatio(d1,d2);
+    m_ratioVolatility = getRatioVolatility(r, period);
 
     int diff = dvh1->timeStamp.size() - m_ratioVolatility.size();
 
@@ -2186,11 +2257,11 @@ void PairTabPage::plotRatioVolatility()
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
-    sw->setWindowTitle("Vola");
+    sw->setWindowTitle("RatioVolatility");
     sw->maximumSize();
     cp->show();
 
-//    P_DEBUG;
+    pDebug("leaving");
 }
 
 void PairTabPage::plotRatioRSI()
@@ -2237,7 +2308,6 @@ void PairTabPage::plotRSISpread()
     dvh2 = s2->getHistData(m_timeFrame);
 
     int period = ui->rsiSpreadSpinBox->value();
-
 
     m_pair1RSI = getRSI(dvh1->close, period);
     m_pair2RSI = getRSI(dvh2->close, period);
@@ -2288,11 +2358,11 @@ void PairTabPage::addTableRow()
 //            << "Price2"
 //            << "Ratio"
 //            << "RatioMA"
-//            << "StdDev"
-//            << "PcntFromMA"
-//            << "Corr"
-//            << "Vola"
-//            << "RSI"
+//            << "RatioStdDev"
+//            << "PcntFromRatioMA"
+//            << "Correlation"
+//            << "RatioVolatility"
+//            << "RatioRSI"
 //            << "RSISpread;
 
 
@@ -2603,6 +2673,10 @@ void PairTabPage::setDefaults()
 QCustomPlot *PairTabPage::createPlot()
 {
     QCustomPlot* cp = new QCustomPlot();
+
+    connect(cp, SIGNAL(plottableDoubleClick(QCPAbstractPlottable*,QMouseEvent*)),
+            this, SLOT(onCustomPlotDoubleClick(QCPAbstractPlottable*,QMouseEvent*)));
+
 //    cp->setMinimumSize(m_minWidth, m_minHeight);
     m_customPlotMap[ui->mdiArea->subWindowList().size()] = cp;
 
@@ -2650,6 +2724,9 @@ QCPGraph *PairTabPage::addGraph(QCustomPlot *cp, QVector<double> x, QVector<doub
 
 bool PairTabPage::isTrading(Security* s)
 {
+
+//    return true;
+
     QDateTime currentDateTime = QDateTime::currentDateTime();
     QDate currentDate = currentDateTime.date();
 
@@ -2680,7 +2757,7 @@ bool PairTabPage::isTrading(Security* s)
     if (liquidTradingHours.contains(',')) {
         QStringList lthList = liquidTradingHours.split(',');
         foreach(QString lth, lthList) {
-            pDebug(lthList);
+// pDebug(lthList);
             QTime startTime = QTime::fromString(lth.split('-').at(0), "hhmm");
             QTime endTime   = QTime::fromString(lth.split('-').at(1), "hhmm");
 
@@ -2698,7 +2775,7 @@ bool PairTabPage::isTrading(Security* s)
     else {
         QString lth = liquidTradingHours;
 
-        pDebug(lth);
+// pDebug(lth);
 
         QTime startTime = QTime::fromString(lth.split('-').at(0), "hhmm");
         QTime endTime   = QTime::fromString(lth.split('-').at(1), "hhmm");
@@ -2768,6 +2845,39 @@ bool PairTabPage::reqDeletePlotsAndTableRow()
 void PairTabPage::on_timeFrameComboBox_currentIndexChanged(const QString &arg1)
 {
     m_timeFrameString = arg1;
+}
+
+void PairTabPage::onCustomPlotDoubleClick(QCPAbstractPlottable* plotable, QMouseEvent* event)
+{
+    pDebug("");
+    Q_UNUSED(event);
+
+    QCPGraph* graph = qobject_cast<QCPGraph*>(plotable);
+    double first = graph->data()->keys().first();
+    double last  = graph->data()->keys().last();
+    graph->keyAxis()->setRange(first, last);
+    graph->parentPlot()->replot();
+}
+
+void PairTabPage::onResetPlot()
+{
+    pDebug("");
+    QPoint point = QCursor::pos();
+    QCPAbstractPlottable* plotable = NULL;
+    foreach(QCustomPlot* cp, m_customPlotMap.values()) {
+        plotable = cp->plottableAt(point);
+        if (plotable != 0)
+            break;
+    }
+
+    if (!plotable)
+        return;
+
+    QCPGraph* graph = qobject_cast<QCPGraph*>(plotable);
+    double first = graph->data()->keys().first();
+    double last  = graph->data()->keys().last();
+    graph->keyAxis()->setRange(first, last);
+    graph->parentPlot()->replot();
 }
 
 void PairTabPage::removeTableRow()

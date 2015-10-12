@@ -6,6 +6,7 @@
 #include <cmath>
 #include <QTime>
 #include <QCoreApplication>
+#include <cfloat>
 
 double getMin(const QVector<double> & vec)
 {
@@ -199,6 +200,10 @@ QVector<double> getRatio(const QVector<double> & vec1, const QVector<double> & v
 
 
     for (int i=0; i<size;++i) {
+        if (vec22.at(i) == 0) {
+            ret.append(DBL_MIN);
+            continue;
+        }
         ret.append(vec11.at(i) / vec22.at(i));
     }
 
@@ -214,54 +219,78 @@ QVector<double> getDiff(const QVector<double> & vec)
     return ret;
 }
 
-QVector<double> getRatioVolatility(const QVector<double> & ratioOfHighs, const QVector<double> & ratioOfLows, int period)
+QVector<double> getRatioVolatility(const QVector<double> & vec, int period)
 {
-//    http://ta.mql4.com/indicators/oscillators/chaikin_volatility
-//    H-L (i) = HIGH (i) - LOW (i)
-//    H-L (i - 10) = HIGH (i - 10) - LOW (i - 10)
-//    CHV = (EMA (H-L (i), 10) - EMA (H-L (i - 10), 10)) / EMA (H-L (i - 10), 10) * 100
-
+    QVector<double> ema = getExpMA(vec, period);
     QVector<double> ret;
-    QVector<double> highs;
-    QVector<double> lows;
-    QVector<double> hl1;
-    QVector<double> hl;
-    QVector<double> ema;
     double vol;
-//    qDebug() << "ratioOfHighs:" << ratioOfHighs;
-//    qDebug() << "";
-    hl = getDiff(ratioOfHighs, ratioOfLows);
-//    qDebug() << "high:low diff:" << hl;
-//    qDebug() << "";
-    ema = getExpMA(hl, period);
-//    qDebug() << "ema" << ema;
-//    qDebug() << "";
-
-    highs = ratioOfHighs.mid(ratioOfHighs.size()-ema.size());
-    lows = ratioOfLows.mid(ratioOfLows.size()-ema.size());
-    hl1 = hl.mid(hl1.size()-ema.size());
 
     for (int i=period;i<ema.size();++i) {
         vol = (ema.at(i) - ema.at(i-period)) / ema.at(i-period) * 100;
         if (qIsNaN(vol) || qIsInf(vol))
             vol = ret.last();
         ret.append(vol);
-
-        qDebug() << "high:" << highs.at(i) << "lows:" << lows.at(i) << "hl:" << hl1.at(i) << "ema:" << ema.at(i)
-                 << "vol:" << vol;
     }
-//    qDebug() << ret;
-//    qApp->exit();
 
     return ret;
-
-//    QVector<double> expMA = getExpMA(getAbsDiff(getVecTimesScalar(ratio, 100)), period);
-
-//    for (int i=period;i<expMA.size();++i) {
-//        ret.append(((expMA.at(i) - expMA.at(i-period)) / expMA.at(i-period)) * 100);
-//    }
-//    return ret;
 }
+
+//QVector<double> getRatioVolatility(const QVector<double> & ratioOfHighs,const QVector<double> & ratioOfLows, int period)
+//{
+
+
+////    http://ta.mql4.com/indicators/oscillatchaikin_volatilityors/
+////    H-L (i) = HIGH (i) - LOW (i)
+////    H-L (i - 10) = HIGH (i - 10) - LOW (i - 10)
+////    CHV = (EMA (H-L (i), 10) - EMA (H-L (i - 10), 10)) / EMA (H-L (i - 10), 10) * 100
+
+//    QVector<double> ret;
+//    QVector<double> highs;
+//    QVector<double> lows;
+//    QVector<double> hl1;
+//    QVector<double> hl;
+//    QVector<double> ema;
+//    QVector<double> h100;
+//    QVector<double> l100;
+//    double vol;
+
+//    h100 = getVecTimesScalar(ratioOfHighs, 100);
+//    l100  = getVecTimesScalar(ratioOfLows, 100);
+
+////    qDebug() << "ratioOfHighs:" << ratioOfHighs;
+////    qDebug() << "";
+//    hl = getDiff(h100, l100);
+////    qDebug() << "high:low diff:" << hl;
+////    qDebug() << "";
+//    ema = getExpMA(hl, period);
+////    qDebug() << "ema" << ema;
+////    qDebug() << "";
+
+//    highs = h100.mid(h100.size()-ema.size());
+//    lows = l100.mid(l100.size()-ema.size());
+//    hl1 = hl.mid(hl1.size()-ema.size());
+
+//    for (int i=period;i<ema.size();++i) {
+//        vol = (ema.at(i) - ema.at(i-period)) / ema.at(i-period) * 100;
+//        if (qIsNaN(vol) || qIsInf(vol))
+//            vol = ret.last();
+//        ret.append(vol);
+
+//        qDebug() << "high:" << highs.at(i) << "lows:" << lows.at(i) << "hl:" << hl1.at(i) << "ema:" << ema.at(i)
+//                 << "vol:" << vol;
+//    }
+////    qDebug() << ret;
+////    qApp->exit();
+
+//    return ret;
+
+////    QVector<double> expMA = getExpMA(getAbsDiff(getVecTimesScalar(ratio, 100)), period);
+
+////    for (int i=period;i<expMA.size();++i) {
+////        ret.append(((expMA.at(i) - expMA.at(i-period)) / expMA.at(i-period)) * 100);
+////    }
+////    return ret;
+//}
 
 QVector<double> getPercentFromMA(const QVector<double> & vec, int period)
 {
@@ -324,6 +353,7 @@ QVector<double> getDiff(const QVector<double> &vec1, const QVector<double> &vec2
         size = vec2.size();
     }
     for (int i=0;i<size;++i) {
+//        qDebug() << vec11.at(i) << vec22.at(i) << vec11.at(i) - vec22.at(i);
         ret.append(vec11.at(i) - vec22.at(i));
     }
     return ret;
@@ -354,26 +384,18 @@ double getStdDev(const QVector<double> &vec)
 
 QVector<double> getExpMA(const QVector<double> &vec, int period)
 {
+    // http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:moving_averages
+
     QVector<double> ret;
-    double k = (2 / (period + 1)) / 100;
+    double k = 2.0 / (period + 1);
+    double yesterdaysMa = getMean(vec.mid(0,period));
 
     for (int i=period+1;i<vec.size();++i) {
-        double yesterdaysMa = getMean(vec.mid(i-1-period,i-1));
-        double val = ((k * vec.at(i)) + (yesterdaysMa * (1-k)));
-        ret.append(val);
+        double ema = (vec.at(i) - yesterdaysMa) * k + yesterdaysMa;
+        ret.append(ema);
+        yesterdaysMa = ema;
     }
-//    qDebug
     return ret;
-
-//    double expPercentage = 2 / (period + 1);
-
-
-//    for (int i=period+1;i<vec.size();++i) {
-//        double val = vec.at(i) * expPercentage;
-//        double ma = getMean(vec.mid(i-period, i));
-//        ret.append(val - (ma - (100-expPercentage)));
-//    }
-//    return ret;
 }
 
 QVector<double> getAbsDiff(const QVector<double> &vec)
@@ -403,3 +425,5 @@ double getSum(const QVector<double> &vec)
         sum += vec.at(i);
     return sum;
 }
+
+

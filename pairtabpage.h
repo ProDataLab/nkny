@@ -119,7 +119,9 @@ private slots:
 
     void on_timeFrameComboBox_currentIndexChanged(const QString &arg1);
 
-    void removeTableRow();
+    void onCustomPlotDoubleClick(QCPAbstractPlottable *plotable, QMouseEvent *event);
+
+    void onResetPlot();
 
 private:
     IBClient*                               m_ibClient;
@@ -226,6 +228,7 @@ private:
     QCPGraph* addGraph(QCustomPlot* cp, QVector<double> x, QVector<double> y, QColor penColor=QColor(Qt::blue), bool useBrush=true);
     bool isTrading(Security *s);
     bool reqDeletePlotsAndTableRow();
+    void removeTableRow();
 };
 
 #endif // PAIRTABPAGE_H

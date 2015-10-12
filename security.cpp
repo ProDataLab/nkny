@@ -404,7 +404,7 @@ void Security::handleRawBarData()
 //        }
 //    }
 
-    pDebug(QDateTime::fromTime_t((uint)newBarsTimeStamp).toString("hh:mm:ss"));
+// pDebug(QDateTime::fromTime_t((uint)newBarsTimeStamp).toString("hh:mm:ss"));
 
     if (dvr->timeStamp.isEmpty()) {
         dvh->close.append(dvh->close.last());
@@ -452,6 +452,7 @@ void Security::handleRawBarData()
             dvh->high.append(high);
             dvh->low.append(low);
             dvh->close.append(close);
+            qDebug() << "open:" << open <<  "high:" << high << "low:" << low << "close:" << close;
         }
         else {
             dvh->open.append(dvh->open.last());

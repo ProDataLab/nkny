@@ -91,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent)
     tab->setVisible(true);
     tab->setColumnCount(m_orderHeaderLabels.size());
     tab->setHorizontalHeaderLabels(m_orderHeaderLabels);
-    tab->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+//    tab->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     tab->horizontalHeader()->setSectionsMovable(true);
     tab->setShowGrid(true);
 
@@ -116,7 +116,7 @@ MainWindow::MainWindow(QWidget *parent)
     ptw->setVisible(true);
     ptw->setColumnCount(m_portfolioHeaderLabels.size());
     ptw->setHorizontalHeaderLabels(m_portfolioHeaderLabels);
-    ptw->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+//    ptw->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ptw->horizontalHeader()->setSectionsMovable(true);
     ptw->setShowGrid(true);
 
@@ -134,17 +134,17 @@ MainWindow::MainWindow(QWidget *parent)
             << "Price2"
             << "Ratio"
             << "RatioMA"
-            << "StdDev"
-            << "PcntFromMA"
-            << "Corr"
-            << "Vola"
-            << "RSI"
+            << "RatioStdDev"
+            << "PcntFromRatioMA"
+            << "Correlation"
+            << "RatioVolatility"
+            << "RatioRSI"
             << "RSISpread";
 
     homeTableWidget->setColumnCount(m_headerLabels.size());
     homeTableWidget->setHorizontalHeaderLabels(m_headerLabels);
 
-    homeTableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+//    homeTableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     homeTableWidget->setShowGrid(true);
 
     connect(ui->tabWidget->tabBar(), SIGNAL(tabMoved(int,int)),
@@ -578,9 +578,12 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     if (so->triggerType == EXIT) {
         if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
             ui->ordersTableWidget->removeRow(row);
-            if (ui->portfolioTableWidget->rowCount() == 2) {
-                ui->portfolioTableWidget->removeRow(0);
-                ui->portfolioTableWidget->removeRow(1);
+//            if (ui->portfolioTableWidget->rowCount() == 2) {
+//                ui->portfolioTableWidget->removeRow(1);
+//                ui->portfolioTableWidget->removeRow(0);
+//            }
+            for (int i=ui->portfolioTableWidget->rowCount()-1;i>=0;--i) {
+                ui->portfolioTableWidget->removeRow(i);
             }
             (*(s->getSecurityOrderMap())).remove(so->referenceOrderId);
             (*(s->getSecurityOrderMap())).remove(so->order.orderId);
@@ -832,7 +835,7 @@ void MainWindow::readSettings()
 
     QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
 
-    QSize size = settings.value("size", QSize(400, 400)).toSize();
+    QSize size = settings.value("size", QSize(400, 600)).toSize();
 
     QByteArray state = settings.value("state", QByteArray())
                                                   .toByteArray();
@@ -849,6 +852,8 @@ void MainWindow::readSettings()
 
 void MainWindow::readPageSettings()
 {
+    pDebug("");
+
     QSettings s;
     s.beginGroup("mainwindow");
     int size = s.beginReadArray("pages");
@@ -874,6 +879,8 @@ void MainWindow::readPageSettings()
     s.endArray();
     ui->tabWidget->setCurrentIndex(s.value("tabWidgetCurrentIndex").toInt());
     s.endGroup();
+
+    pDebug("leaving");
 }
 QStringList MainWindow::getHeaderLabels() const
 {
@@ -1010,6 +1017,10 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
     default:
         break;
     }
+
+    if (ui->portfolioTableWidget->rowCount() == 1) {
+        ui->portfolioTableWidget->removeRow(0);
+    }
 }
 
 void MainWindow::onTickSize(const long &tickerId, const TickType &field, const int &size)
@@ -1099,7 +1110,7 @@ QStringList MainWindow::getManagedAccounts() const
 
 void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
 {
-    pDebug("");
+// pDebug("");
 
     OrdersTableWidget* tw = ui->ordersTableWidget;
 
