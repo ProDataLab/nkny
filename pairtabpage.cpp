@@ -606,6 +606,10 @@ void PairTabPage::onActivateButtonClicked(bool)
         m_stdDevLayerPeaks.append(m_ratioStdDev.last());
     }
 
+
+    checkTradeTriggers();
+
+
     // THIS IS ONLY FOR TESTING REMOVE
 //    placeOrder(TEST);
 
