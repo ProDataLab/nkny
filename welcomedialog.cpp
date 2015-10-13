@@ -17,3 +17,8 @@ Ui::WelcomeDialog *WelcomeDialog::getUi() const
     return ui;
 }
 
+
+void WelcomeDialog::on_clearSettingsButton_clicked()
+{
+    ui->clearSettingsButton->setStyleSheet(QString("QPushButton {background-color: green;}"));
+}

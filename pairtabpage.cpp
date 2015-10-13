@@ -1816,6 +1816,9 @@ void PairTabPage::appendPlotsAndTable(long sid)
     cp->xAxis->setRangeUpper(timeStampLast);
     cp->replot();
 
+    if (m_securityMap.size() == 1)
+        return;
+
     if (m_bothPairsUpdated) {
         if (m_securityMap.size() > 1 && m_securityMap.values().at(1) == s) {
             m_bothPairsUpdated = false;

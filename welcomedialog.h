@@ -17,6 +17,9 @@ public:
 
     Ui::WelcomeDialog *getUi() const;
 
+private slots:
+    void on_clearSettingsButton_clicked();
+
 private:
     Ui::WelcomeDialog *ui;
 };
