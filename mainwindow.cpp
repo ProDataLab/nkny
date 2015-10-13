@@ -1208,3 +1208,5 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
 
 
 
+
+

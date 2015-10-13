@@ -123,7 +123,13 @@ private slots:
 
     void onCustomPlotDoubleClick(QCPAbstractPlottable *plotable, QMouseEvent *event);
 
-    void onResetPlot();    
+    void onResetPlot();
+
+    void on_manualTradeEntryCheckBox_stateChanged(int arg1);
+
+    void on_manualTradeExitCheckBox_stateChanged(int arg1);
+
+
 
 private:
     IBClient*                               m_ibClient;

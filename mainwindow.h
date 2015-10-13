@@ -91,6 +91,8 @@ private slots:
     void onClearSettings();
 
 
+
+
 private:
     Ui::MainWindow *ui;
     Ui::PairTabPage* ptpui;

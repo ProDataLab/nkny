@@ -80,6 +80,7 @@ enum TriggerType
     RSI,
     PCNT,
     EXIT,
+    MANUAL,
     TEST
 };
 
