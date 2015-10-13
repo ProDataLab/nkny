@@ -2885,6 +2885,13 @@ void PairTabPage::onResetPlot()
     graph->parentPlot()->replot();
 }
 
+void PairTabPage::onAutoUpdateRangeCheckBox(int arg1)
+{
+    if (arg1 == Qt::Checked) {
+        foreach(QMdiSubWindow* s, ui->mdiArea->subWindowList()) {
+    }
+}
+
 void PairTabPage::removeTableRow()
 {
     QTableWidget* tab = mwui->homeTableWidget;

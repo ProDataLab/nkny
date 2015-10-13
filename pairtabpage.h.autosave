@@ -122,6 +122,8 @@ private slots:
     void onCustomPlotDoubleClick(QCPAbstractPlottable *plotable, QMouseEvent *event);
 
     void onResetPlot();    
+    
+    void onAutoUpdateRangeCheckBox(int arg1);
 
 private:
     IBClient*                               m_ibClient;

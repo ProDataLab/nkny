@@ -90,6 +90,7 @@ private slots:
     void onWelcomeTimeout();
     void onClearSettings();
 
+
 private:
     Ui::MainWindow *ui;
     Ui::PairTabPage* ptpui;
