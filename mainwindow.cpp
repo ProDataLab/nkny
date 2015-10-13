@@ -984,11 +984,12 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
 {
     Q_UNUSED(canAutoExecute);
 
+    PairTabPage* p = NULL;
     Security* s = NULL;
     bool breakout = false;
 
     for (int i=0;i<m_pairTabPageMap.count();++i) {
-        PairTabPage* p = m_pairTabPageMap.values().at(i);
+        p = m_pairTabPageMap.values().at(i);
         if (p==NULL)
             continue;
         QList<Security*> securities = p->getSecurities();
@@ -1013,6 +1014,8 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
     case LAST:
 //        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
         s->appendRawPrice(price);
+        p->checkTradeTriggers();
+        p->checkTradeExits();
         break;
     default:
         break;

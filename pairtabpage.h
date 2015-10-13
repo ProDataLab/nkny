@@ -59,8 +59,10 @@ public:
 
     void exitOrder();
 
-
     uint getTimeFrameInSeconds() const;
+
+    void checkTradeTriggers();
+    void checkTradeExits();
 
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
@@ -219,8 +221,7 @@ private:
     void plotRatioRSI();
     void plotRSISpread();
     void addTableRow();
-    void checkTradeTriggers();
-    void checkTradeExits();
+
 //    void setupTriggers();
     int getPlotIndexFromSymbol(Security *s);
     void setDefaults();
