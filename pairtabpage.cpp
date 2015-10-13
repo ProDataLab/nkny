@@ -459,6 +459,7 @@ void PairTabPage::on_pair1ShowButton_clicked()
     }
 
     m_pair1ShowButtonClickedAlready = true;
+    ui->chartDataPage->getUi()->lastPair1PriceLabel->setText(c->symbol);
 
 //qDebug() << "[DEBUG-on_pair1ShowButton_clicked] leaving";
 }
@@ -518,6 +519,8 @@ void PairTabPage::on_pair2ShowButton_clicked()
     m_ibClient->reqContractDetails(reqId, *contract);
 
     m_pair2ShowButtonClickedAlready = true;
+
+    ui->chartDataPage->getUi()->lastPair2PriceLabel->setText(contract->symbol);
 
     pDebug("leaving");
 }
@@ -1850,6 +1853,8 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     // update chart data page
     Ui::DataToolBoxWidget* w = ui->chartDataPage->getUi();
+    w->lastPair1PriceLineEdit->setText(QString::number(dvh1->close.last()));
+    w->lastPair2PriceLineEdit->setText(QString::number(dvh2->close.last()));
     w->timeLabel->setText(QDateTime::fromTime_t((uint)dvh1->timeStamp.last()).time().toString("'Timestamp:    ' h:mm:ss AP"));
     w->lastCorrelationLineEdit->setText(QString::number(m_correlation.last(),'f',2));
     w->lastMaLineEdit->setText(QString::number(m_ratioMA.last(),'f',2));
@@ -2884,6 +2889,8 @@ void PairTabPage::onResetPlot()
     graph->keyAxis()->setRange(first, last);
     graph->parentPlot()->replot();
 }
+
+
 
 void PairTabPage::removeTableRow()
 {
