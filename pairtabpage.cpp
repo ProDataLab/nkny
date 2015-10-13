@@ -588,6 +588,14 @@ void PairTabPage::onPair2TimeOut()
 void PairTabPage::onActivateButtonClicked(bool)
 {
     if (ui->manualTradeEntryCheckBox->isChecked()) {
+        QMessageBox msgBox;
+        msgBox.setText("Caution!");
+        msgBox.setInformativeText("You are about to place an order... are you sure about the configurations in the trade entry window that pertain to manual orders?");
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Cancel);
+        int ret = msgBox.exec();
+        if (ret == QMessageBox::Cancel)
+            return;
         placeOrder(MANUAL);
     }
     else {
@@ -599,6 +607,10 @@ void PairTabPage::onActivateButtonClicked(bool)
         int ret = msgBox.exec();
         if (ret == QMessageBox::Cancel)
             return;
+        for (int i=0;i<5;++i) {
+            m_stdDevLayerPeaks.append(m_ratioStdDev.last());
+        }
+        checkTradeTriggers();
     }
 
     ui->activateButton->setEnabled(false);
@@ -607,12 +619,7 @@ void PairTabPage::onActivateButtonClicked(bool)
 //    ui->activateButton->setAutoFillBackground(true);
 //    ui->activateButton->setPalette(ui->activateButton->parentWidget()->palette());
 
-    for (int i=0;i<5;++i) {
-        m_stdDevLayerPeaks.append(m_ratioStdDev.last());
-    }
 
-
-    checkTradeTriggers();
 
 
     // THIS IS ONLY FOR TESTING REMOVE
