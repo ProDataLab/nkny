@@ -1012,8 +1012,9 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
     switch (field)
     {
     case LAST:
-//        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
+        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
         s->appendRawPrice(price);
+        p->appendPlotsAndTable(p->getSecurityMap().key(s));
         p->checkTradeTriggers();
         p->checkTradeExits();
         break;
