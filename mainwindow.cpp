@@ -1015,8 +1015,19 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
         qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
         s->appendRawPrice(price);
         p->appendPlotsAndTable(p->getSecurityMap().key(s));
-        p->checkTradeTriggers();
-        p->checkTradeExits();
+        if (!p->getUi()->activateButton->isEnabled()
+                && !p->getUi()->manualTradeEntryCheckBox->isChecked())
+        {
+            p->checkTradeTriggers();
+        }
+        if (!p->getUi()->activateButton->isEnabled()
+                && p->getUi()->deactivateButton->isEnabled()
+                && !p->getUi()->manualTradeExitCheckBox->isChecked()
+                && p->getSecurities().at(0)->getSecurityOrderMap()->count() > 0
+                )
+        {
+            p->checkTradeExits();
+        }
         break;
     default:
         break;

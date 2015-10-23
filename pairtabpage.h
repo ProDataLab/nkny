@@ -237,7 +237,7 @@ private:
     int getPlotIndexFromSymbol(Security *s);
     void setDefaults();
     QCustomPlot* createPlot();
-    QCPGraph* addGraph(QCustomPlot* cp, QVector<double> x, QVector<double> y, QColor penColor=QColor(Qt::blue), bool useBrush=true);
+    QCPGraph* addGraph(QCustomPlot* cp, QVector<double> x, QVector<QString> xLabels, QVector<double> y, QColor penColor=QColor(Qt::blue), bool useBrush=true);
     bool isTrading(Security *s);
     bool reqDeletePlotsAndTableRow();
     void removeTableRow();

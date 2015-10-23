@@ -29,6 +29,7 @@ void Security::appendHistData(TimeFrame timeFrame, double timeStamp, double open
 
     DataVecsHist* dvh;
     if (!m_dataMap.contains(timeFrame)) {
+        m_timeFrame = timeFrame;
         dvh = new DataVecsHist;
         m_dataMap[timeFrame] = dvh;
     }
@@ -492,6 +493,49 @@ double Security::getRawPriceHigh() const
 double Security::getRawPriceLow() const
 {
     return m_rawPriceLow;
+}
+
+QVector<double> Security::getFakeTimeStampVector()
+{
+    DataVecsHist* dvh = (DataVecsHist*)m_dataMap.value(m_timeFrame);
+    QVector<double> timeStampVector = dvh->timeStamp;
+    double fakeTimeStamp = timeStampVector.first();
+    double timeFrameInSeconds = (double)m_pairTabPage->getTimeFrameInSeconds();
+    QVector<double> ret;
+
+    for (int i=0;i<timeStampVector.size();++i) {
+        fakeTimeStamp += timeFrameInSeconds;
+        ret.append(fakeTimeStamp);
+    }
+    return ret;
+}
+
+QVector<QString> Security::getTimeStampVectorLabels()
+{
+//    if (m_timeFrame == DAY_1)
+//        cp->xAxis->setDateTimeFormat("MM/dd/yy");
+//    else
+//        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
+
+    TimeFrame tf = m_pairTabPage->getTimeFrame();
+
+    DataVecsHist* dvh = (DataVecsHist*)m_dataMap.value(m_timeFrame);
+    QVector<double> timeStampVec = dvh->timeStamp;
+    QVector<QString> ret;
+
+    if (tf == DAY_1) {
+        for (int i = 0;i<timeStampVec.size();++i) {
+            uint ts = (uint)timeStampVec.at(i);
+            ret.append(QDateTime::fromTime_t(ts).toString("MM/dd/yy"));
+        }
+    }
+    else {
+        for (int i = 0;i<timeStampVec.size();++i) {
+            uint ts = (uint)timeStampVec.at(i);
+            ret.append(QDateTime::fromTime_t(ts).toString("MM/dd/yy\nhh:mm:ss"));
+        }
+    }
+    return ret;
 }
 
 

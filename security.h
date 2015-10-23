@@ -166,6 +166,11 @@ public:
 
     double getRawPriceLow() const;
 
+    QVector<double> getFakeTimeStampVector();
+
+    QVector<QString> getTimeStampVectorLabels();
+
+
 signals:
 
 public slots:
@@ -189,6 +194,7 @@ private:
     PairTabPage*                        m_pairTabPage;
     double                              m_rawPriceHigh;
     double                              m_rawPriceLow;
+    TimeFrame                           m_timeFrame;
 };
 
 #endif // SECURITY_H

@@ -641,6 +641,17 @@ void PairTabPage::onDeactivateButtonClicked(bool)
     Security* s1 = m_securityMap.values().at(0);
     Security* s2 = m_securityMap.values().at(1);
 
+    bool manualTrade = ui->manualTradeExitCheckBox->isChecked();
+    bool haveOrders = s1->getSecurityOrderMap()->count() > 0;
+
+    if (manualTrade && haveOrders)
+    {
+        exitOrder();
+        ui->activateButton->setEnabled(true);
+        ui->deactivateButton->setEnabled(false);
+        return;
+    }
+
     if (s1->getSecurityOrderMap()->isEmpty() && s2->getSecurityOrderMap()->isEmpty()) {
         ui->activateButton->setEnabled(true);
         ui->deactivateButton->setEnabled(false);
@@ -1610,6 +1621,7 @@ QString PairTabPage::getTabSymbol() const
 
 void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
 {
+    pDebug("");
 //qDebug() << "[DEBUG-PairTabPage::placeOrder]";
 
 
@@ -1768,7 +1780,8 @@ void PairTabPage::showPlot(long tickerId)
     DataVecsHist* dvh = s->getHistData(m_timeFrame);
 
     QCustomPlot* cp = createPlot();
-    addGraph(cp, dvh->timeStamp, dvh->close);
+//    addGraph(cp, dvh->timeStamp, dvh->close);
+    addGraph(cp, s->getFakeTimeStampVector(), s->getTimeStampVectorLabels(), dvh->close);
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
@@ -1813,18 +1826,29 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     if (!dvr || dvrTimeStampIsEmpty) {
 //        pDebug("");
-        timeStampLast = dvh->timeStamp.last();
+//        timeStampLast = dvh->timeStamp.last();
+        timeStampLast = s->getFakeTimeStampVector().last();
         closeLast = dvh->close.last();
         cp->graph()->addData(timeStampLast, closeLast);
+        cp->xAxis->setTickVectorLabels(s->getTimeStampVectorLabels());
     }
     if (dvr && !dvrTimeStampIsEmpty) {
         pDebug("");
-        timeStampLast = dvh->timeStamp.last() + m_timeFrameInSeconds;
+//        timeStampLast = dvh->timeStamp.last() + m_timeFrameInSeconds;
+        timeStampLast = s->getFakeTimeStampVector().last() + m_timeFrameInSeconds;
         closeLast = dvr->price.last();
         QCPDataMap* dataMap = cp->graph()->data();
         double lastKey = dataMap->keys().last();
         dataMap->remove(lastKey);
         (*dataMap)[timeStampLast] = QCPData(timeStampLast, closeLast);
+        QVector<QString> newTsLabels = s->getTimeStampVectorLabels();
+        QString format;
+        if (m_timeFrame == DAY_1)
+            format = QString("MM/dd/yy");
+        else
+            format = QString("MM/dd/yy\nhh:mm:ss");
+        newTsLabels.append(QDateTime::fromTime_t(timeStampLast).toString(format));
+        cp->xAxis->setTickVectorLabels(newTsLabels);
     }
 
     if (ui->autoUpdateRangeCheckBox->isChecked())
@@ -1870,6 +1894,8 @@ void PairTabPage::appendPlotsAndTable(long sid)
     dvr2 = s2->getRawData();
 
     QVector<double> timeStampVec = dvh1->timeStamp;
+    QVector<double> fakeTimeStamps = s1->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = s1->getTimeStampVectorLabels();
     QVector<double> closeVec1 = dvh1->close;
     QVector<double> closeVec2 = dvh2->close;
     QVector<double> highVec1  = dvh1->high;
@@ -1878,21 +1904,30 @@ void PairTabPage::appendPlotsAndTable(long sid)
     QVector<double> lowVec2   = dvh2->low;
 
     bool isRawUpdate = false;
+    QString format;
 
     if (dvr1 && !dvr1->price.isEmpty()) {
         pDebug("");
-        timeStampVec.append(dvh1->timeStamp.last() + m_timeFrameInSeconds);
         isRawUpdate = true;
         closeVec1.append(dvr1->price.last());
         highVec1.append(s1->getRawPriceHigh());
         lowVec1.append(s1->getRawPriceLow());
     }
     if (dvr2 && !dvr2->price.isEmpty()) {
-        timeStampVec.append(dvh1->timeStamp.last() + m_timeFrameInSeconds);
         isRawUpdate = true;
         closeVec2.append(dvr1->price.last());
         highVec2.append(s2->getRawPriceHigh());
         lowVec2.append(s2->getRawPriceLow());
+    }
+
+    if (isRawUpdate) {
+        timeStampVec.append(dvh1->timeStamp.last() + m_timeFrameInSeconds);
+        fakeTimeStamps.append(fakeTimeStamps.last() + m_timeFrameInSeconds);
+        if (m_timeFrame == DAY_1)
+            format = QString("MM/dd/yy");
+        else
+            format = QString("MM/dd/yy\nhh:mm:ss");
+        timeStampLabels.append(QDateTime::fromTime_t((uint)timeStampVec.last()).toString(format));
     }
 
 //    pDebug("");
@@ -1925,7 +1960,8 @@ void PairTabPage::appendPlotsAndTable(long sid)
     w->lastVolatilityLineEdit->setText(QString::number(m_ratioVolatility.last(),'f',2));
 
 //    double ts = dvh->timeStamp.last();
-    double ts = timeStampVec.last();
+//    double ts = timeStampVec.last();
+    double ts = fakeTimeStamps.last();
 
     double min = 0;
     double max = 0;
@@ -2055,6 +2091,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
         if (ui->autoUpdateRangeCheckBox->isChecked())
             cp->xAxis->setRangeUpper(timeStampLast);
+        cp->xAxis->setTickVectorLabels(timeStampLabels);
         cp->replot();
     }
 
@@ -2207,7 +2244,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
             tw->item(row,c)->setText(QString::number(m_ratioVolatility.last(),'f',2));
         else if (headerItemText == "RatioRSI")
             tw->item(row,c)->setText(QString::number(m_ratioRSI.last(),'f',2));
-        else if (headerItemText == "SpreadRSI")
+        else if (headerItemText == "RSISpread")
             tw->item(row,c)->setText(QString::number(m_rsiSpread.last(),'f',2));
     }
 
@@ -2261,13 +2298,15 @@ void PairTabPage::plotRatio()
     int diff;
 
     diff = ts.size() - m_ratioMA.size();
+    QVector<double> fakeTimeStamps = s1->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = s1->getTimeStampVectorLabels();
 
     // Ratio
-    addGraph(cp, ts.mid(diff), m_ratio.mid(diff));
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_ratio.mid(diff));
 //    addGraph(cp, ts, m_ratio);
 
     // MA
-    addGraph(cp, ts.mid(diff), m_ratioMA, Qt::red, false);
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_ratioMA, Qt::red, false);
 
 
     QMdiArea* ma = ui->mdiArea;
@@ -2289,8 +2328,11 @@ void PairTabPage::plotRatioMA()
 
     int diff = dvh1->timeStamp.size() - m_ratioMA.size();
 
+    QVector<double> fakeTimeStamps = m_securityMap.values().at(0)->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = m_securityMap.values().at(0)->getTimeStampVectorLabels();
+
     QCustomPlot* cp = createPlot();
-    addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioMA);
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_ratioMA);
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
@@ -2302,7 +2344,8 @@ void PairTabPage::plotRatioMA()
 
 void PairTabPage::plotRatioStdDev()
 {
-    DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
+    Security* s1 = m_securityMap.values().at(0);
+    DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
 
     int period = qMin(ui->stdDevPeriodSpinBox->value(), m_ratio.size());
 
@@ -2310,8 +2353,11 @@ void PairTabPage::plotRatioStdDev()
 
     int diff = dvh1->timeStamp.size() - m_ratioStdDev.size();
 
+    QVector<double> fakeTimeStamps = s1->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = s1->getTimeStampVectorLabels();
+
     QCustomPlot* cp = createPlot();
-    addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioStdDev);
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_ratioStdDev);
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
@@ -2323,14 +2369,18 @@ void PairTabPage::plotRatioStdDev()
 
 void PairTabPage::plotRatioPercentFromMean()
 {
-    DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
+    Security* s1 = m_securityMap.values().at(0);
+    DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
 
     m_ratioPercentFromMA = getPercentFromMA(m_ratio, ui->maPeriodSpinBox->value());
 
     int diff = dvh1->timeStamp.size() - m_ratioPercentFromMA.size();
 
+    QVector<double> fakeTimeStamps = s1->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = s1->getTimeStampVectorLabels();
+
     QCustomPlot* cp = createPlot();
-    addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioPercentFromMA);
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_ratioPercentFromMA);
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
@@ -2343,15 +2393,21 @@ void PairTabPage::plotRatioPercentFromMean()
 void PairTabPage::plotCorrelation()
 {
 //    P_DEBUG;
-    DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
-    DataVecsHist* dvh2 = m_securityMap.values().at(1)->getHistData(m_timeFrame);
+    Security* s1 = m_securityMap.values().at(0);
+    Security* s2 = m_securityMap.values().at(1);
+
+    DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
+    DataVecsHist* dvh2 = s2->getHistData(m_timeFrame);
 
     m_correlation = getCorrelation(dvh1->close, dvh2->close);
 
     int diff = dvh1->timeStamp.size() - m_correlation.size();
 
+    QVector<double> fakeTimeStamps = s1->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = s1->getTimeStampVectorLabels();
+
     QCustomPlot* cp = createPlot();
-    addGraph(cp, dvh1->timeStamp.mid(diff), m_correlation);
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_correlation);
     cp->yAxis->setRange(-1.0, 1.0);
 
     QMdiArea* ma = ui->mdiArea;
@@ -2374,8 +2430,11 @@ void PairTabPage::plotRatioVolatility()
 {
     pDebug("");
 
-    DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
-    DataVecsHist* dvh2 = m_securityMap.values().at(1)->getHistData(m_timeFrame);
+    Security* s1 = m_securityMap.values().at(0);
+    Security* s2 = m_securityMap.values().at(1);
+
+    DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
+    DataVecsHist* dvh2 = s2->getHistData(m_timeFrame);
 
     int period = qMin(ui->volatilityPeriodSpinBox->value(), m_ratio.size());
 
@@ -2387,8 +2446,11 @@ void PairTabPage::plotRatioVolatility()
 
     int diff = dvh1->timeStamp.size() - m_ratioVolatility.size();
 
+    QVector<double> fakeTimeStamps = s1->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = s1->getTimeStampVectorLabels();
+
     QCustomPlot* cp = createPlot();
-    addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioVolatility);
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_ratioVolatility);
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
@@ -2401,7 +2463,8 @@ void PairTabPage::plotRatioVolatility()
 
 void PairTabPage::plotRatioRSI()
 {
-    DataVecsHist* dvh1 = m_securityMap.values().at(0)->getHistData(m_timeFrame);
+    Security* s1 = m_securityMap.values().at(0);
+    DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
 
     int period = qMin(ui->volatilityPeriodSpinBox->value(), m_ratio.size());
 
@@ -2409,9 +2472,12 @@ void PairTabPage::plotRatioRSI()
 
     int diff = dvh1->timeStamp.size() - m_ratioRSI.size();
 
+    QVector<double> fakeTimeStamps = s1->getFakeTimeStampVector();
+    QVector<QString> timeStampLabels = s1->getTimeStampVectorLabels();
+
     QCustomPlot* cp = createPlot();
 
-    addGraph(cp, dvh1->timeStamp.mid(diff), m_ratioRSI);
+    addGraph(cp, fakeTimeStamps.mid(diff), timeStampLabels.mid(diff), m_ratioRSI);
     cp->yAxis->setRange(0, 100);
 
 
@@ -2450,18 +2516,23 @@ void PairTabPage::plotRSISpread()
 
     int diff = 0;
     QVector<double> ts;
+    QVector<QString> tsLabels;
 
     if (dvh1->timeStamp.size() < dvh2->timeStamp.size()) {
         diff = dvh1->timeStamp.size() - m_rsiSpread.size();
-        ts = dvh1->timeStamp.mid(diff);
+//        ts = dvh1->timeStamp.mid(diff);
+        ts = s1->getFakeTimeStampVector().mid(diff);
+        tsLabels = s1->getTimeStampVectorLabels().mid(diff);
     }
     else {
         diff = dvh2->timeStamp.size() - m_rsiSpread.size();
-        ts = dvh2->timeStamp.mid(diff);
+//        ts = dvh2->timeStamp.mid(diff);
+        ts = s2->getFakeTimeStampVector().mid(diff);
+        tsLabels = s2->getTimeStampVectorLabels().mid(diff);
     }
-    QString tsLast = QDateTime::fromTime_t((int)ts.last()).toString("yyMMdd::hh:mm:ss");
+//    QString tsLast = QDateTime::fromTime_t((int)ts.last()).toString("yyMMdd::hh:mm:ss");
     QCustomPlot* cp = createPlot();
-    addGraph(cp, ts, m_rsiSpread);
+    addGraph(cp, ts, tsLabels, m_rsiSpread);
 
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
@@ -2839,7 +2910,7 @@ QCustomPlot *PairTabPage::createPlot()
     return cp;
 }
 
-QCPGraph *PairTabPage::addGraph(QCustomPlot *cp, QVector<double> x, QVector<double> y, QColor penColor, bool useBrush)
+QCPGraph *PairTabPage::addGraph(QCustomPlot *cp, QVector<double> x, QVector<QString> xLabels, QVector<double> y, QColor penColor, bool useBrush)
 {
     cp->addGraph();
     int count = cp->graphCount();
@@ -2847,7 +2918,11 @@ QCPGraph *PairTabPage::addGraph(QCustomPlot *cp, QVector<double> x, QVector<doub
     g->setPen(QPen(penColor));
     if (useBrush)
         g->setBrush(QBrush(QColor(0, 0, 255, 20)));
+
     g->setData(x, y);
+
+    cp->xAxis->setAutoTickLabels(false);
+    cp->xAxis->setTickVectorLabels(xLabels);
 
     cp->xAxis->setRange(x.first(), x.last());
 
@@ -3039,13 +3114,17 @@ void PairTabPage::on_manualTradeEntryCheckBox_stateChanged(int arg1)
     if (arg1 == Qt::Checked) {
         ui->activateButton->setText("Place Order");
     }
+    else
+        ui->activateButton->setText("Activate");
 }
 
 void PairTabPage::on_manualTradeExitCheckBox_stateChanged(int arg1)
 {
     if (arg1 == Qt::Checked) {
-        ui->activateButton->setChecked("Close Order");
+        ui->deactivateButton->setText("Close Order");
     }
+    else
+        ui->deactivateButton->setText("Deactivate");
 }
 
 void PairTabPage::onMouseMove(QMouseEvent *event)
