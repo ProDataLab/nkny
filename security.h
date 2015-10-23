@@ -126,7 +126,13 @@ public:
     void appendRawPrice(const double & price);
     void appendRawSize(const int & size);
 
-//    DataVecsRaw* getRawData() { return (DataVecsRaw*)m_dataMap[RAW]; }
+    DataVecsRaw* getRawData()
+    {
+        if (m_dataMap.contains(RAW))
+            return (DataVecsRaw*)m_dataMap.value(RAW);
+        else
+            return NULL;
+    }
     DataVecsHist* getHistData(TimeFrame timeFrame) { return (DataVecsHist*)m_dataMap.value(timeFrame); }
     DataVecsNewBar* getNewBarData(TimeFrame timeFrame) { return (DataVecsNewBar*)m_dataMap.value(timeFrame); }
 
@@ -156,6 +162,10 @@ public:
 
     void handleRawBarData();
 
+    double getRawPriceHigh() const;
+
+    double getRawPriceLow() const;
+
 signals:
 
 public slots:
@@ -177,6 +187,8 @@ private:
     QMap<long,SecurityOrder*>           m_securityOrderMap;
     Security*                           m_pairPartner;
     PairTabPage*                        m_pairTabPage;
+    double                              m_rawPriceHigh;
+    double                              m_rawPriceLow;
 };
 
 #endif // SECURITY_H

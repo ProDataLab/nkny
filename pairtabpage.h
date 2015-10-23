@@ -64,6 +64,11 @@ public:
     void checkTradeTriggers();
     void checkTradeExits();
 
+    void appendPlotsAndTable(long sid);
+
+
+    QMap<long, Security *> getSecurityMap() const;
+
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
         double low, double close, int volume, int barCount, double WAP, int hasGaps);
@@ -217,7 +222,6 @@ private:
     void reqHistoricalData(long tickerId, QDateTime dt=QDateTime::currentDateTime());
     void placeOrder(TriggerType triggerType, bool reverse=false);
     void showPlot(long tickerId);
-    void appendPlotsAndTable(long sid);
     void plotRatio();
     void plotRatioMA();
     void plotRatioStdDev();

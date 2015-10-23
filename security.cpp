@@ -9,6 +9,8 @@ Security::Security(const long &tickerId, QObject *parent)
     , m_histDataRequested(false)
     , m_lastBarsTimeStamp(0)
     , m_pairTabPage(qobject_cast<PairTabPage*>(parent))
+    , m_rawPriceHigh(0)
+    , m_rawPriceLow(9999999)
 //    , m_gettingRealTimeData(false)
 //    , m_fillDataHandled(false)
 {
@@ -100,6 +102,11 @@ void Security::appendRawPrice(const double &price)
 
     dvr->timeStamp.append((double)QDateTime::currentDateTime().toTime_t());
     dvr->size.append(-1);
+
+    if (price > m_rawPriceHigh)
+        m_rawPriceHigh = price;
+    if (price < m_rawPriceLow)
+        m_rawPriceLow = price;
 }
 
 void Security::appendRawSize(const int &size)
@@ -475,6 +482,16 @@ void Security::handleRawBarData()
     dvr->size.clear();
 
 //    qApp->exit();
+}
+
+double Security::getRawPriceHigh() const
+{
+    return m_rawPriceHigh;
+}
+
+double Security::getRawPriceLow() const
+{
+    return m_rawPriceLow;
 }
 
 
