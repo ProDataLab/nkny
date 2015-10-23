@@ -1815,9 +1815,16 @@ void PairTabPage::showPlot(long tickerId)
 
 void PairTabPage::appendPlotsAndTable(long sid)
 {
-//    pDebug("");
+    pDebug("");
+
+    bool isS1 = false;
+    bool isS2 = false;
 
     Security* s = m_securityMap.value(sid);
+    if (s == m_securityMap.values().at(0))
+        isS1 = true;
+    if (m_securityMap.count() == 2 && s == m_securityMap.values().at(1))
+        isS2 = true;
 
 //    bool isS1 = m_securityMap.keys().indexOf(sid) == 0;
 //    bool isS2 = m_securityMap.keys().indexOf(sid) == 1;
@@ -1845,7 +1852,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
         closeLast = dvh->close.last();
         cp->graph()->addData(timeStampLast, closeLast);
     }
-    else {
+    if (dvr && !dvrTimeStampIsEmpty) {
         pDebug("");
         timeStampLast = dvh->timeStamp.last() + m_timeFrameInSeconds;
         closeLast = dvr->price.last();
@@ -1858,6 +1865,21 @@ void PairTabPage::appendPlotsAndTable(long sid)
     if (ui->autoUpdateRangeCheckBox->isChecked())
         cp->xAxis->setRangeUpper(timeStampLast);
     cp->replot();
+
+    Ui::DataToolBoxWidget* w = ui->chartDataPage->getUi();
+    QTableWidget* tw = mwui->homeTableWidget;
+
+
+    if (isS1) {
+        pDebug("isS1");
+        pDebug(QString::number(closeLast,'f',2));
+        w->lastPair1PriceLineEdit->setText(QString::number(closeLast));
+    }
+    if (isS2) {
+        pDebug("isS2");
+        pDebug(QString::number(closeLast));
+        w->lastPair2PriceLineEdit->setText(QString::number(closeLast,'f',2));
+    }
 
     if (m_securityMap.size() == 1)
         return;
@@ -1927,9 +1949,6 @@ void PairTabPage::appendPlotsAndTable(long sid)
     m_rsiSpread = getDiff(m_pair1RSI, m_pair2RSI);
 
     // update chart data page
-    Ui::DataToolBoxWidget* w = ui->chartDataPage->getUi();
-    w->lastPair1PriceLineEdit->setText(QString::number(closeVec1.last()));
-    w->lastPair2PriceLineEdit->setText(QString::number(closeVec2.last()));
     w->timeLabel->setText(QDateTime::fromTime_t((uint)timeStampVec.last()).time().toString("'Timestamp:    ' h:mm:ss AP"));
     w->lastCorrelationLineEdit->setText(QString::number(m_correlation.last(),'f',2));
     w->lastMaLineEdit->setText(QString::number(m_ratioMA.last(),'f',2));
@@ -2077,7 +2096,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
 //    QString sym1 = ui->pairsTabWidget->tabText(0);
 //    QString sym2 = ui->pairsTabWidget->tabText(1);
 
-    QTableWidget* tw = mwui->homeTableWidget;
+//    QTableWidget* tw = mwui->homeTableWidget;
 
     int row = -1;
 
@@ -2198,31 +2217,32 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     for (int c=0;c<tw->columnCount();++c) {
         QTableWidgetItem* headerItem = tw->horizontalHeaderItem(c);
-        if (headerItem->text() == "Price1") {
+        QString headerItemText = headerItem->text();
+        if (headerItemText == "Price1") {
             if (s == s1) {
                 tw->item(row,c)->setText(QString::number(closeVec1.last(), 'f', 2));
             }
         }
-        else if (headerItem->text() == "Price2") {
+        else if (headerItemText == "Price2") {
             if (s == s2) {
                 tw->item(row, c)->setText(QString::number(closeVec2.last(), 'f', 2));
             }
         }
-        if (headerItem->text() == "Ratio")
+        if (headerItemText == "Ratio")
             tw->item(row,c)->setText(QString::number(m_ratio.last(),'f',2));
-        else if (headerItem->text() == "RatioMA")
+        else if (headerItemText == "RatioMA")
             tw->item(row,c)->setText(QString::number(m_ratioMA.last(),'f',2));
-        else if (headerItem->text() == "RatioStdDev")
+        else if (headerItemText == "RatioStdDev")
             tw->item(row,c)->setText(QString::number(m_ratioStdDev.last(),'f',2));
-        else if (headerItem->text() == "PcntFromRatioMA")
+        else if (headerItemText == "PcntFromRatioMA")
             tw->item(row,c)->setText(QString::number(m_ratioPercentFromMA.last(),'f',2));
-        else if (headerItem->text() == "Correlation")
+        else if (headerItemText == "Correlation")
             tw->item(row,c)->setText(QString::number(m_correlation.last(),'f',2));
-        else if (headerItem->text() == "RatioVolatility")
+        else if (headerItemText == "RatioVolatility")
             tw->item(row,c)->setText(QString::number(m_ratioVolatility.last(),'f',2));
-        else if (headerItem->text() == "RatioRSI")
+        else if (headerItemText == "RatioRSI")
             tw->item(row,c)->setText(QString::number(m_ratioRSI.last(),'f',2));
-        else if (headerItem->text() == "SpreadRSI")
+        else if (headerItemText == "SpreadRSI")
             tw->item(row,c)->setText(QString::number(m_rsiSpread.last(),'f',2));
     }
 
@@ -2876,7 +2896,7 @@ QCPGraph *PairTabPage::addGraph(QCustomPlot *cp, QVector<double> x, QVector<doub
 bool PairTabPage::isTrading(Security* s)
 {
 
-//    return true;
+    return true;
 
     QDateTime currentDateTime = QDateTime::currentDateTime();
     QDate currentDate = currentDateTime.date();
