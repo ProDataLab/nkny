@@ -1775,41 +1775,6 @@ void PairTabPage::showPlot(long tickerId)
     sw->setWindowTitle(s->contract()->symbol);
     sw->maximumSize();
     cp->show();
-
-//    QCustomPlot* cp = new QCustomPlot();
-
-//    int tabIdx = ui->tabWidget->addTab(cp, s->contract()->symbol);
-//    ui->tabWidget->setCurrentIndex(tabIdx);
-//    m_customPlotMap[tabIdx] = cp;                   // TODO: SLOT TO DELETE CUSTOMPLOTS WHEN TAB IS REMOVED
-
-//    cp->addGraph();
-//    QCPGraph* g = cp->graph(0);
-//    g->setPen(QPen(Qt::blue));
-//    g->setBrush(QBrush(QColor(0, 0, 255, 20)));
-//    g->setData(dvh->timeStamp, dvh->close);
-
-////    g->setScatterStyle(QCPScatterStyle::ssCross);
-
-//    cp->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
-//    cp->axisRect()->setRangeDrag(Qt::Horizontal);
-//    cp->axisRect()->setRangeZoom(Qt::Horizontal);
-
-//    cp->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-//    cp->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-//    if (m_timeFrame == DAY_1)
-//        cp->xAxis->setDateTimeFormat("MM/dd/yy");
-//    else
-//        cp->xAxis->setDateTimeFormat("MM/dd/yy\nhh:mm:ss");
-//    cp->xAxis->setTickLabelFont(QFont(QFont().family(), 8));
-
-//    cp->xAxis->setRange(dvh->timeStamp.first(), dvh->timeStamp.last());
-
-//    double min = getMin(dvh->close);
-//    double max = getMax(dvh->close);
-
-//    cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
-
-//    cp->replot();
 }
 
 
@@ -2165,6 +2130,7 @@ void PairTabPage::plotRatio()
     QMdiArea* ma = ui->mdiArea;
     QMdiSubWindow* sw =  ma->addSubWindow(cp);
     sw->setWindowTitle("Ratio");
+    cp->setToolTip("Ratio/RatioMA");
     sw->maximumSize();
     cp->show();
 }
@@ -2700,8 +2666,12 @@ QCustomPlot *PairTabPage::createPlot()
 {
     QCustomPlot* cp = new QCustomPlot();
 
+    cp->setCursor(QCursor(Qt::CrossCursor));
+
     connect(cp, SIGNAL(plottableDoubleClick(QCPAbstractPlottable*,QMouseEvent*)),
             this, SLOT(onCustomPlotDoubleClick(QCPAbstractPlottable*,QMouseEvent*)));
+    connect(cp, SIGNAL(mouseMove(QMouseEvent*)),
+            this, SLOT(onMouseMove(QMouseEvent*)));
 
 //    cp->setMinimumSize(m_minWidth, m_minHeight);
     m_customPlotMap[ui->mdiArea->subWindowList().size()] = cp;
@@ -2932,3 +2902,41 @@ void PairTabPage::on_manualTradeExitCheckBox_stateChanged(int arg1)
         ui->activateButton->setChecked("Close Order");
     }
 }
+
+void PairTabPage::onMouseMove(QMouseEvent *event)
+{
+    QCustomPlot* cp = qobject_cast<QCustomPlot*>(sender());
+
+    double xVal = 0;
+    double yVal = 0;
+
+    xVal = cp->xAxis->pixelToCoord((double)(event->pos().x()));
+    yVal = cp->yAxis->pixelToCoord((double)(event->pos().y()));
+    m_mainWindow->statusBar()->clearMessage();
+
+    QDateTime dt = QDateTime::fromTime_t(xVal);
+
+    QString dateString(QString("Date: " + dt.toString("MM/dd/yyyy")));
+    QString timeString(QString("Time: " + dt.toString("hh:mm:ss")));
+    QString valString(QString("Value: " + QString::number(yVal)));
+    m_mainWindow->statusBar()->showMessage(dateString + "        " + timeString + "        " + valString);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

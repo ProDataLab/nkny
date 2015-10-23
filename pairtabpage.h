@@ -129,6 +129,7 @@ private slots:
 
     void on_manualTradeExitCheckBox_stateChanged(int arg1);
 
+    void onMouseMove(QMouseEvent* event);
 
 
 private:
