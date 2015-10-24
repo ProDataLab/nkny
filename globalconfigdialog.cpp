@@ -45,6 +45,7 @@ GlobalConfigDialog::GlobalConfigDialog(QWidget *parent)
     ui->tradeExitPercentFromMeanDoubleSpinBox_2->setValue(s.value("tradeExitPercentFromMean").toDouble());
     ui->tradeExitStdDevCheckBox_2->setCheckState((Qt::CheckState)s.value("stdDevExitCheckBoxState").toInt());
     ui->tradeExitStdDevDoubleSpinBox_2->setValue(s.value("stdDevExit").toDouble());
+    ui->autoUpdateRangeCheckBox->setCheckState((Qt::CheckState)s.value("autoUpdateRangeCheckBoxState").toInt());
     s.endGroup();
 
     ui->lookbackLabel->setVisible(false);
@@ -96,6 +97,7 @@ void GlobalConfigDialog::on_buttonBox_accepted()
     s.setValue("tradeExitPercentFromMean", ui->tradeExitPercentFromMeanDoubleSpinBox_2->value());
     s.setValue("stdDevExitCheckBoxState", ui->tradeExitStdDevCheckBox_2->checkState());
     s.setValue("stdDevExit", ui->tradeExitStdDevDoubleSpinBox_2->value());
+    s.setValue("autoUpdateRangeCheckBoxState", ui->autoUpdateRangeCheckBox->checkState());
     s.endGroup();
 }
 

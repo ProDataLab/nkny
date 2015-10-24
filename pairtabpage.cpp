@@ -2557,6 +2557,8 @@ void PairTabPage::addTableRow()
     /// update chart data page
 //    DataToolBoxWidget* d = ui->
     Ui::DataToolBoxWidget* w = ui->chartDataPage->getUi();
+    w->lastPair1PriceLineEdit->setText(QString::number(d1->close.last(),'f',2));
+    w->lastPair2PriceLineEdit->setText(QString::number(d2->close.last(),'f',2));
     w->timeLabel->setText(QDateTime::fromTime_t((uint)d1->timeStamp.last()).time().toString("'Timestamp:    ' h:mm:ss AP"));
     w->lastCorrelationLineEdit->setText(QString::number(m_ratioStdDev.last(),'f',2));
     w->lastMaLineEdit->setText(QString::number(m_ratioMA.last(),'f',2));
@@ -2805,6 +2807,7 @@ void PairTabPage::setDefaults()
     ui->tradeExitPercentFromMeanDoubleSpinBox->setValue(dui->tradeExitPercentFromMeanDoubleSpinBox_2->value());
     ui->tradeExitStdDevCheckBox->setChecked(dui->tradeExitStdDevCheckBox_2->isChecked());
     ui->tradeExitStdDevDoubleSpinBox->setValue(dui->tradeExitStdDevDoubleSpinBox_2->value());
+    ui->autoUpdateRangeCheckBox->setChecked(dui->autoUpdateRangeCheckBox->isChecked());
 }
 
 QCustomPlot *PairTabPage::createPlot()
@@ -3039,13 +3042,17 @@ void PairTabPage::on_manualTradeEntryCheckBox_stateChanged(int arg1)
     if (arg1 == Qt::Checked) {
         ui->activateButton->setText("Place Order");
     }
+    else
+        ui->activateButton->setText("Activate");
 }
 
 void PairTabPage::on_manualTradeExitCheckBox_stateChanged(int arg1)
 {
     if (arg1 == Qt::Checked) {
-        ui->activateButton->setChecked("Close Order");
+        ui->deactivateButton->setText("Close Order");
     }
+    else
+        ui->deactivateButton->setText("Deactivate");
 }
 
 void PairTabPage::onMouseMove(QMouseEvent *event)
