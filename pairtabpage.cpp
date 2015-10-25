@@ -2180,6 +2180,11 @@ void PairTabPage::appendPlotsAndTable(long sid)
 //        }
     }
 
+    if (row == -1) {
+        pDebug("row == -1");
+        return;
+    }
+
     for (int c=0;c<tw->columnCount();++c) {
         QTableWidgetItem* headerItem = tw->horizontalHeaderItem(c);
         QString headerItemText = headerItem->text();
