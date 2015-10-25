@@ -55,7 +55,8 @@ HEADERS  += mainwindow.h \
     datatoolboxwidget.h \
     orderstablewidget.h \
     portfoliotablewidget.h \
-    welcomedialog.h
+    welcomedialog.h \
+    tablewidgetitem.h
 
 
 

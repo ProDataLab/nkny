@@ -17,6 +17,7 @@
 #include "stddevlayertab.h"
 //#include "smtp.h"
 #include "datatoolboxwidget.h"
+#include "tablewidgetitem.h"
 
 #include <QDateTime>
 #include <QTime>
@@ -25,7 +26,7 @@
 #include <QPen>
 #include <QColor>
 #include <QTableWidget>
-#include <QTableWidgetItem>
+//#include <QTableWidgetItem>
 #include <QCheckBox>
 #include <QLineEdit>
 #include <QMdiArea>
@@ -2554,7 +2555,7 @@ void PairTabPage::addTableRow()
         m_homeTablePageRowIndex = numRows;
     tab->setRowCount(m_homeTablePageRowIndex + 1);
     for (int i=0;i<itemList.size();++i) {
-        QTableWidgetItem* item = new QTableWidgetItem(itemList.at(i));
+        TableWidgetItem* item = new TableWidgetItem(itemList.at(i));
         tab->setItem(m_homeTablePageRowIndex, i, item);
     }
     tab->update();

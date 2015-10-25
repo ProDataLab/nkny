@@ -17,6 +17,7 @@
 
 #include "ui_welcomedialog.h"
 #include "welcomedialog.h"
+#include "tablewidgetitem.h"
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -447,7 +448,7 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
         ui->ordersTableWidget->setRowCount(ui->ordersTableWidget->rowCount()+1);
         row = ui->ordersTableWidget->rowCount() - 1;
         for (int c=0;c<ui->ordersTableWidget->columnCount();++c) {
-            ui->ordersTableWidget->setItem(row, c, new QTableWidgetItem);
+            ui->ordersTableWidget->setItem(row, c, new TableWidgetItem);
         }
     }
 
@@ -729,7 +730,7 @@ void MainWindow::onUpdatePortfolio( const Contract& contract, int position,
 //    << "RealizedPNL"
 //    << "AccountName";
 
-    QTableWidgetItem* i = NULL;
+    TableWidgetItem* i = NULL;
 
     if (!isUpdate) {
         row = ui->portfolioTableWidget->rowCount();
@@ -742,11 +743,11 @@ void MainWindow::onUpdatePortfolio( const Contract& contract, int position,
         QString field = ui->portfolioTableWidget->horizontalHeaderItem(c)->text();
 
         if (!isUpdate) {
-            i = new QTableWidgetItem;
+            i = new TableWidgetItem;
             ui->portfolioTableWidget->setItem(row, c, i);
         }
         else {
-            i = ui->portfolioTableWidget->item(row, c);
+            i = (TableWidgetItem*)ui->portfolioTableWidget->item(row, c);
         }
         if (field == "Symbol")
             i->setText(contract.symbol);
