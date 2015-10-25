@@ -9,6 +9,7 @@
 #include "ibcommissionreport.h"
 #include "ibsocketerrors.h"
 #include "ibtagvalue.h"
+#include "helpers.h"
 
 #include <QDebug>
 #include <QByteArray>
@@ -2444,7 +2445,9 @@ void IBClient::onReadyRead()
 
         default:
         {
-//qDebug() << "[CRITICAL] UNKNOWN_ID:" << msgId;
+            QString errstr("[CRITICAL] UNKNOWN_ID: " + QString::number(msgId));
+            pDebug(errstr);
+
             emit error( msgId, UNKNOWN_ID.code(), UNKNOWN_ID.msg());
             disconnectTWS();
             emit connectionClosed();

@@ -882,6 +882,8 @@ void MainWindow::readPageSettings()
 
     pDebug("leaving");
 }
+
+
 QStringList MainWindow::getHeaderLabels() const
 {
     return m_headerLabels;

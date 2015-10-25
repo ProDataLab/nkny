@@ -2874,7 +2874,7 @@ QCPGraph *PairTabPage::addGraph(QCustomPlot *cp, QVector<double> x, QVector<doub
 bool PairTabPage::isTrading(Security* s)
 {
 
-    return true;
+//    return true;
 
     QDateTime currentDateTime = QDateTime::currentDateTime();
     QDate currentDate = currentDateTime.date();
