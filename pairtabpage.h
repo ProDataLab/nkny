@@ -29,6 +29,9 @@ class PairTabPage : public QWidget
     Q_OBJECT
 
 public:
+    static int PairTabPageCount;
+
+public:
     explicit PairTabPage(IBClient* ibClient, const QStringList &managedAccounts, QWidget *parent = 0);
     ~PairTabPage();
     Ui::PairTabPage* getUi() { return ui; }
@@ -68,6 +71,12 @@ public:
 
 
     QMap<long, Security *> getSecurityMap() const;
+
+    int  getPairTabPageId() const;
+    void setPairTabPageId(int pairTabPageId);
+
+    bool isTrading(Security *s);
+
 
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
@@ -190,6 +199,7 @@ private:
     bool                                    m_mdiTile;
     bool                                    m_pair1ShowButtonClickedAlready;
     bool                                    m_pair2ShowButtonClickedAlready;
+    int                                     m_pairTabPageId;
 
     struct GraphInfo
     {
@@ -238,7 +248,6 @@ private:
     void setDefaults();
     QCustomPlot* createPlot();
     QCPGraph* addGraph(QCustomPlot* cp, QVector<double> x, QVector<double> y, QColor penColor=QColor(Qt::blue), bool useBrush=true);
-    bool isTrading(Security *s);
     bool reqDeletePlotsAndTableRow();
     void removeTableRow();
 };

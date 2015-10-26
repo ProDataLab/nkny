@@ -35,6 +35,7 @@
 #include <QCoreApplication>
 #include <QCursor>
 
+int PairTabPage::PairTabPageCount = 0;
 
 PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts, QWidget *parent)
     : QWidget(parent)
@@ -51,9 +52,9 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
     , m_readingSettings(false)
     , m_pair1ShowButtonClickedAlready(false)
     , m_pair2ShowButtonClickedAlready(false)
+    , m_pairTabPageId(++PairTabPageCount)
 
 {
-
 //    qDebug() << "[DEBUG-PairTabPage]";
 
     ui->setupUi(this);
@@ -1180,6 +1181,8 @@ void PairTabPage::setTabSymbol()
 {
     QString exp1, exp2;
 
+    QString idString(QString::number(m_pairTabPageId));
+
     QString expiryString1 = QString::number(m_pair1ContractDetailsWidget->getUi()->expiryMonthSpinBox->value())
             + "/"
             + QString::number(m_pair1ContractDetailsWidget->getUi()->expiryYearSpinBox->value());
@@ -1195,7 +1198,9 @@ void PairTabPage::setTabSymbol()
         exp2 = " [" + expiryString2 + "]";
     }
     m_oldTabSymbol = m_tabSymbol;
-    m_tabSymbol = ui->pairsTabWidget->tabText(0)
+    m_tabSymbol = idString
+            + ": "
+            + ui->pairsTabWidget->tabText(0)
             + exp1
             + " / "
             + ui->pairsTabWidget->tabText(1)
@@ -3081,6 +3086,16 @@ void PairTabPage::onMouseMove(QMouseEvent *event)
     QString timeString(QString("Time: " + dt.toString("hh:mm:ss")));
     QString valString(QString("Value: " + QString::number(yVal)));
     m_mainWindow->statusBar()->showMessage(dateString + "        " + timeString + "        " + valString);
+}
+
+int PairTabPage::getPairTabPageId() const
+{
+    return m_pairTabPageId;
+}
+
+void PairTabPage::setPairTabPageId(int pairTabPageId)
+{
+    m_pairTabPageId = pairTabPageId;
 }
 
 

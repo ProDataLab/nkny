@@ -128,6 +128,7 @@ MainWindow::MainWindow(QWidget *parent)
     QTableWidget* homeTableWidget = ui->homeTableWidget;
     homeTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     homeTableWidget->horizontalHeader()->setStretchLastSection(true);
+    homeTableWidget->verticalHeader()->setVisible(false);
 
 
     m_headerLabels << "Pair"
@@ -176,9 +177,11 @@ void MainWindow::on_action_New_triggered()
         if (p->getTabSymbol() == tabSymbol)
             return;
     }
+
+    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+    page->setPairTabPageId(ui->tabWidget->count()-1);
     page->setTabSymbol();
     ui->tabWidget->addTab(page, tabSymbol);
-    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
     m_pairTabPageMap[ui->tabWidget->currentIndex()] = page;
 
     page->getUi()->pair1UnitOverrideLabel->setText(sym1 + QString(" Units"));
