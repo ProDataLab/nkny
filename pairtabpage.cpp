@@ -2189,9 +2189,12 @@ void PairTabPage::appendPlotsAndTable(long sid)
     for (int c=0;c<tw->columnCount();++c) {
         QTableWidgetItem* headerItem = tw->horizontalHeaderItem(c);
         QString headerItemText = headerItem->text();
+        QTableWidgetItem* item = tw->item(row, c);
+        if (!item)
+            continue;
         if (headerItemText == "Price1") {
             if (s == s1) {
-                tw->item(row,c)->setText(QString::number(closeVec1.last(), 'f', 2));
+                item->setText(QString::number(closeVec1.last(), 'f', 2));
             }
         }
         else if (headerItemText == "Price2") {
@@ -2200,21 +2203,21 @@ void PairTabPage::appendPlotsAndTable(long sid)
             }
         }
         if (headerItemText == "Ratio")
-            tw->item(row,c)->setText(QString::number(m_ratio.last(),'f',2));
+            item->setText(QString::number(m_ratio.last(),'f',2));
         else if (headerItemText == "RatioMA")
-            tw->item(row,c)->setText(QString::number(m_ratioMA.last(),'f',2));
+            item->setText(QString::number(m_ratioMA.last(),'f',2));
         else if (headerItemText == "RatioStdDev")
-            tw->item(row,c)->setText(QString::number(m_ratioStdDev.last(),'f',2));
+            item->setText(QString::number(m_ratioStdDev.last(),'f',2));
         else if (headerItemText == "PcntFromRatioMA")
-            tw->item(row,c)->setText(QString::number(m_ratioPercentFromMA.last(),'f',2));
+            item->setText(QString::number(m_ratioPercentFromMA.last(),'f',2));
         else if (headerItemText == "Correlation")
-            tw->item(row,c)->setText(QString::number(m_correlation.last(),'f',2));
+            item->setText(QString::number(m_correlation.last(),'f',2));
         else if (headerItemText == "RatioVolatility")
-            tw->item(row,c)->setText(QString::number(m_ratioVolatility.last(),'f',2));
+            item->setText(QString::number(m_ratioVolatility.last(),'f',2));
         else if (headerItemText == "RatioRSI")
-            tw->item(row,c)->setText(QString::number(m_ratioRSI.last(),'f',2));
+            item->setText(QString::number(m_ratioRSI.last(),'f',2));
         else if (headerItemText == "SpreadRSI")
-            tw->item(row,c)->setText(QString::number(m_rsiSpread.last(),'f',2));
+            item->setText(QString::number(m_rsiSpread.last(),'f',2));
     }
 
     tw->update();

@@ -1008,8 +1008,9 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
             break;
     }
 
-    if (!s) {
-//qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
+    if (!s || !p->isTrading(s)) {
+        //qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
+        return;
     }
 
     switch (field)
