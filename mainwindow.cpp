@@ -988,46 +988,97 @@ void MainWindow::onSaveSettings()
 
 void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const double &price, const int &canAutoExecute)
 {
+    qDebug() << "";
+    qDebug() << "";
+
     Q_UNUSED(canAutoExecute);
 
-    PairTabPage* p = NULL;
-    Security* s = NULL;
-    bool breakout = false;
-
-    for (int i=0;i<m_pairTabPageMap.count();++i) {
-        p = m_pairTabPageMap.values().at(i);
-        if (p==NULL)
-            continue;
-        QList<Security*> securities = p->getSecurities();
-        for (int j=0;j<securities.size();++j) {
-            Security* ss = securities.at(j);
-            if (tickerId == ss->getRealTimeTickerId()) {
-                s = ss;
-                breakout = true;
-                break;
-            }
-        }
-        if (breakout)
-            break;
-    }
-
-    if (!s || !p->isTrading(s)) {
-        //qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
-        return;
-    }
+    QList<Security*> securities;
 
     switch (field)
     {
     case LAST:
-        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
-        s->appendRawPrice(price);
-        p->appendPlotsAndTable(p->getSecurityMap().key(s));
-        p->checkTradeTriggers();
-        p->checkTradeExits();
-        break;
+        for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
+            Security* value = PairTabPage::RawDataMap.values().at(i);
+            if (tickerId == PairTabPage::RawDataMap.key(value)) {
+                securities.append(value);
+            }
+        }
+        pDebug(securities);
+
+        for (int i=0;i<securities.count();++i) {
+            Security* ss = securities.at(i);
+            for (int j=0;j<m_pairTabPageMap.values().count();++j) {
+                bool containsSecurity = false;
+                Security* s = NULL;
+                PairTabPage* p = m_pairTabPageMap.values().at(j);
+                if (!p)
+                    continue;
+//                if (p->getSecurities().contains(s)
+//                        && p->isTrading(s))
+                for (int k=0;k<p->getSecurities().count();++k) {
+                    s = p->getSecurities().at(k);
+                    if (s->contract()->symbol == ss->contract()->symbol
+                            && s->contract()->expiry == ss->contract()->expiry)
+                    {
+                        containsSecurity = true;
+                    }
+                }
+                if (containsSecurity && p->isTrading(s)) {
+                    pDebug(s);
+                    pDebug(price);
+                    s->appendRawPrice(price);
+                    p->appendPlotsAndTable(p->getSecurityMap().key(s));
+
+                    if (!p->getUi()->manualTradeEntryCheckBox->isChecked())
+                        p->checkTradeTriggers();
+                    if (!p->getUi()->manualTradeExitCheckBox->isChecked())
+                        p->checkTradeExits();
+                }
+            }
+        }
     default:
         break;
     }
+
+//    PairTabPage* p = NULL;
+//    Security* s = NULL;
+//    bool breakout = false;
+
+//    for (int i=0;i<m_pairTabPageMap.count();++i) {
+//        p = m_pairTabPageMap.values().at(i);
+//        if (p==NULL)
+//            continue;
+//        QList<Security*> securities = p->getSecurities();
+//        for (int j=0;j<securities.size();++j) {
+//            Security* ss = securities.at(j);
+//            if (tickerId == ss->getRealTimeTickerId()) {
+//                s = ss;
+//                breakout = true;
+//                break;
+//            }
+//        }
+//        if (breakout)
+//            break;
+//    }
+
+//    if (!s || !p->isTrading(s)) {
+//        //qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
+//        return;
+//    }
+
+//    switch (field)
+//    {
+//    case LAST:
+//        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
+//        s->appendRawPrice(price);
+//        p->appendPlotsAndTable(p->getSecurityMap().key(s));
+//        p->checkTradeTriggers();
+//        p->checkTradeExits();
+//        break;
+//    default:
+//        break;
+//    }
 
     if (ui->portfolioTableWidget->rowCount() == 1) {
         ui->portfolioTableWidget->removeRow(0);

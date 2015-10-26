@@ -30,6 +30,7 @@ class PairTabPage : public QWidget
 
 public:
     static int PairTabPageCount;
+    static QMap<long, Security*> RawDataMap;
 
 public:
     explicit PairTabPage(IBClient* ibClient, const QStringList &managedAccounts, QWidget *parent = 0);
@@ -155,7 +156,6 @@ private:
     QMap<long, long>                        m_newBarMap;
     QMap<long, long>                        m_moreDataMap;
     QMap<long, long>                        m_contractDetailsMap;
-    QMap<long, Security*>                   m_rawDataMap;
     TimeFrame                               m_timeFrame;
     uint                                    m_timeFrameInSeconds;
     QMap<int, QCustomPlot*>                 m_customPlotMap;

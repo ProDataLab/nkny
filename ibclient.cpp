@@ -2445,7 +2445,10 @@ void IBClient::onReadyRead()
 
         default:
         {
-            QString errstr("[CRITICAL] UNKNOWN_ID: " + QString::number(msgId));
+            QString errstr("[CRITICAL] UNKNOWN_ID: msgId:"
+                           + QString::number(msgId)
+                           + "buffer: "
+                           + m_inBuffer.mid(m_endIdx));
             pDebug(errstr);
 
             emit error( msgId, UNKNOWN_ID.code(), UNKNOWN_ID.msg());

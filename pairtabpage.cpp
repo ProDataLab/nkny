@@ -36,6 +36,7 @@
 #include <QCursor>
 
 int PairTabPage::PairTabPageCount = 0;
+QMap<long, Security*> PairTabPage::RawDataMap = QMap<long, Security*>();
 
 PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts, QWidget *parent)
     : QWidget(parent)
@@ -250,12 +251,29 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
                 double lastBarsTimeStamp = dvh->timeStamp.last();
                 s->setLastBarsTimeStamp(lastBarsTimeStamp);
 
+                // realtime data request
 
-                long tid = m_ibClient->getTickerId();
-                m_rawDataMap[tid] = s;
+                // is this a duplicate?
+                long tid = 0;
+
+                QMap<long, Security*> tmpMap = PairTabPage::RawDataMap;
+
+                for (int i=0;i<tmpMap.values().count();++i) {
+                    Security* ss = tmpMap.values().at(i);
+                    if ((ss->contract()->symbol == s->contract()->symbol)
+                            && (ss->contract()->expiry == s->contract()->expiry)) {
+                        tid = tmpMap.key(ss);
+                        PairTabPage::RawDataMap.insertMulti(tid, s);
+                    }
+                }
+
+                if (tid == 0) {
+                    tid = m_ibClient->getTickerId();
+                    PairTabPage::RawDataMap[tid] = s;
+                    m_ibClient->reqMktData(tid, *(s->contract()), QByteArray(""), false);
+                    s->getTimer()->start(m_timeFrameInSeconds * 1000);
+                }
                 s->setRealTimeTickerId(tid);
-                m_ibClient->reqMktData(tid, *(s->contract()), QByteArray(""), false);
-                s->getTimer()->start(m_timeFrameInSeconds * 1000);
 
 
 qDebug() << "[DEBUG-onHistoricalData] NUM BARS RECEIVED:" << dvh->timeStamp.size()
@@ -855,11 +873,23 @@ bool PairTabPage::reqClosePair()
 
     QSettings s;
 
+    int numOfSameSecurity = 0;
+
     // IF S2 NOT SET YET
     if (m_securityMap.isEmpty() || s2 == NULL) {
         s.remove(m_tabSymbol);
         if (s1->getTimer()->isActive()) {
             s1->getTimer()->stop();
+        }
+        for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
+            Security* ss = PairTabPage::RawDataMap.values().at(i);
+            if (ss->contract()->symbol == s1->contract()->symbol
+                    && ss->contract()->expiry == s1->contract()->expiry)
+            {
+                ++numOfSameSecurity;
+            }
+        }
+        if (numOfSameSecurity == 1) {
             m_ibClient->cancelMktData(s1->getRealTimeTickerId());
         }
         return true;
@@ -882,10 +912,31 @@ bool PairTabPage::reqClosePair()
             s.remove(m_tabSymbol);
         if (s1->getTimer()->isActive()) {
             s1->getTimer()->stop();
+        }
+        for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
+            Security* ss = PairTabPage::RawDataMap.values().at(i);
+            if (ss->contract()->symbol == s1->contract()->symbol
+                    && ss->contract()->expiry == s1->contract()->expiry)
+            {
+                ++numOfSameSecurity;
+            }
+        }
+        if (numOfSameSecurity == 1) {
             m_ibClient->cancelMktData(s1->getRealTimeTickerId());
         }
         if (s2->getTimer()->isActive()) {
             s2->getTimer()->stop();
+        }
+        numOfSameSecurity = 0;
+        for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
+            Security* ss = PairTabPage::RawDataMap.values().at(i);
+            if (ss->contract()->symbol == s2->contract()->symbol
+                    && ss->contract()->expiry == s2->contract()->expiry)
+            {
+                ++numOfSameSecurity;
+            }
+        }
+        if (numOfSameSecurity == 1) {
             m_ibClient->cancelMktData(s2->getRealTimeTickerId());
         }
         m_securityMap.remove(m_securityMap.key(s1));
@@ -1805,6 +1856,8 @@ void PairTabPage::appendPlotsAndTable(long sid)
     DataVecsRaw*  dvr1 = NULL;
     DataVecsRaw*  dvr2 = NULL;
 
+    if (!dvh || !dvh->timeStamp.isEmpty())
+        return;
     s->setLastBarsTimeStamp(dvh->timeStamp.last());
 
     QCustomPlot* cp = m_customPlotMap[getPlotIndexFromSymbol(s)];
@@ -1842,12 +1895,12 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
 
     if (isS1) {
-        pDebug("isS1");
+        pDebug("isS1"); pDebug(s);
         pDebug(QString::number(closeLast,'f',2));
         w->lastPair1PriceLineEdit->setText(QString::number(closeLast));
     }
     if (isS2) {
-        pDebug("isS2");
+        pDebug("isS2"); pDebug(s);
         pDebug(QString::number(closeLast));
         w->lastPair2PriceLineEdit->setText(QString::number(closeLast,'f',2));
     }
