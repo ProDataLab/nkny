@@ -143,7 +143,7 @@ MainWindow::MainWindow(QWidget *parent)
             << "Correlation"
             << "RatioVolatility"
             << "RatioRSI"
-            << "RSISpread";
+            << "SpreadRSI";
 
     homeTableWidget->setColumnCount(m_headerLabels.size());
     homeTableWidget->setHorizontalHeaderLabels(m_headerLabels);
