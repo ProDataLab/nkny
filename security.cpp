@@ -362,6 +362,7 @@ void Security::setRealTimeTickerId(long realTimeTickerId)
 
 void Security::handleRawBarData()
 {        
+    pDebug("");
 //    static bool isFirstRun = true;
 //    static bool isSecondRun = false;
 

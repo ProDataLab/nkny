@@ -583,7 +583,7 @@ void PairTabPage::onPair1TimeOut()
 
 void PairTabPage::onPair2TimeOut()
 {
-//    P_DEBUG;
+//    pDebug("");
 
     long sid = m_securityMap.keys().last();
     Security* s = m_securityMap.value(sid);
@@ -1899,7 +1899,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
     }
     s->setLastBarsTimeStamp(dvh->timeStamp.last());
 
-    QCustomPlot* cp = m_customPlotMap[getPlotIndexFromSymbol(s)];
+    QCustomPlot* cp = m_customPlotMap.value(this->getPlotIndexFromSymbol(s));
 
     double timeStampLast = 0;
     double closeLast     = 0;
@@ -1914,20 +1914,19 @@ void PairTabPage::appendPlotsAndTable(long sid)
     }
 
     if (!dvr || dvrTimeStampIsEmpty) {
-        // pDebug("3");
+         pDebug("3");
         timeStampLast = dvh->timeStamp.last();
         closeLast = dvh->close.last();
-        cp->graph()->addData(timeStampLast, closeLast);
     }
     if (dvr && !dvrTimeStampIsEmpty) {
-        // pDebug("4");
+         pDebug("4");
         timeStampLast = dvh->timeStamp.last() + m_timeFrameInSeconds;
         closeLast = dvr->price.last();
-        QCPDataMap* dataMap = cp->graph()->data();
-        double lastKey = dataMap->keys().last();
-        dataMap->remove(lastKey);
-        (*dataMap)[timeStampLast] = QCPData(timeStampLast, closeLast);
     }
+
+    QCPDataMap* dataMap = cp->graph()->data();
+    //dataMap->remove(dataMap->keys().last());
+    dataMap->insert(timeStampLast, QCPData(timeStampLast, closeLast));
 
     // pDebug("5");
 
@@ -1990,14 +1989,11 @@ void PairTabPage::appendPlotsAndTable(long sid)
     QVector<double> lowVec1   = dvh1->low;
     QVector<double> lowVec2   = dvh2->low;
 
-    bool isRawUpdate = false;
-
     // pDebug(11);
 
     if (dvr1 && !dvr1->price.isEmpty()) {
         // pDebug("");
         timeStampVec.append(dvh1->timeStamp.last() + m_timeFrameInSeconds);
-        isRawUpdate = true;
         closeVec1.append(dvr1->price.last());
         highVec1.append(s1->getRawPriceHigh());
         lowVec1.append(s1->getRawPriceLow());
@@ -2007,7 +2003,6 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     if (dvr2 && !dvr2->price.isEmpty()) {
         timeStampVec.append(dvh1->timeStamp.last() + m_timeFrameInSeconds);
-        isRawUpdate = true;
         closeVec2.append(dvr2->price.last());
         highVec2.append(s2->getRawPriceHigh());
         lowVec2.append(s2->getRawPriceLow());
@@ -2044,130 +2039,83 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     // pDebug("");
 
-//    double ts = dvh->timeStamp.last();
-    double ts = timeStampVec.last();
+    double ts = dvh->timeStamp.last();
+
+    pDebug(QDateTime::fromTime_t((uint)ts));
 
     double min = 0;
     double max = 0;
 
     for (int i=0;i<ui->mdiArea->subWindowList().size();++i) {
+
         QMdiSubWindow* w = ui->mdiArea->subWindowList().at(i);
         QString tabText = w->windowTitle();
         cp = qobject_cast<QCustomPlot*>(w->widget());
+        dataMap = cp->graph(0)->data();
 
-//        if (tabText == s->contract()->symbol) {
-//            cp->graph(0)->addData(ts, dvh->close.last());
-//            min = getMin(dvh->close);
-//            max = getMax(dvh->close);
-//            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
-
-//        }
         if (tabText == "Ratio") {
-            if (!isRawUpdate) {
-                cp->graph(0)->addData(ts, m_ratio.last());
-                cp->graph(1)->addData(ts, m_ratioMA.last());
-            }
-            else {
-                QCPDataMap* dataMap;
-                dataMap = cp->graph(0)->data();
-                double lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_ratio.last());
-                dataMap = cp->graph(1)->data();
-                lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_ratioMA.last());
-            }
+
+//            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_ratio.last()));
+
+            dataMap = cp->graph(1)->data();
+//            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_ratioMA.last()));
+
             min = getMin(m_ratio);
             max = getMax(m_ratio);
             cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
 
         }
         else if (tabText == "RatioStdDev") {
-            if (!isRawUpdate) {
-                cp->graph(0)->addData(ts, m_ratioStdDev.last());
-            }
-            else {
-                QCPDataMap* dataMap = cp->graph()->data();
-                double lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_ratioStdDev.last());
-            }
+
+//            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_ratioStdDev.last()));
             min = getMin(m_ratioStdDev);
             max = getMax(m_ratioStdDev);
             cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
 
         }
         else if (tabText == "PcntFromRatioMA") {
-            if (!isRawUpdate) {
-                cp->graph(0)->addData(ts, m_ratioPercentFromMA.last());
-            }
-            else {
-                QCPDataMap* dataMap = cp->graph()->data();
-                double lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_ratioPercentFromMA.last());
-            }
+
+            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_ratioPercentFromMA.last()));
             min = getMin(m_ratioPercentFromMA);
             max = getMax(m_ratioPercentFromMA);
             cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
 
         }
         else if (tabText == "Correlation") {
-            if (!isRawUpdate) {
-                cp->graph(0)->addData(ts, m_correlation.last());
-            }
-            else {
-                QCPDataMap* dataMap = cp->graph()->data();
-                double lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_correlation.last());
-            }
+
+            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_correlation.last()));
             min = getMin(m_correlation);
             max = getMax(m_correlation);
             cp->yAxis->setRange(-1.0,1.0);
 
         }
         else if (tabText == "RatioVolatility") {
-            if (!isRawUpdate) {
-                cp->graph(0)->addData(ts, m_ratioVolatility.last());
-            }
-            else {
-                QCPDataMap* dataMap = cp->graph()->data();
-                double lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_ratioVolatility.last());
-            }
+
+            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_ratioVolatility.last()));
             min = getMin(m_ratioVolatility);
             max = getMax(m_ratioVolatility);
-//            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
+            cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
 
         }
         else if (tabText == "RatioRSI") {
-            if (!isRawUpdate) {
-                cp->graph(0)->addData(ts, m_ratioRSI.last());
-            }
-            else {
-                QCPDataMap* dataMap = cp->graph()->data();
-                double lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_ratioRSI.last());
-            }
+
+            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_ratioRSI.last()));
             min = getMin(m_ratioRSI);
             max = getMax(m_ratioRSI);
             cp->yAxis->setRange(0,100);
 
         }
         else if (tabText == "RSISpread") {
-            if (!isRawUpdate) {
-                cp->graph(0)->addData(ts, m_rsiSpread.last());
-            }
-            else {
-                QCPDataMap* dataMap = cp->graph()->data();
-                double lastKey = dataMap->keys().last();
-                dataMap->remove(lastKey);
-                (*dataMap)[timeStampLast] = QCPData(timeStampLast, m_rsiSpread.last());
-            }
+
+            //dataMap->remove(dataMap->keys().last());
+            dataMap->insert(ts, QCPData(ts, m_rsiSpread.last()));
             min = getMin(m_rsiSpread);
             max = getMax(m_rsiSpread);
             cp->yAxis->setRange(min - (min * 0.01), max + (max * 0.01));
@@ -2175,15 +2123,11 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
         if (ui->autoUpdateRangeCheckBox->isChecked())
             cp->xAxis->setRangeUpper(timeStampLast);
+
         cp->replot();
     }
 
     // pDebug("");
-
-//    QString sym1 = ui->pairsTabWidget->tabText(0);
-//    QString sym2 = ui->pairsTabWidget->tabText(1);
-
-//    QTableWidget* tw = mwui->homeTableWidget;
 
     int row = -1;
 
@@ -2205,7 +2149,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
 //                    << "Correlation"
 //                    << "RatioVolatility"
 //                    << "RatioRSI"
-//                    << "RSISpread";
+//                    << "SpreadRSI";
 
             if (hItemText == "Pair") {
                 if (itemText == m_tabSymbol) {
@@ -2214,85 +2158,6 @@ void PairTabPage::appendPlotsAndTable(long sid)
                 }
 //              continue;
             }
-//            if (hItemText == "Price1" && isS1) {
-//                QString val = QString::number(dvh->close.at(dvh->close.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "Price2" && isS2) {
-//                QString val =  QString::number(dvh->close.at(dvh->close.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "Ratio") {
-//                QString val =QString::number(m_ratio.at(m_ratio.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "RatioMA") {
-//                QString val =  QString::number(m_ratioMA.at(m_ratioMA.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "RatioStdDev") {
-//                QString val = QString::number(m_ratioStdDev.at(m_ratioStdDev.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "PcntFromRatioMA") {
-//                if (itemText != QString::number(m_ratioPercentFromMA.at(m_ratioPercentFromMA.size()-2),'f',2)) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "Correlation") {
-//                QString val = QString::number(m_correlation.at(m_correlation.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "RatioVolatility") {
-//                QString val = QString::number(m_ratioVolatility.at(m_ratioVolatility.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "RatioRSI") {
-//                QString val = QString::number(m_ratioRSI.at(m_ratioRSI.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
-//            if (hItemText == "RSISpread") {
-//                QString val =  QString::number(m_rsiSpread.at(m_rsiSpread.size()-2),'f',2);
-//                if (itemText != val) {
-//                    isTheRow = false;
-//                    break;
-//                }
-//                continue;
-//            }
         }
         if (isTheRow) {
             row = r;
