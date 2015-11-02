@@ -9,6 +9,7 @@
 #include <QWidget>
 #include <QVector>
 #include <QMap>
+#include <QMultiMap>
 #include <QList>
 #include <QPair>
 #include <QSettings>
@@ -30,7 +31,7 @@ class PairTabPage : public QWidget
 
 public:
     static int PairTabPageCount;
-    static QMap<long, Security*> RawDataMap;
+    static QMultiMap<long, Security*> RawDataMap;
 
 public:
     explicit PairTabPage(IBClient* ibClient, const QStringList &managedAccounts, QWidget *parent = 0);

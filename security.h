@@ -128,10 +128,11 @@ public:
 
     DataVecsRaw* getRawData()
     {
-        if (m_dataMap.contains(RAW))
-            return (DataVecsRaw*)m_dataMap.value(RAW);
-        else
-            return NULL;
+        return m_rawDataMap.value(RAW);
+//        if (m_dataMap.contains(RAW))
+//            return (DataVecsRaw*)m_dataMap.value(RAW);
+//        else
+//            return NULL;
     }
     DataVecsHist* getHistData(TimeFrame timeFrame) { return (DataVecsHist*)m_dataMap.value(timeFrame); }
     DataVecsNewBar* getNewBarData(TimeFrame timeFrame) { return (DataVecsNewBar*)m_dataMap.value(timeFrame); }

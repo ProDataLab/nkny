@@ -36,7 +36,7 @@
 #include <QCursor>
 
 int PairTabPage::PairTabPageCount = 0;
-QMap<long, Security*> PairTabPage::RawDataMap = QMap<long, Security*>();
+QMultiMap<long, Security*> PairTabPage::RawDataMap = QMultiMap<long, Security*>();
 
 PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts, QWidget *parent)
     : QWidget(parent)
@@ -263,13 +263,13 @@ void PairTabPage::onHistoricalData(long reqId, const QByteArray& date, double op
                     if ((ss->contract()->symbol == s->contract()->symbol)
                             && (ss->contract()->expiry == s->contract()->expiry)) {
                         tid = tmpMap.key(ss);
-                        PairTabPage::RawDataMap.insertMulti(tid, s);
+                        PairTabPage::RawDataMap.insert(tid, s);
                     }
                 }
 
                 if (tid == 0) {
                     tid = m_ibClient->getTickerId();
-                    PairTabPage::RawDataMap[tid] = s;
+                    PairTabPage::RawDataMap.insert(tid, s);
                     m_ibClient->reqMktData(tid, *(s->contract()), QByteArray(""), false);
                     s->getTimer()->start(m_timeFrameInSeconds * 1000);
                 }
@@ -512,6 +512,7 @@ void PairTabPage::on_pair2ShowButton_clicked()
     setTabSymbol();
     mwui->tabWidget->setTabText(mwui->tabWidget->indexOf(this),
                                 m_tabSymbol);
+    mwui->tabWidget->setCurrentIndex(mwui->tabWidget->count()-1);
 
     connect(pair2->getTimer(), SIGNAL(timeout()),
             this, SLOT(onPair2TimeOut()));
@@ -851,6 +852,7 @@ ContractDetailsWidget *PairTabPage::getPair2ContractDetailsWidget() const
 
 bool PairTabPage::reqClosePair()
 {
+    // pDebug("");
 //qDebug() << "[DEBUG-reqClosePair]";
 
     Security* s1=NULL;
@@ -867,6 +869,7 @@ bool PairTabPage::reqClosePair()
         s2 = m_securityMap.values().at(1);
     }
     else if (m_securityMap.keys().size() == 3) {
+        pDebug("I SHOULD NOT BE HERE... FIXME FIXME FIXME !!!!");
         s1 = m_securityMap.values().at(1);
         s2 = m_securityMap.values().at(2);
     }
@@ -876,19 +879,30 @@ bool PairTabPage::reqClosePair()
     int numOfSameSecurity = 0;
 
     // IF S2 NOT SET YET
-    if (m_securityMap.isEmpty() || s2 == NULL) {
+    if (s1 != NULL && s2 == NULL) {
         s.remove(m_tabSymbol);
         if (s1->getTimer()->isActive()) {
             s1->getTimer()->stop();
         }
+
         for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
             Security* ss = PairTabPage::RawDataMap.values().at(i);
-            if (ss->contract()->symbol == s1->contract()->symbol
-                    && ss->contract()->expiry == s1->contract()->expiry)
-            {
+//            if (ss->contract()->symbol == s1->contract()->symbol
+//                    && ss->contract()->expiry == s1->contract()->expiry)
+//            {
+//                long key = PairTabPage::RawDataMap.key(ss);
+//                if (PairTabPage::RawDataMap.contains(key, ss))
+//                    PairTabPage::RawDataMap.remove(key, ss);
+//                ++numOfSameSecurity;
+//            }
+            if (ss == s1) {
+                long key = PairTabPage::RawDataMap.key(ss);
+                if (PairTabPage::RawDataMap.contains(key, ss))
+                    PairTabPage::RawDataMap.remove(key, ss);
                 ++numOfSameSecurity;
             }
         }
+
         if (numOfSameSecurity == 1) {
             m_ibClient->cancelMktData(s1->getRealTimeTickerId());
         }
@@ -898,8 +912,6 @@ bool PairTabPage::reqClosePair()
             && s2->getSecurityOrderMap()->isEmpty()) {
         if (mwui->homeTableWidget->rowCount() > 0
                 && m_homeTablePageRowIndex != -1) {
-        //        qDebug() << "[DEBUG-reqClosePair] rowIdx:" << m_homeTablePageRowIndex;
-        //        qDebug() << "[DEBUG-reqClosePair] rowCount:" << mwui->homeTableWidget->rowCount();
             QTableWidget* tw = mwui->homeTableWidget;
             for (int r=0;r<tw->rowCount();++r) {
                 if (tw->item(r,0)->text() == m_tabSymbol) {
@@ -915,9 +927,27 @@ bool PairTabPage::reqClosePair()
         }
         for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
             Security* ss = PairTabPage::RawDataMap.values().at(i);
-            if (ss->contract()->symbol == s1->contract()->symbol
-                    && ss->contract()->expiry == s1->contract()->expiry)
-            {
+//            if (ss->contract()->symbol == s1->contract()->symbol) {
+//                if (ss->contract()->secType == QByteArray("FUT")
+//                        && s1->contract()->secType == QByteArray("FUT")) {
+//                    if (ss->contract()->expiry == s1->contract()->expiry) {
+//                        long key = PairTabPage::RawDataMap.key(ss);
+//                        if (PairTabPage::RawDataMap.contains(key, ss))
+//                            PairTabPage::RawDataMap.remove(key, ss);
+//                        ++numOfSameSecurity;
+//                    }
+//                }
+//                else {
+//                    long key = PairTabPage::RawDataMap.key(ss);
+//                    if (PairTabPage::RawDataMap.contains(key, ss))
+//                        PairTabPage::RawDataMap.remove(key, ss);
+//                    ++numOfSameSecurity;
+//                }
+//            }
+            if (ss == s1) {
+                long key = PairTabPage::RawDataMap.key(ss);
+                if (PairTabPage::RawDataMap.contains(key, ss))
+                    PairTabPage::RawDataMap.remove(key, ss);
                 ++numOfSameSecurity;
             }
         }
@@ -930,9 +960,11 @@ bool PairTabPage::reqClosePair()
         numOfSameSecurity = 0;
         for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
             Security* ss = PairTabPage::RawDataMap.values().at(i);
-            if (ss->contract()->symbol == s2->contract()->symbol
-                    && ss->contract()->expiry == s2->contract()->expiry)
+            if (ss == s2)
             {
+                long key = PairTabPage::RawDataMap.key(ss);
+                if (PairTabPage::RawDataMap.contains(key, ss))
+                    PairTabPage::RawDataMap.remove(key, ss);
                 ++numOfSameSecurity;
             }
         }
@@ -1837,16 +1869,21 @@ void PairTabPage::showPlot(long tickerId)
 
 void PairTabPage::appendPlotsAndTable(long sid)
 {
-    pDebug("");
+//    QString sidString("sid: " + QString::number(sid));
+    // pDebug(sidString);
 
     bool isS1 = false;
     bool isS2 = false;
 
     Security* s = m_securityMap.value(sid);
+
     if (s == m_securityMap.values().at(0))
         isS1 = true;
     if (m_securityMap.count() == 2 && s == m_securityMap.values().at(1))
         isS2 = true;
+
+    // pDebug(isS1);
+    // pDebug(isS2);
 
 //    bool isS1 = m_securityMap.keys().indexOf(sid) == 0;
 //    bool isS2 = m_securityMap.keys().indexOf(sid) == 1;
@@ -1856,8 +1893,10 @@ void PairTabPage::appendPlotsAndTable(long sid)
     DataVecsRaw*  dvr1 = NULL;
     DataVecsRaw*  dvr2 = NULL;
 
-    if (!dvh || !dvh->timeStamp.isEmpty())
+    if (!dvh || dvh->timeStamp.isEmpty()) {
+        // pDebug("return");
         return;
+    }
     s->setLastBarsTimeStamp(dvh->timeStamp.last());
 
     QCustomPlot* cp = m_customPlotMap[getPlotIndexFromSymbol(s)];
@@ -1867,17 +1906,21 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     bool dvrTimeStampIsEmpty = true;
 
-    if (dvr)
+    // pDebug("1a");
+
+    if (dvr) {
+        // pDebug("2");
         dvrTimeStampIsEmpty = dvr->timeStamp.isEmpty();
+    }
 
     if (!dvr || dvrTimeStampIsEmpty) {
-//        pDebug("");
+        // pDebug("3");
         timeStampLast = dvh->timeStamp.last();
         closeLast = dvh->close.last();
         cp->graph()->addData(timeStampLast, closeLast);
     }
     if (dvr && !dvrTimeStampIsEmpty) {
-        pDebug("");
+        // pDebug("4");
         timeStampLast = dvh->timeStamp.last() + m_timeFrameInSeconds;
         closeLast = dvr->price.last();
         QCPDataMap* dataMap = cp->graph()->data();
@@ -1885,6 +1928,8 @@ void PairTabPage::appendPlotsAndTable(long sid)
         dataMap->remove(lastKey);
         (*dataMap)[timeStampLast] = QCPData(timeStampLast, closeLast);
     }
+
+    // pDebug("5");
 
     if (ui->autoUpdateRangeCheckBox->isChecked())
         cp->xAxis->setRangeUpper(timeStampLast);
@@ -1895,26 +1940,31 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
 
     if (isS1) {
-        pDebug("isS1"); pDebug(s);
-        pDebug(QString::number(closeLast,'f',2));
+        // pDebug("isS1"); // pDebug(s);
+        // pDebug(QString::number(closeLast,'f',2));
         w->lastPair1PriceLineEdit->setText(QString::number(closeLast));
     }
     if (isS2) {
-        pDebug("isS2"); pDebug(s);
-        pDebug(QString::number(closeLast));
+        // pDebug("isS2"); // pDebug(s);
+        // pDebug(QString::number(closeLast));
         w->lastPair2PriceLineEdit->setText(QString::number(closeLast,'f',2));
     }
 
-    if (m_securityMap.size() == 1)
+    if (m_securityMap.size() == 1) {
+        // pDebug("6");
         return;
+    }
 
     if (m_bothPairsUpdated) {
+        // pDebug("7");
         if (m_securityMap.size() > 1 && m_securityMap.values().at(1) == s) {
             m_bothPairsUpdated = false;
-//            pDebug("returning early");
+            // pDebug("returning early");
             return;
         }
     }
+
+    // pDebug("8");
 
     Security* s1 = m_securityMap.values().at(0);
     Security* s2 = m_securityMap.values().at(1);
@@ -1922,8 +1972,12 @@ void PairTabPage::appendPlotsAndTable(long sid)
     DataVecsHist* dvh1 = s1->getHistData(m_timeFrame);
     DataVecsHist* dvh2 = s2->getHistData(m_timeFrame);
 
+    // pDebug(9);
+
     if (!dvh1 || !dvh2)
         return;
+
+    // pDebug(10);
 
     dvr1 = s1->getRawData();
     dvr2 = s2->getRawData();
@@ -1938,23 +1992,28 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     bool isRawUpdate = false;
 
+    // pDebug(11);
+
     if (dvr1 && !dvr1->price.isEmpty()) {
-        pDebug("");
+        // pDebug("");
         timeStampVec.append(dvh1->timeStamp.last() + m_timeFrameInSeconds);
         isRawUpdate = true;
         closeVec1.append(dvr1->price.last());
         highVec1.append(s1->getRawPriceHigh());
         lowVec1.append(s1->getRawPriceLow());
     }
+
+    // pDebug(12);
+
     if (dvr2 && !dvr2->price.isEmpty()) {
         timeStampVec.append(dvh1->timeStamp.last() + m_timeFrameInSeconds);
         isRawUpdate = true;
-        closeVec2.append(dvr1->price.last());
+        closeVec2.append(dvr2->price.last());
         highVec2.append(s2->getRawPriceHigh());
         lowVec2.append(s2->getRawPriceLow());
     }
 
-//    pDebug("");
+    // pDebug("");
 
     m_ratio = getRatio(closeVec1, closeVec2);
 
@@ -1982,6 +2041,8 @@ void PairTabPage::appendPlotsAndTable(long sid)
     w->lastRsiSpreadLineEdit->setText(QString::number(m_rsiSpread.last(),'f',2));
     w->lastStdDevLineEdit->setText(QString::number(m_ratioStdDev.last(),'f',2));
     w->lastVolatilityLineEdit->setText(QString::number(m_ratioVolatility.last(),'f',2));
+
+    // pDebug("");
 
 //    double ts = dvh->timeStamp.last();
     double ts = timeStampVec.last();
@@ -2117,6 +2178,8 @@ void PairTabPage::appendPlotsAndTable(long sid)
         cp->replot();
     }
 
+    // pDebug("");
+
 //    QString sym1 = ui->pairsTabWidget->tabText(0);
 //    QString sym2 = ui->pairsTabWidget->tabText(1);
 
@@ -2235,14 +2298,18 @@ void PairTabPage::appendPlotsAndTable(long sid)
             row = r;
         }
 //        else {
-//            pDebug("FUCK FUCK FUCK");
+//            // pDebug("FUCK FUCK FUCK");
 //        }
     }
 
+    // pDebug("");
+
     if (row == -1) {
-        pDebug("row == -1");
+        // pDebug("row == -1");
         return;
     }
+
+    // pDebug("");
 
     for (int c=0;c<tw->columnCount();++c) {
         QTableWidgetItem* headerItem = tw->horizontalHeaderItem(c);
@@ -2283,6 +2350,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
     m_bothPairsUpdated = true;
 
     //    qDebug() << "[DEBUG-appendPlotsAndTable]" << "leaving";
+    // pDebug("leaving");
 }
 
 

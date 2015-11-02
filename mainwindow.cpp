@@ -62,8 +62,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tabWidget->setTabsClosable(true);
 
     for (int i =0;i<ui->tabWidget->count();++i) {
-        m_pairTabPageMap[i] = NULL;
+        m_pairTabPageMap.insert(i, NULL);
     }
+
+    pDebug(m_pairTabPageMap);
 
     connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)),
             this, SLOT(onTabCloseRequested(int)));
@@ -178,11 +180,12 @@ void MainWindow::on_action_New_triggered()
             return;
     }
 
-    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+//    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
     page->setPairTabPageId(ui->tabWidget->count()-1);
     page->setTabSymbol();
     ui->tabWidget->addTab(page, tabSymbol);
-    m_pairTabPageMap[ui->tabWidget->currentIndex()] = page;
+    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+    m_pairTabPageMap.insert(ui->tabWidget->count()-1, page);
 
     page->getUi()->pair1UnitOverrideLabel->setText(sym1 + QString(" Units"));
     page->getUi()->pair2UnitOverrideLabel->setText(sym2 + QString(" Units"));
@@ -334,28 +337,54 @@ void MainWindow::onTwsConnectionClosed()
 
 void MainWindow::onTabCloseRequested(int idx)
 {
-//qDebug() << "[DEBUG-onTabCloseRequested]";
 
-    PairTabPage* p = m_pairTabPageMap.value(idx);
+    pDebug(idx);
 
     QMap<int, PairTabPage*> tmpMap;
 
+
+    // hack to fix missing map item
+
+
+    PairTabPage* p = m_pairTabPageMap.value(idx);
+
+    pDebug(m_pairTabPageMap);
+
+    if (!p) {
+        pDebug("");
+        for (int i=3;i<m_pairTabPageMap.count();++i) {
+            QString mapString("key: "
+                              + QString::number(m_pairTabPageMap.keys().at(i))
+                              + "value: "
+                              + m_pairTabPageMap.values().at(i)->getTabSymbol());
+            pDebug(QString("NO p... FUCK: " + mapString));
+        }
+        return;
+    }
+
+
     if (p->reqClosePair()) {
+        pDebug(2);
+
+        // remove tabWidget tab
         QWidget* w = ui->tabWidget->widget(idx);
         ui->tabWidget->removeTab(idx);
         for (int i=0;i<m_pairTabPageMap.count()-1;++i) {
             if (i<idx) {
-                tmpMap[i] = m_pairTabPageMap.value(i);
+                tmpMap.insert(i, m_pairTabPageMap.value(i));
                 continue;
             }
             else {
-                tmpMap[i] = m_pairTabPageMap.value(i+1);
+                tmpMap.insert(i, m_pairTabPageMap.value(i+1));
             }
         }
         delete w;
         m_pairTabPageMap = tmpMap;
+        pDebug(m_pairTabPageMap);
     }
 
+
+    pDebug("leaving");
 
 //    // else ... POP UP WINDOW THAT THERE ARE ORDERS ACTIVE
 }
@@ -868,7 +897,7 @@ void MainWindow::readPageSettings()
 
         s.setArrayIndex(i);
         PairTabPage* p = new PairTabPage(m_ibClient, m_managedAccounts, this);
-        m_pairTabPageMap[ui->tabWidget->count()] = p;
+        m_pairTabPageMap.insert(ui->tabWidget->count(), p);
         QString tabSymbol = s.value("tabSymbol").toString();
 //qDebug() << "[DEBUG-readPageSettings] tabSymbol" << i << ":" << tabSymbol;
         p->setTabSymbol(tabSymbol);
@@ -878,7 +907,7 @@ void MainWindow::readPageSettings()
 
         ui->tabWidget->addTab(p, p->getTabSymbol());
         ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
-        m_pairTabPageMap[ui->tabWidget->currentIndex()] = p;
+//        m_pairTabPageMap[ui->tabWidget->currentIndex()] = p;
     }
     s.endArray();
     ui->tabWidget->setCurrentIndex(s.value("tabWidgetCurrentIndex").toInt());
@@ -947,32 +976,32 @@ void MainWindow::onHomeTabMoved(int from, int to)
     for (int i=0;i<m_pairTabPageMap.count();++i) {
         if (from > to) {
             if (i < to && i > from) {
-                tmpMap[i] = m_pairTabPageMap.value(i);
+                tmpMap.insert(i, m_pairTabPageMap.value(i));
                 continue;
             }
             else {
                 if (i == to) {
-                    tmpMap[i] = m_pairTabPageMap.value(from);
+                    tmpMap.insert(i, m_pairTabPageMap.value(from));
                     continue;
                 }
                 if (i > to) {
-                    tmpMap[i] = m_pairTabPageMap.value(i+1);
+                    tmpMap.insert(i, m_pairTabPageMap.value(i+1));
                     continue;
                 }
             }
         }
         else {
             if (i < from && i > to) {
-                tmpMap[i] = m_pairTabPageMap.value(i);
+                tmpMap.insert(i, m_pairTabPageMap.value(i));
                 continue;
             }
             else {
                 if (i < to) {
-                    tmpMap[i] = m_pairTabPageMap.value(i+1);
+                    tmpMap.insert(i, m_pairTabPageMap.value(i+1));
                     continue;
                 }
                 if (i == to) {
-                    tmpMap[i] = m_pairTabPageMap.value(from);
+                    tmpMap.insert(i, m_pairTabPageMap.value(from));
                     continue;
                 }
             }
@@ -988,27 +1017,33 @@ void MainWindow::onSaveSettings()
 
 void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const double &price, const int &canAutoExecute)
 {
-    qDebug() << "";
-    qDebug() << "";
+//    qDebug() << "";
+//    qDebug() << "";
 
     Q_UNUSED(canAutoExecute);
 
     QList<Security*> securities;
 
+    int cnt = 0;
+
     switch (field)
     {
     case LAST:
-        for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
+        // pDebug("1");
+        cnt = PairTabPage::RawDataMap.values().count();
+        for (int i=0;i<cnt;++i) {
             Security* value = PairTabPage::RawDataMap.values().at(i);
             if (tickerId == PairTabPage::RawDataMap.key(value)) {
                 securities.append(value);
             }
         }
-        pDebug(securities);
+        // pDebug(securities);
 
         for (int i=0;i<securities.count();++i) {
+            // pDebug(2);
             Security* ss = securities.at(i);
             for (int j=0;j<m_pairTabPageMap.values().count();++j) {
+                // pDebug(3);
                 bool containsSecurity = false;
                 Security* s = NULL;
                 PairTabPage* p = m_pairTabPageMap.values().at(j);
@@ -1017,16 +1052,26 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
 //                if (p->getSecurities().contains(s)
 //                        && p->isTrading(s))
                 for (int k=0;k<p->getSecurities().count();++k) {
+                    // pDebug(4);
                     s = p->getSecurities().at(k);
-                    if (s->contract()->symbol == ss->contract()->symbol
-                            && s->contract()->expiry == ss->contract()->expiry)
-                    {
-                        containsSecurity = true;
+                    if (s->contract()->symbol == ss->contract()->symbol) {
+                        if (s->contract()->secType == QByteArray("FUT")) {
+                            if (s->contract()->expiry == ss->contract()->expiry)
+                            {
+                                containsSecurity = true;
+                                break;
+                            }
+                        }
+                        else {
+                            containsSecurity = true;
+                            break;
+                        }
                     }
                 }
+                // pDebug(5);
                 if (containsSecurity && p->isTrading(s)) {
-                    pDebug(s);
-                    pDebug(price);
+                    // pDebug(s);
+                    // pDebug(price);
                     s->appendRawPrice(price);
                     p->appendPlotsAndTable(p->getSecurityMap().key(s));
 
@@ -1035,50 +1080,13 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
                     if (!p->getUi()->manualTradeExitCheckBox->isChecked())
                         p->checkTradeExits();
                 }
+                // pDebug(6);
             }
         }
+        break;
     default:
         break;
     }
-
-//    PairTabPage* p = NULL;
-//    Security* s = NULL;
-//    bool breakout = false;
-
-//    for (int i=0;i<m_pairTabPageMap.count();++i) {
-//        p = m_pairTabPageMap.values().at(i);
-//        if (p==NULL)
-//            continue;
-//        QList<Security*> securities = p->getSecurities();
-//        for (int j=0;j<securities.size();++j) {
-//            Security* ss = securities.at(j);
-//            if (tickerId == ss->getRealTimeTickerId()) {
-//                s = ss;
-//                breakout = true;
-//                break;
-//            }
-//        }
-//        if (breakout)
-//            break;
-//    }
-
-//    if (!s || !p->isTrading(s)) {
-//        //qDebug() << "[ERROR]" << __func__ << __LINE__ << "where is the tickerId of value" << tickerId << "???";
-//        return;
-//    }
-
-//    switch (field)
-//    {
-//    case LAST:
-//        qDebug() << "[DEBUG]" << __func__ << __LINE__ << "PRICE:" << price;
-//        s->appendRawPrice(price);
-//        p->appendPlotsAndTable(p->getSecurityMap().key(s));
-//        p->checkTradeTriggers();
-//        p->checkTradeExits();
-//        break;
-//    default:
-//        break;
-//    }
 
     if (ui->portfolioTableWidget->rowCount() == 1) {
         ui->portfolioTableWidget->removeRow(0);
