@@ -22,3 +22,8 @@ void WelcomeDialog::on_clearSettingsButton_clicked()
 {
     ui->clearSettingsButton->setStyleSheet(QString("QPushButton {background-color: green;}"));
 }
+
+void WelcomeDialog::on_clickShowButtonsManually_clicked()
+{
+    ui->clickShowButtonsManually->setStyleSheet(QString("QPushButton {background-color: green;}"));
+}

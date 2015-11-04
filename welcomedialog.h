@@ -20,6 +20,8 @@ public:
 private slots:
     void on_clearSettingsButton_clicked();
 
+    void on_clickShowButtonsManually_clicked();
+
 private:
     Ui::WelcomeDialog *ui;
 };

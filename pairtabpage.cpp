@@ -37,6 +37,7 @@
 
 int PairTabPage::PairTabPageCount = 0;
 QMultiMap<long, Security*> PairTabPage::RawDataMap = QMultiMap<long, Security*>();
+bool PairTabPage::DontClickShowButtons = false;
 
 PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts, QWidget *parent)
     : QWidget(parent)
@@ -54,7 +55,6 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
     , m_pair1ShowButtonClickedAlready(false)
     , m_pair2ShowButtonClickedAlready(false)
     , m_pairTabPageId(++PairTabPageCount)
-
 {
 //    qDebug() << "[DEBUG-PairTabPage]";
 
@@ -1533,16 +1533,24 @@ void PairTabPage::readSettings()
         c->exchangeLineEdit->setText(s.value("exchange").toString());
         c->expiryMonthSpinBox->setValue(s.value("expiryMonth").toInt());
         c->expiryYearSpinBox->setValue(s.value("expiryYear").toInt());
-        bool showButtonClicked = false;
-        if (i==0) {
-            showButtonClicked = s.value("showButton1Clicked").toBool();
-            if (showButtonClicked)
-                ui->pair1ShowButton->click();
-        }
-        else {
-            showButtonClicked = s.value("showButton2Clicked").toBool();
-            if (showButtonClicked) {
-                ui->pair2ShowButton->click();
+
+        if (!PairTabPage::DontClickShowButtons) {
+
+            bool showButtonClicked = false;
+
+            if (i==0) {
+                showButtonClicked = s.value("showButton1Clicked").toBool();
+                if (showButtonClicked) {
+                    ui->pair1ShowButton->click();
+                    m_pair1ShowButtonClickedAlready = true;
+                }
+            }
+            else {
+                showButtonClicked = s.value("showButton2Clicked").toBool();
+                if (showButtonClicked) {
+                    ui->pair2ShowButton->click();
+                    m_pair2ShowButtonClickedAlready = true;
+                }
             }
         }
     }

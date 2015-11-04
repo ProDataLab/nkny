@@ -293,7 +293,7 @@ void MainWindow::onIbSocketError(const QString &error)
                 delay(1000);
                 int clientId = 0;
                 m_ibClient->connectToTWS("127.0.0.1", 7496, clientId);
-                ++numAttempts;
+                ++m_numConnectionAttempts;
             }
         }
         enacted = false;
@@ -1145,6 +1145,7 @@ void MainWindow::onWelcome()
     t.start(1000);
     m_welcomeDialog = new WelcomeDialog;
     connect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
+    connect(m_welcomeDialog->getUi()->clickShowButtonsManually, SIGNAL(pressed()), this, SLOT(onClickShowButtonsManually()));
     m_welcomeDialog->exec();
     t.stop();
 //    disconnect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
@@ -1165,6 +1166,11 @@ void MainWindow::onClearSettings()
 {
     QSettings s;
     s.clear();
+}
+
+void MainWindow::onClickShowButtonsManually()
+{
+    PairTabPage::DontClickShowButtons = true;
 }
 
 QStringList MainWindow::getOrderHeaderLabels() const

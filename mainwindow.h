@@ -89,7 +89,7 @@ private slots:
     void onWelcome();
     void onWelcomeTimeout();
     void onClearSettings();
-
+    void onClickShowButtonsManually();
 
 
 

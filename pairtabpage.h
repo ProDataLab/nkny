@@ -32,6 +32,7 @@ class PairTabPage : public QWidget
 public:
     static int PairTabPageCount;
     static QMultiMap<long, Security*> RawDataMap;
+    static bool DontClickShowButtons;
 
 public:
     explicit PairTabPage(IBClient* ibClient, const QStringList &managedAccounts, QWidget *parent = 0);
@@ -79,6 +80,8 @@ public:
 
     bool isTrading(Security *s);
 
+
+    void setDontClickShowButtons(bool dontClickShowButtons);
 
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
