@@ -107,6 +107,7 @@ private:
     QPoint m_ordersTableRowPoint;
     QTimer      m_saveSettingsTimer;
     WelcomeDialog* m_welcomeDialog;
+    int             m_numConnectionAttempts;
 
     void writeSettings();
     void readSettings();

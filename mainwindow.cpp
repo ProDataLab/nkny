@@ -47,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_ibClient(NULL)
+    , m_numConnectionAttempts(0)
 {
     QTimer::singleShot(0, this, SLOT(onWelcome()));
 
@@ -263,34 +264,40 @@ void MainWindow::onManagedAccounts(const QByteArray &msg)
 
 void MainWindow::onIbError(const int id, const int errorCode, const QByteArray errorString)
 {
-
     qDebug() << "IbError:" << id << errorCode << errorString.data();
 }
 
 void MainWindow::onIbSocketError(const QString &error)
 {
     static bool enacted = false;
-    if (!enacted && error == QString("Connection Refused")) {
-        QMessageBox msgBox;
-        msgBox.setText("Connection Refused");
-        msgBox.setInformativeText("Please ensure TWS is running and accepts API calls.");
-//        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-//        msgBox.setDefaultButton(QMessageBox::Save);
-        enacted = true;
-        /*int ret =*/ msgBox.exec();
-        enacted = false;
-    }
-    else if (!enacted) {
-        QMessageBox msgBox;
-        msgBox.setText(error + " Please restart the application");
-        msgBox.setInformativeText("Please ensure TWS is running and accepts API calls.");
-//        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-//        msgBox.setDefaultButton(QMessageBox::Save);
-        enacted = true;
-        /*int ret =*/ msgBox.exec();
-        enacted = false;
-    }
 
+    ++m_numConnectionAttempts;
+
+    if (!enacted) {
+        enacted = true;
+        if (error == QString("Connection Refused")) {
+            QMessageBox msgBox;
+            msgBox.setText("Connection Refused");
+            msgBox.setInformativeText("Please ensure TWS is running and accepts API calls.");
+            enacted = true;
+            /*int ret =*/ msgBox.exec();
+        }
+        else {
+            if (m_numConnectionAttempts == 3) {
+                QMessageBox msgBox;
+                msgBox.setText(error + ". Please restart the application");
+                msgBox.setInformativeText("Please ensure TWS is running and accepts API calls.");
+                /*int ret =*/ msgBox.exec();
+            }
+            else {
+                delay(1000);
+                int clientId = 0;
+                m_ibClient->connectToTWS("127.0.0.1", 7496, clientId);
+                ++numAttempts;
+            }
+        }
+        enacted = false;
+    }
 }
 
 void MainWindow::onNextValidId(long orderId)
@@ -328,6 +335,7 @@ void MainWindow::onTwsConnected()
 //    }
 //    delay(3000);
     m_ibClient->reqCurrentTime();
+    m_numConnectionAttempts = 0;
 }
 
 void MainWindow::onTwsConnectionClosed()
