@@ -362,7 +362,7 @@ void Security::setRealTimeTickerId(long realTimeTickerId)
 
 void Security::handleRawBarData()
 {        
-    pDebug("");
+//    pDebug("");
 //    static bool isFirstRun = true;
 //    static bool isSecondRun = false;
 
@@ -460,7 +460,7 @@ void Security::handleRawBarData()
             dvh->high.append(high);
             dvh->low.append(low);
             dvh->close.append(close);
-            qDebug() << "open:" << open <<  "high:" << high << "low:" << low << "close:" << close;
+//            qDebug() << "open:" << open <<  "high:" << high << "low:" << low << "close:" << close;
         }
         else {
             dvh->open.append(dvh->open.last());

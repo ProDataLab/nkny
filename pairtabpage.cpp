@@ -662,18 +662,31 @@ void PairTabPage::onDeactivateButtonClicked(bool)
     Security* s1 = m_securityMap.values().at(0);
     Security* s2 = m_securityMap.values().at(1);
 
-    if (s1->getSecurityOrderMap()->isEmpty() && s2->getSecurityOrderMap()->isEmpty()) {
-        ui->activateButton->setEnabled(true);
-        ui->deactivateButton->setEnabled(false);
-        m_stdDevLayerPeaks.clear();
+    if (!ui->manualTradeExitCheckBox->isChecked()) {
+        if (s1->getSecurityOrderMap()->isEmpty() && s2->getSecurityOrderMap()->isEmpty()) {
+            ui->activateButton->setEnabled(true);
+            ui->deactivateButton->setEnabled(false);
+            m_stdDevLayerPeaks.clear();
+        }
+        else {
+            QMessageBox msgBox;
+            msgBox.setText("Can not deactivate this pair because orders have been placed");
+            msgBox.setInformativeText("Please go to the orders page to close existing orders");
+            /*int ret =*/ msgBox.exec();
+        }
     }
     else {
-        QMessageBox msgBox;
-        msgBox.setText("Can not deactivate this pair because orders have been placed");
-        msgBox.setInformativeText("Please go to the orders page to close existing orders");
-//        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-//        msgBox.setDefaultButton(QMessageBox::Save);
-        /*int ret =*/ msgBox.exec();
+        if (s1->getSecurityOrderMap()->isEmpty() && s2->getSecurityOrderMap()->isEmpty()) {
+            QMessageBox msgBox;
+            msgBox.setText("Can not close order, because no order is currently recorded");
+            msgBox.setInformativeText("If this is a faulty condition, see app creator for fix");
+            /*int ret =*/ msgBox.exec();
+        }
+        else {
+            ui->activateButton->setEnabled(true);
+            ui->deactivateButton->setEnabled(false);
+            exitOrder();
+        }
     }
 }
 
@@ -1318,11 +1331,14 @@ void PairTabPage::writeSettings() const
     s.beginGroup(m_tabSymbol);
     s.setValue("activateButtonEnabled", ui->activateButton->isEnabled());
     s.setValue("dectivateButtonEnabled", ui->deactivateButton->isEnabled());
+    s.setValue("manualTradeEntryCheckBoxState", ui->manualTradeEntryCheckBox->checkState());
+    s.setValue("manualTradeExitCheckBoxState", ui->manualTradeExitCheckBox->checkState());
     s.setValue("toolBoxIndex", ui->toolBox->currentIndex());
 //    s.setValue("tabWidgetIndex", ui->tabWidget->currentIndex());
     s.endGroup();
 
     s.beginGroup(m_tabSymbol + "/pairsPage");
+
     s.setValue("timeFrame", m_timeFrame);
     s.setValue("timeFrameString", m_timeFrameString);
     s.setValue("timeFrameInSeconds", m_timeFrameInSeconds);
@@ -1478,6 +1494,8 @@ void PairTabPage::readSettings()
     s.beginGroup(m_tabSymbol);
     ui->activateButton->setEnabled(s.value("activateButtonEnabled").toBool());
     ui->deactivateButton->setEnabled(s.value("deactivateButtonEnabled").toBool());
+    ui->manualTradeEntryCheckBox->setCheckState((Qt::CheckState)s.value("manualTradeEntryCheckBoxState").toInt());
+    ui->manualTradeExitCheckBox->setCheckState((Qt::CheckState)s.value("manualTradeExitCheckBoxState").toInt());
     ui->toolBox->setCurrentIndex(s.value("toolBoxIndex").toInt());
     s.endGroup();
 
@@ -1652,6 +1670,16 @@ void PairTabPage::readSettings()
         Security* ss = m_securityMap.values().at(i);
 
         int n2 = s.beginReadArray("orders");
+
+        if (n2 == 0) {
+            if (ui->manualTradeEntryCheckBox->isChecked()) {
+                ui->activateButton->setEnabled(true);
+            }
+            if (ui->manualTradeExitCheckBox->isChecked()) {
+                ui->deactivateButton->setEnabled(false);
+            }
+        }
+
         for (int j=0;j<n2;++j) {
             s.setArrayIndex(j);
             int orderId = s.value("orderId").toInt();
@@ -1699,21 +1727,13 @@ QString PairTabPage::getTabSymbol() const
 
 void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
 {
-//qDebug() << "[DEBUG-PairTabPage::placeOrder]";
-
-
-//    Contract contract;
-//    Order order;
-
-//    contract.symbol = "IBM";
-//    contract.secType = "STK";
-//    contract.exchange = "SMART";
-//    contract.currency = "USD";
-
-//    order.action = "BUY";
-//    order.totalQuantity = 1000;
-//    order.orderType = "LMT";
-//    order.lmtPrice = 0.01;
+    if (ui->tradeEntryAmountSpinBox->value() == 0) {
+        QMessageBox msgBox;
+        msgBox.setText("Can not place order because the amount of money allocated is $0.00");
+        msgBox.setInformativeText("Please check configurations and correct the error");
+        /*int ret =*/ msgBox.exec();
+        return;
+    }
 
     Security* s1 = m_securityMap.values().at(0);
     Security* s2 = m_securityMap.values().at(1);
@@ -1914,12 +1934,12 @@ void PairTabPage::appendPlotsAndTable(long sid)
     }
 
     if (!dvr || dvrTimeStampIsEmpty) {
-         pDebug("3");
+//         pDebug("3");
         timeStampLast = dvh->timeStamp.last();
         closeLast = dvh->close.last();
     }
     if (dvr && !dvrTimeStampIsEmpty) {
-         pDebug("4");
+//         pDebug("4");
         timeStampLast = dvh->timeStamp.last() + m_timeFrameInSeconds;
         closeLast = dvr->price.last();
     }
@@ -2041,7 +2061,7 @@ void PairTabPage::appendPlotsAndTable(long sid)
 
     double ts = dvh->timeStamp.last();
 
-    pDebug(QDateTime::fromTime_t((uint)ts));
+//    pDebug(QDateTime::fromTime_t((uint)ts));
 
     double min = 0;
     double max = 0;
