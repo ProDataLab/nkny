@@ -38,8 +38,15 @@ struct Info
     double diff2;
 
     Info()
-        : isSym1(false)
-        , isSym2(false) {}
+        : row(-1)
+        , isSym1(false)
+        , isSym2(false)
+        , sym2IsShort(false)
+        , purchasePrice1(0)
+        , purchasePrice2(0)
+        , diff1(0)
+        , diff2(0)
+    {}
 };
 
 
@@ -89,7 +96,9 @@ MainWindow::MainWindow(QWidget *parent)
                       << "Diff1"
                       << "Diff2"
                       << "PercentChange1"
-                      << "PercentChange2";
+                      << "PercentChange2"
+                      << "NetDiff"
+                      << "NetPercentChange";
 
     tab->setEnabled(true);
     tab->setVisible(true);
@@ -437,6 +446,8 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     int row = -1;
 
     QTableWidgetItem* item = NULL;
+    QTableWidgetItem* sym1Item = NULL;
+    QTableWidgetItem* sym2Item = NULL;
 
     // get the page and securities
 
@@ -494,6 +505,8 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
 
     // set orderTableWidget data
     for (int c=0;c<ui->ordersTableWidget->columnCount();++c) {
+        bool isShort = false;
+        Q
         item = ui->ordersTableWidget->item(row, c);
         QString headerString = ui->ordersTableWidget->horizontalHeaderItem(c)->text();
 
@@ -521,6 +534,7 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
             if (isS1) {
                 QString sym1 = s1->contract()->symbol;
                 item->setText(sym1);
+                sym1Item = item;
             }
             else
                 continue;
@@ -529,6 +543,7 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
             if (isS2) {
                 QString sym2 = s2->contract()->symbol;
                 item->setText(sym2);
+                sym2Item = item;
             }
             else
                 continue;
@@ -543,8 +558,13 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
                         item->setText(QString::number(size1+filled));
                 }
                 else {
-                    if (s1->getSecurityOrderMap()->values().at(0)->order.action == "SELL")
+                    if (s1->getSecurityOrderMap()->values().at(0)->order.action == "SELL") {
                         item->setText(QString::number(-filled));
+                        item->setTextColor(QColor(Qt::red));
+                        if (sym1Item)
+                            sym1Item->setTextColor(QColor(Qt::red));
+                        isShort = true;
+                    }
                     else
                         item->setText(QString::number(filled));
                 }
@@ -562,8 +582,13 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
                         item->setText(QString::number(size2+filled));
                 }
                 else {
-                    if (s2->getSecurityOrderMap()->values().at(0)->order.action == "SELL")
+                    if (s2->getSecurityOrderMap()->values().at(0)->order.action == "SELL") {
                         item->setText(QString::number(-filled));
+                        item->setTextColor(QColor(Qt::red));
+                        if (sym2Item)
+                            sym2Item->setTextColor(QColor(Qt::red));
+                        isShort = true;
+                    }
                     else
                         item->setText(QString::number(filled));
             }
@@ -619,10 +644,6 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     if (so->triggerType == EXIT) {
         if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
             ui->ordersTableWidget->removeRow(row);
-//            if (ui->portfolioTableWidget->rowCount() == 2) {
-//                ui->portfolioTableWidget->removeRow(1);
-//                ui->portfolioTableWidget->removeRow(0);
-//            }
             for (int i=ui->portfolioTableWidget->rowCount()-1;i>=0;--i) {
                 ui->portfolioTableWidget->removeRow(i);
             }
@@ -630,47 +651,6 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
             (*(s->getSecurityOrderMap())).remove(so->order.orderId);
         }
     }
-
-
-
-
-
-
-
-//    if (s1->getSecurityOrderMap()->count() == 2
-//            && s2->getSecurityOrderMap()->count() == 2) {
-//        int s1_0 = s1->getSecurityOrderMap()->values().at(0)->filled;
-//        int s1_1 = s1->getSecurityOrderMap()->values().at(1)->filled;
-//        int s2_0 = s2->getSecurityOrderMap()->values().at(0)->filled;
-//        int s2_1 = s2->getSecurityOrderMap()->values().at(1)->filled;
-
-//        if (s1_0 == s1_1 && s2_0 == s2_1) {
-//            s1->getSecurityOrderMap()->clear();
-//            s2->getSecurityOrderMap()->clear();
-//            ui->ordersTableWidget->removeRow(row);
-//            p->getUi()->activateButton->setEnabled(true);
-//            p->getUi()->deactivateButton->setEnabled(false);
-//            return;
-//        }
-//    }
-//    Security* s = NULL;
-//    SecurityOrder* so = NULL;
-//    bool finished = true;
-
-//    QPair<SecurityOrder* entry, SecurityOrder* exit> EE;
-//    QList<EE*> eeList;
-
-//    for (int i=0;i<2;++i) {
-//        if (i=0)
-//            s = s1;
-//        else
-//            s = s2;
-//        for (int j=0;j<s->getSecurityOrderMap()->count();++j) {
-//            EE* ee = new EE;
-//            if (s->getSecurityOrderMap()->values().at(j)->triggerType == EXIT);
-
-//        }
-//    }
 }
 
 
@@ -1212,7 +1192,9 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
 //                      << "Diff1"
 //                      << "Diff2"
 //                      << "PercentChange1"
-//                      << "PercentChange2";
+//                      << "PercentChange2"
+//                      << "NetDiff"
+//                      << "NetPercentChange";
 
 
 
@@ -1220,32 +1202,31 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
 
     for (int r=0;r<tw->rowCount();++r) {
         Info *info = new Info;
-        info->isSym1 = false;
-        info->isSym2 = false;
         for (int c=0;c<tw->columnCount();++c) {
             QString field = tw->horizontalHeaderItem(c)->text();
             QString text = tw->item(r,c)->text();
             if (field == "Sym1" && text == symbol)
                 info->isSym1 = true;
-            else if (field == "Sym2" && text == symbol)
+            if (field == "Sym2" && text == symbol)
                 info->isSym2 = true;
-            else if (field == "Cost/Unit1") {
+            if (field == "Cost/Unit1") {
                 info->purchasePrice1 = text.toDouble();
                 info->diff1 = last - info->purchasePrice1;
             }
-            else if (field == "Cost/Unit2") {
+            if (field == "Cost/Unit2") {
                 info->purchasePrice2 = text.toDouble();
                 info->diff2 = last - info->purchasePrice2;
             }
-            else if (field == "Size2" && text.toInt() < 0)
+            if (field == "Size2" && text.toInt() < 0)
                 info->sym2IsShort = true;
-
         }
         infoList.append(info);
     }
 
     for (int r=0;r<tw->rowCount();++r) {
         Info* info = infoList.at(r);
+        double pcntChange1 = 0;
+        double pcntChange2 = 0;
         if (!(info->isSym1 || info->isSym2))
             continue;
         for (int c=0;c<tw->columnCount();++c) {
@@ -1255,29 +1236,100 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
                 if (field == "Last1")
                     item->setText(QString::number(last, 'f', 2));
                 if (field == "Diff1") {
-                    item->setText(QString::number(info->diff1,'f',2));
+                    if (!info->sym2IsShort) {
+                        item->setText(QString::number(-info->diff1,'f',2));
+                        if (-info->diff1 > 0)
+                            item->setTextColor(QColor(Qt::red));
+                        else
+                            item->setTextColor(QColor(Qt::black));
+                    }
+
+                    else {
+                        item->setText(QString::number(info->diff1,'f',2));
+                        if (info->diff1 < 0)
+                            item->setTextColor(QColor(Qt::red));
+                        else
+                            item->setTextColor(QColor(Qt::black));
+                    }
+
                 }
                 if (field == "PercentChange1") {
                     double ret = info->diff1 / info->purchasePrice1 * 100;
                     if (!info->sym2IsShort) {
                         item->setText(QString::number(-ret,'f',2));
+                        if (-ret < 0)
+                            item->setTextColor(QColor(Qt::red));
+                        else
+                            item->setTextColor(QColor(Qt::black));
+                        pcntChange1 = -ret;
                     }
                     else {
                         item->setText(QString::number(ret,'f',2));
+                        if (ret > 0)
+                            item->setTextColor(QColor(Qt::black));
+                        else
+                            item->setTextColor(QColor(Qt::red));
+                        pcntChange1 = ret;
                     }
                 }
             }
             else if (info->isSym2) {
                 if (field == "Last2")
                     item->setText(QString::number(last, 'f', 2));
-                if (field == "Diff2")
-                    item->setText(QString::number(info->diff2,'f',2));
+                if (field == "Diff2") {
+                    if (info->sym2IsShort) {
+                        item->setText(QString::number(-info->diff2,'f',2));
+                        if (-info->diff2 > 0)
+                            item->setTextColor(QColor(Qt::red));
+                        else
+                            item->setTextColor(QColor(Qt::black));
+                    }
+                    else {
+                        item->setText(QString::number(info->diff2,'f',2));
+                        if (info->diff2 < 0)
+                            item->setTextColor(QColor(Qt::red));
+                        else
+                            item->setTextColor(QColor(Qt::black));
+                    }
+                }
                 if (field == "PercentChange2") {
                     double ret = info->diff2 / info->purchasePrice2 * 100;
-                    if (info->sym2IsShort)
+                    if (info->sym2IsShort) {
                         item->setText(QString::number(-ret,'f',2));
-                    else
+                        if (-ret > 0)
+                            item->setTextColor(QColor(Qt::red));
+                        else
+                            item->setTextColor(QColor(Qt::black));
+                        pcntChange2 = -ret;
+                    }
+                    else {
                         item->setText(QString::number(ret,'f',2));
+                        if (ret < 0)
+                            item->setTextColor(QColor(Qt::black));
+                        else
+                            item->setTextColor(QColor(Qt::red));
+                        pcntChange2 = ret;
+                    }
+                }
+            }
+            if (field == "NetDiff" && info->diff1 != 0 && info->diff2 != 0) {
+                double netDiff = info->diff1 + info->diff2;
+                item->setText(QString::number(netDiff,'f',2));
+                if (netDiff < 0) {
+                    item->setTextColor(QColor(Qt::red));
+                }
+                else {
+                    item->setTextColor(QColor(Qt::black));
+                }
+            }
+            if (field == "NetPercentChange" && pcntChange1 != 0 && pcntChange2 != 0) {
+                double netPcntChange = pcntChange1 + pcntChange2;
+                item->setText(QString::number(netPcntChange,'f',2));
+                if (netPcntChange < 0) {
+                    item->setTextColor(QColor(Qt::red));
+                }
+                else {
+                    item->setTextColor(QColor(Qt::black));
                 }
             }
         }
