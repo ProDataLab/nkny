@@ -151,6 +151,7 @@ private slots:
     void onMouseMove(QMouseEvent* event);
 
 
+
 private:
     IBClient*                               m_ibClient;
     QStringList                             m_managedAccounts;

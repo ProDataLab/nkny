@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     datatoolboxwidget.cpp \
     orderstablewidget.cpp \
     portfoliotablewidget.cpp \
-    welcomedialog.cpp
+    welcomedialog.cpp \
+    logdialog.cpp
 
 HEADERS  += mainwindow.h \
     qcustomplot.h \
@@ -56,7 +57,8 @@ HEADERS  += mainwindow.h \
     orderstablewidget.h \
     portfoliotablewidget.h \
     welcomedialog.h \
-    tablewidgetitem.h
+    tablewidgetitem.h \
+    logdialog.h
 
 
 
@@ -66,7 +68,8 @@ FORMS    += mainwindow.ui \
     contractdetailswidget.ui \
     globalconfigdialog.ui \
     datatoolboxwidget.ui \
-    welcomedialog.ui
+    welcomedialog.ui \
+    logdialog.ui
 
 
 INCLUDEPATH += $$PWD/
