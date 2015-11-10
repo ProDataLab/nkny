@@ -22,6 +22,7 @@ private slots:
 
     void on_clickShowButtonsManually_clicked();
 
+
 private:
     Ui::WelcomeDialog *ui;
 };

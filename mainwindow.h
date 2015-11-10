@@ -96,7 +96,7 @@ private slots:
     void onWelcomeTimeout();
     void onClearSettings();
     void onClickShowButtonsManually();
-
+    void onWelcomeDialogStartButtonClicked();
 
 
 private:
@@ -115,6 +115,7 @@ private:
     QTimer      m_saveSettingsTimer;
     WelcomeDialog* m_welcomeDialog;
     int             m_numConnectionAttempts;
+    QTimer          m_welcomeTimer;
 
     void writeSettings();
     void readSettings();

@@ -1159,14 +1159,14 @@ void MainWindow::onTickSize(const long &tickerId, const TickType &field, const i
 
 void MainWindow::onWelcome()
 {
-    QTimer t;
-    connect(&t, SIGNAL(timeout()), this, SLOT(onWelcomeTimeout()));
-    t.start(1000);
+    connect(&m_welcomeTimer, SIGNAL(timeout()), this, SLOT(onWelcomeTimeout()));
+    m_welcomeTimer.start(1000);
     m_welcomeDialog = new WelcomeDialog;
     connect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
     connect(m_welcomeDialog->getUi()->clickShowButtonsManually, SIGNAL(pressed()), this, SLOT(onClickShowButtonsManually()));
+    connect(m_welcomeDialog->getUi()->startButton, SIGNAL(pressed()), this, SLOT(onWelcomeDialogStartButtonClicked()));
     m_welcomeDialog->exec();
-    t.stop();
+    m_welcomeTimer.stop();
 //    disconnect(m_welcomeDialog->getUi()->clearSettingsButton, SIGNAL(pressed()), this, SLOT(onClearSettings()));
 }
 
@@ -1192,6 +1192,12 @@ void MainWindow::onClearSettings()
 void MainWindow::onClickShowButtonsManually()
 {
     PairTabPage::DontClickShowButtons = true;
+}
+
+void MainWindow::onWelcomeDialogStartButtonClicked()
+{
+    m_welcomeDialog->close();
+    m_welcomeTimer.stop();
 }
 
 QStringList MainWindow::getOrderHeaderLabels() const

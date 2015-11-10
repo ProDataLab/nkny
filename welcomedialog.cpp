@@ -27,3 +27,5 @@ void WelcomeDialog::on_clickShowButtonsManually_clicked()
 {
     ui->clickShowButtonsManually->setStyleSheet(QString("QPushButton {background-color: green;}"));
 }
+
+
