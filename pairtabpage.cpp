@@ -1735,7 +1735,7 @@ QString PairTabPage::getTabSymbol() const
 
 void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
 {
-    if (ui->tradeEntryAmountSpinBox->value() == 0) {
+    if (ui->tradeEntryAmountSpinBox->value() == 0 && !ui->overrideUnitSizeCheckBox->isChecked()) {
         QMessageBox msgBox;
         msgBox.setText("Can not place order because the amount of money allocated is $0.00");
         msgBox.setInformativeText("Please check configurations and correct the error");
