@@ -46,6 +46,7 @@ GlobalConfigDialog::GlobalConfigDialog(QWidget *parent)
     ui->tradeExitStdDevCheckBox_2->setCheckState((Qt::CheckState)s.value("stdDevExitCheckBoxState").toInt());
     ui->tradeExitStdDevDoubleSpinBox_2->setValue(s.value("stdDevExit").toDouble());
     ui->autoUpdateRangeCheckBox->setCheckState((Qt::CheckState)s.value("autoUpdateRangeCheckBoxState").toInt());
+    ui->welcomeCountDownSpinBox->setValue(s.value("welcomeCountDown", 5).toInt());
     s.endGroup();
 
     ui->lookbackLabel->setVisible(false);
@@ -98,6 +99,7 @@ void GlobalConfigDialog::on_buttonBox_accepted()
     s.setValue("stdDevExitCheckBoxState", ui->tradeExitStdDevCheckBox_2->checkState());
     s.setValue("stdDevExit", ui->tradeExitStdDevDoubleSpinBox_2->value());
     s.setValue("autoUpdateRangeCheckBoxState", ui->autoUpdateRangeCheckBox->checkState());
+    s.setValue("welcomeCountDown", ui->welcomeCountDownSpinBox->value());
     s.endGroup();
 }
 

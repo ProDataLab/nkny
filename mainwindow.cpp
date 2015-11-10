@@ -1172,7 +1172,9 @@ void MainWindow::onWelcome()
 
 void MainWindow::onWelcomeTimeout()
 {
-    static int t = 3;
+    int val = m_globalConfigDialog.getUi()->welcomeCountDownSpinBox->value();
+    static int t = val;
+
     if (t==1) {
         m_welcomeDialog->close();
         delete m_welcomeDialog;

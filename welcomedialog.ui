@@ -208,7 +208,7 @@
      <item>
       <widget class="QLabel" name="countDownLabel">
        <property name="text">
-        <string>3 seconds</string>
+        <string>seconds</string>
        </property>
       </widget>
      </item>
