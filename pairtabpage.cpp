@@ -3117,3 +3117,5 @@ QMap<long, Security *> PairTabPage::getSecurityMap() const
 {
     return m_securityMap;
 }
+
+

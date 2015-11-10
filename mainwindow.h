@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "globalconfigdialog.h"
+#include "logdialog.h"
 #include "ibticktype.h"
 
 
@@ -28,6 +29,7 @@ namespace Ui {
 class MainWindow;
 class PairTabPage;
 class GlobalConfigDialog;
+class LogDialog;
 }
 
 class MainWindow : public QMainWindow
@@ -45,6 +47,8 @@ public:
     QStringList getManagedAccounts() const;
 
     GlobalConfigDialog* getGlobalConfigDialog() const;
+
+    LogDialog* getLogDialog() const;
 
     QStringList getOrderHeaderLabels() const;
 
@@ -80,6 +84,8 @@ private slots:
 
     void on_actionGlobal_Config_triggered();
 
+    void on_action_Log_Dialog_triggered();
+
     void onOrdersTableContextMenuEventTriggered(const QPoint & pos, const QPoint & globalPos);
     void onCloseOrder();
     void onHomeTabMoved(int from, int to);
@@ -104,6 +110,7 @@ private:
     QStringList m_portfolioHeaderLabels;
     QSettings m_settings;
     GlobalConfigDialog m_globalConfigDialog;
+    LogDialog m_logDialog;
     QPoint m_ordersTableRowPoint;
     QTimer      m_saveSettingsTimer;
     WelcomeDialog* m_welcomeDialog;

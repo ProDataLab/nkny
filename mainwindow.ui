@@ -21,7 +21,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <property name="tabsClosable">
        <bool>true</bool>
@@ -90,6 +90,7 @@
    <addaction name="actionConnect_To_TWS"/>
    <addaction name="action_New"/>
    <addaction name="actionGlobal_Config"/>
+   <addaction name="action_Log_Dialog"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_New">
@@ -117,6 +118,11 @@
    </property>
    <property name="text">
     <string>Global Config</string>
+   </property>
+  </action>
+  <action name="action_Log_Dialog">
+   <property name="text">
+    <string>&amp;Log</string>
    </property>
   </action>
  </widget>

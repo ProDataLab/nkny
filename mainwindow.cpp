@@ -8,6 +8,7 @@
 #include "ui_pairtabpage.h"
 #include "ui_contractdetailswidget.h"
 #include "ui_globalconfigdialog.h"
+#include "ui_logdialog.h"
 #include "contractdetailswidget.h"
 #include "globalconfigdialog.h"
 #include "orderstablewidget.h"
@@ -23,6 +24,7 @@
 #include <QVBoxLayout>
 #include <QtDebug>
 #include <QDateTime>
+#include <QPlainTextEdit>
 
 #include <iostream>
 
@@ -279,7 +281,19 @@ void MainWindow::onManagedAccounts(const QByteArray &msg)
 
 void MainWindow::onIbError(const int id, const int errorCode, const QByteArray errorString)
 {
-    qDebug() << "IbError:" << id << errorCode << errorString.data();
+//    qDebug() << "IbError:" << id << errorCode << errorString.data();
+    QPlainTextEdit* pte = m_logDialog.getUi()->logPlainTextEdit;
+    QString msg(QString("[IB_ERROR] ") + QString::number(id) + QString(" ") + QString::number(errorCode) + QString(" ") + errorString);
+    pte->appendPlainText(msg);
+
+    if (errorCode == 200) {
+        QMessageBox msgBox;
+        msgBox.setText("IB Error");
+        msgBox.setInformativeText(errorString);
+//        enacted = true;
+        /*int ret =*/ msgBox.exec();
+
+    }
 }
 
 void MainWindow::onIbSocketError(const QString &error)
@@ -925,6 +939,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::on_actionGlobal_Config_triggered()
 {
     m_globalConfigDialog.exec();
+}
+
+void MainWindow::on_action_Log_Dialog_triggered()
+{
+    m_logDialog.exec();
 }
 
 void MainWindow::onOrdersTableContextMenuEventTriggered(const QPoint &pos, const QPoint &globalPos)
