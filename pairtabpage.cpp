@@ -81,6 +81,18 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
 
     ui->pair2Tab->setVisible(false);
 
+    ui->sym1IsShortCheckBox->setChecked(true);
+
+    if (!ui->manualTradeEntryCheckBox->isChecked()) {
+        ui->sym1IsShortCheckBox->setVisible(false);
+        ui->sym2IsShortCheckBox->setVisible(false);
+    }
+    else {
+        ui->sym1IsShortCheckBox->setVisible(true);
+        ui->sym2IsShortCheckBox->setVisible(true);
+        on_sym2IsShortCheckBox_stateChanged(Qt::Checked);
+    }
+
     QStringList secTypes;
     secTypes += "STK";
     secTypes += "FUT";
@@ -617,7 +629,12 @@ void PairTabPage::onActivateButtonClicked(bool)
         int ret = msgBox.exec();
         if (ret == QMessageBox::Cancel)
             return;
-        placeOrder(MANUAL);
+        if (ui->sym1IsShortCheckBox->isChecked()) {
+            placeOrder(MANUAL);
+        }
+        else {
+            placeOrder(MANUAL, true);
+        }
     }
     else {
         QMessageBox msgBox;
@@ -1350,10 +1367,14 @@ void PairTabPage::writeSettings() const
     for (int i=0;i<size;++i) {
         s.setArrayIndex(i);
         s.setValue("tabText", ui->pairsTabWidget->tabText(i));
-        if (i == 0)
+        if (i == 0) {
             s.setValue("showButton1Clicked", m_pair1ShowButtonClickedAlready);
-        else
+            s.setValue("sym1IsShortLegCheckBoxState", ui->sym1IsShortCheckBox->checkState());
+        }
+        else {
             s.setValue("showButton2Clicked", m_pair2ShowButtonClickedAlready);
+            s.setValue("sym2IsShortLegCheckBoxState", ui->sym2IsShortCheckBox->checkState());
+        }
 
         Ui::ContractDetailsWidget* c = NULL;
         if (i==0)
@@ -1544,6 +1565,7 @@ void PairTabPage::readSettings()
                     ui->pair1ShowButton->click();
                     m_pair1ShowButtonClickedAlready = true;
                 }
+                ui->sym1IsShortCheckBox->setCheckState((Qt::CheckState)s.value("sym1IsShortLegCheckBoxState").toInt());
             }
             else {
                 showButtonClicked = s.value("showButton2Clicked").toBool();
@@ -1551,6 +1573,7 @@ void PairTabPage::readSettings()
                     ui->pair2ShowButton->click();
                     m_pair2ShowButtonClickedAlready = true;
                 }
+                ui->sym2IsShortCheckBox->setCheckState((Qt::CheckState)s.value("sym2IsShortLegCheckBoxState").toInt());
             }
         }
     }
@@ -3069,9 +3092,14 @@ void PairTabPage::on_manualTradeEntryCheckBox_stateChanged(int arg1)
 {
     if (arg1 == Qt::Checked) {
         ui->activateButton->setText("Place Order");
+        ui->sym1IsShortCheckBox->setVisible(true);
+        ui->sym2IsShortCheckBox->setVisible(true);
     }
-    else
+    else {
         ui->activateButton->setText("Activate");
+        ui->sym1IsShortCheckBox->setVisible(false);
+        ui->sym2IsShortCheckBox->setVisible(false);
+    }
 }
 
 void PairTabPage::on_manualTradeExitCheckBox_stateChanged(int arg1)
@@ -3119,3 +3147,23 @@ QMap<long, Security *> PairTabPage::getSecurityMap() const
 }
 
 
+
+void PairTabPage::on_sym2IsShortCheckBox_stateChanged(int arg1)
+{
+    if (arg1 == Qt::Checked) {
+        ui->sym1IsShortCheckBox->setChecked(false);
+    }
+    else {
+        ui->sym1IsShortCheckBox->setChecked(true);
+    }
+}
+
+void PairTabPage::on_sym1IsShortCheckBox_stateChanged(int arg1)
+{
+    if (arg1 == Qt::Checked) {
+        ui->sym2IsShortCheckBox->setChecked(false);
+    }
+    else {
+        ui->sym2IsShortCheckBox->setChecked(true);
+    }
+}

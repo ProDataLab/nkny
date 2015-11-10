@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>201</width>
+    <width>455</width>
     <height>516</height>
    </rect>
   </property>
@@ -94,7 +94,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>158</width>
+            <width>280</width>
             <height>264</height>
            </rect>
           </property>
@@ -227,25 +227,62 @@
               <attribute name="title">
                <string>Tab 1</string>
               </attribute>
-              <layout class="QVBoxLayout" name="verticalLayout">
+              <layout class="QVBoxLayout" name="verticalLayout_4">
                <item>
-                <widget class="QPushButton" name="pair1ShowButton">
-                 <property name="enabled">
-                  <bool>true</bool>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>75</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Show</string>
-                 </property>
-                </widget>
+                <layout class="QHBoxLayout" name="horizontalLayout_2">
+                 <item>
+                  <widget class="QPushButton" name="pair1ShowButton">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>75</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Show</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>17</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="sym1IsShortCheckBox">
+                   <property name="text">
+                    <string>Set as Short Leg</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
                <item>
                 <widget class="ContractDetailsWidget" name="pair1ContractDetailsWidget" native="true"/>
+               </item>
+               <item>
+                <spacer name="verticalSpacer_2">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>98</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
               </layout>
              </widget>
@@ -253,25 +290,62 @@
               <attribute name="title">
                <string>Tab 2</string>
               </attribute>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
+              <layout class="QVBoxLayout" name="verticalLayout">
                <item>
-                <widget class="QPushButton" name="pair2ShowButton">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>75</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Show</string>
-                 </property>
-                </widget>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QPushButton" name="pair2ShowButton">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>75</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Show</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_2">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="sym2IsShortCheckBox">
+                   <property name="text">
+                    <string>Set as Short Leg</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
                <item>
                 <widget class="ContractDetailsWidget" name="pair2ContractDetailsWidget" native="true"/>
+               </item>
+               <item>
+                <spacer name="verticalSpacer_3">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>98</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
               </layout>
              </widget>
@@ -284,7 +358,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>158</width>
+            <width>280</width>
             <height>264</height>
            </rect>
           </property>
@@ -499,7 +573,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>226</width>
+            <width>263</width>
             <height>304</height>
            </rect>
           </property>
@@ -729,8 +803,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>160</width>
-            <height>247</height>
+            <width>280</width>
+            <height>264</height>
            </rect>
           </property>
           <attribute name="label">
@@ -784,7 +858,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>158</width>
+            <width>280</width>
             <height>264</height>
            </rect>
           </property>

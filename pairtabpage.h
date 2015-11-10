@@ -152,6 +152,10 @@ private slots:
 
 
 
+    void on_sym2IsShortCheckBox_stateChanged(int arg1);
+
+    void on_sym1IsShortCheckBox_stateChanged(int arg1);
+
 private:
     IBClient*                               m_ibClient;
     QStringList                             m_managedAccounts;
