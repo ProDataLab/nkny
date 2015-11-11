@@ -78,8 +78,9 @@ MainWindow::MainWindow(QWidget *parent)
                       << "Diff2"
                       << "PercentChange1"
                       << "PercentChange2"
-                      << "NetDiff"
-                      << "NetPercentChange";
+                      << "NetPercentChange"
+                      << "NetProfit";
+
 
     tab->setEnabled(true);
     tab->setVisible(true);
@@ -697,21 +698,21 @@ void MainWindow::onUpdatePortfolio( const Contract& contract, int position,
 //             << accountName;
 
 
-    // update orders table
-    QString sym(contract.symbol);
-    double last = marketPrice;
+//    // update orders table
+//    QString sym(contract.symbol);
+//    double last = marketPrice;
 
-    for (int i=0;i<m_pairTabPageMap.values().count();++i) {
-        PairTabPage* p = m_pairTabPageMap.values().at(i);
-        if (p==NULL)
-            continue;
-        for (int j=0;j<p->getSecurities().count();++j) {
-            Security* s = p->getSecurities().at(j);
-            if (s->contract()->symbol == sym) {
-                updateOrdersTable(sym, last);
-            }
-        }
-    }
+//    for (int i=0;i<m_pairTabPageMap.values().count();++i) {
+//        PairTabPage* p = m_pairTabPageMap.values().at(i);
+//        if (p==NULL)
+//            continue;
+//        for (int j=0;j<p->getSecurities().count();++j) {
+//            Security* s = p->getSecurities().at(j);
+//            if (s->contract()->symbol == sym) {
+//                updateOrdersTable(sym, last);
+//            }
+//        }
+//    }
 
 
     // update portfolio table
@@ -1025,6 +1026,11 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
         }
         // pDebug(securities);
 
+        // updateOrdersPage
+        if (!securities.isEmpty()) {
+            updateOrdersTable(securities.first()->contract()->symbol, price);
+        }
+
         for (int i=0;i<securities.count();++i) {
             // pDebug(2);
             Security* ss = securities.at(i);
@@ -1197,7 +1203,7 @@ struct Info
     double diff2;
     double pcntChange1;
     double pcntChange2;
-    double netDiff;
+    double netProfit;
     double netPcnt;
 
     Info()
@@ -1218,7 +1224,7 @@ struct Info
         , diff2(0)
         , pcntChange1(0)
         , pcntChange2(0)
-        , netDiff(0)
+        , netProfit(0)
         , netPcnt(0)
     {}
 };
@@ -1278,6 +1284,12 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
             else if (field == "Cost/Unit2") {
                 info->purchasePrice2 = text.toDouble();
             }
+            else if (field == "TotalCost1") {
+                info->totalCost1 = text.toDouble();
+            }
+            else if (field == "TotalCost2") {
+                info->totalCost2 = text.toDouble();
+            }
             else if (field == "Last1") {
                 info->last1 = text.toDouble();
             }
@@ -1296,8 +1308,8 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
             else if (field == "PercentChange2") {
                 info->pcntChange2 = text.toDouble();
             }
-            else if (field == "NetDiff") {
-                info->netDiff = text.toDouble();
+            else if (field == "NetProfit") {
+                info->netProfit = text.toDouble();
             }
             else if (field == "NetPercentChange") {
                 info->netPcnt = text.toDouble();
@@ -1311,32 +1323,16 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
         if (!(info->isSym1 || info->isSym2))
             continue;
         if (info->isSym1) {
+            info->last1 = last;
             info->diff1 = last - info->purchasePrice1;
             info->pcntChange1 = info->diff1 / info->purchasePrice1 * 100;
         }
         else {
+            info->last2 = last;
             info->diff2 = last - info->purchasePrice2;
             info->pcntChange2 = info->diff2 / info->purchasePrice2 * 100;
         }
     }
-
-    //    m_orderHeaderLabels << "Pair"
-    //                      << "Sym1"
-    //                      << "Sym2"
-    //                      << "Size1"
-    //                      << "Size2"
-    //                      << "Cost/Unit1"
-    //                      << "Cost/Unit2"
-    //                      << "TotalCost1"
-    //                      << "TotalCost2"
-    //                      << "Last1"
-    //                      << "Last2"
-    //                      << "Diff1"
-    //                      << "Diff2"
-    //                      << "PercentChange1"
-    //                      << "PercentChange2"
-    //                      << "NetDiff"
-    //                      << "NetPercentChange";
 
     for (int r=0;r<tw->rowCount();++r) {
         Info* info = infoList.at(r);
@@ -1351,10 +1347,22 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
                     item->setText(QString::number(info->last1,'f',2));
                 }
                 else if (field == "Diff1") {
+                    if (info->sym1IsShort && info->diff1 > 0) {
+                        info->diff1 = info->diff1 * -1;
+                        info->pcntChange1 = info->pcntChange1 * -1;
+                    }
                     item->setText(QString::number(info->diff1,'f',2));
+                    if (info->diff1 < 0)
+                        item->setTextColor(QColor(Qt::red));
+                    else
+                        item->setTextColor(QColor(Qt::black));
                 }
                 else if (field == "PercentChange1") {
                     item->setText(QString::number(info->pcntChange1,'f',2));
+                    if (info->pcntChange1 < 0)
+                        item->setTextColor(QColor(Qt::red));
+                    else
+                        item->setTextColor(QColor(Qt::black));
                 }
             }
             else {
@@ -1362,17 +1370,41 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
                     item->setText(QString::number(info->last2,'f',2));
                 }
                 else if (field == "Diff2") {
+                    if (info->sym2IsShort && info->diff2 > 0) {
+                        info->diff2 = info->diff2 * -1;
+                        info->pcntChange2 = info->pcntChange2 * -1;
+                    }
                     item->setText(QString::number(info->diff2,'f',2));
+                    if (info->diff2 < 0)
+                        item->setTextColor(QColor(Qt::red));
+                    else
+                        item->setTextColor(QColor(Qt::black));
                 }
                 else if (field == "PercentChange2") {
                     item->setText(QString::number(info->pcntChange2,'f',2));
+                    if (info->pcntChange2 < 0)
+                        item->setTextColor(QColor(Qt::red));
+                    else
+                        item->setTextColor(QColor(Qt::black));
                 }
             }
-            if (field == "NetDiff") {
-                item->setText(QString::number(info->diff1 + info->diff2,'f',2));
+            if (field == "NetProfit") {
+//                double netDiff = info->diff1 + info->diff2;
+                double netPcnt = info->pcntChange1 + info->pcntChange2;
+                double netProfit = (info->totalCost1 + info->totalCost2) * netPcnt / 100;
+                item->setText(QString::number(netProfit,'f',2));
+                if (netProfit < 0)
+                    item->setTextColor(QColor(Qt::red));
+                else
+                    item->setTextColor(QColor(Qt::black));
             }
             else if (field == "NetPercentChange") {
-                item->setText(QString::number(info->pcntChange1 + info->pcntChange2,'f',2));
+                double netPcnt = info->pcntChange1 + info->pcntChange2;
+                item->setText(QString::number(netPcnt,'f',2));
+                if (netPcnt < 0)
+                    item->setTextColor(QColor(Qt::red));
+                else
+                    item->setTextColor(QColor(Qt::black));
             }
             else {
                 continue;
@@ -1380,126 +1412,6 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
         }
 
     }
-
-
-
-////    QTableWidgetItem* netDiffItem = NULL;
-////    QTableWidgetItem* netPcntItem = NULL;
-
-//    int netDiffCol = -1;
-//    int netPcntCol = -1;
-
-//    for (int r=0;r<tw->rowCount();++r) {
-
-//        Info* info = infoList.at(r);
-////        double diff1 = 0;
-////        double diff2  = 0;
-////        double pcnt1 = 0;
-////        double pcnt2 = 0;
-
-//        if (!(info->isSym1 || info->isSym2))
-//            continue;
-//        for (int c=0;c<tw->columnCount();++c) {
-//            QString field = tw->horizontalHeaderItem(c)->text();
-//            QTableWidgetItem* item = tw->item(r,c);
-//            if (info->isSym1) {
-//                if (field == "Last1")
-//                    item->setText(QString::number(last, 'f', 2));
-//                if (field == "Diff1") {
-//                    if (info->sym1IsShort) {
-//                        if (info->diff1 > 0) {
-//                            item->setText(QString::number(info->diff1,'f',2));
-////                            diff1 = info->diff1;
-//                            item->setTextColor(QColor(Qt::red));
-//                        }
-//                        else {
-//                            item->setText(QString::number(-info->diff1,'f',2));
-//                            info->diff1 = -1 * info->diff1;
-//                            item->setTextColor(QColor(Qt::black));
-//                        }
-//                    }
-//                }
-//                if (field == "PercentChange1") {
-//                    info->pcntChange1 = info->diff1 / info->purchasePrice1 * 100;
-//                    item->setText(QString::number(info->pcntChange1,'f',2));
-
-//                    if (info->sym1IsShort) {
-//                        if (info->pcntChange1 > 0) {
-//                            item->setTextColor(QColor(Qt::black));
-//                        }
-//                        else {
-//                            item->setTextColor(QColor(Qt::red));
-//                        }
-//                    }
-//                }
-//            }
-//            else if (info->isSym2) {
-//                if (field == "Last2")
-//                    item->setText(QString::number(last, 'f', 2));
-//                if (field == "Diff2") {
-//                    if (info->sym1IsShort) {
-//                        if (info->diff2 > 0) {
-//                            item->setText(QString::number(-info->diff2,'f',2));
-//                            info->diff2 = -info->diff2;
-//                            item->setTextColor(QColor(Qt::black));
-//                        }
-//                        else {
-//                            item->setText(QString::number(info->diff2,'f',2));
-////                            diff2 = info->diff2;
-//                            item->setTextColor(QColor(Qt::red));
-
-//                        }
-//                    }
-//                }
-//                if (field == "PercentChange2") {
-//                    info->pcntChange2 = info->diff2 / info->purchasePrice2 * 100;
-//                    if (info->pcntChange2 < 0 && info->sym2IsShort) {
-//                        info->pcntChange2 = -info->pcntChange2;
-//                    }
-//                    item->setText(QString::number(info->pcntChange2,'f',2));
-////                    pcnt2 = info->pcntChange2;
-
-//                    if (info->sym2IsShort) {
-//                        if (info->pcntChange2 < 0)
-//                            item->setTextColor(QColor(Qt::black));
-//                    }
-//                    else
-//                        item->setTextColor(QColor(Qt::red));
-//                }
-//            }
-//            if (field == "NetDiff")
-////                netDiffItem = item;
-//                netDiffCol = c;
-//            if (field == "NetPercentChange")
-////                netPcntItem = item;
-//                netPcntCol = c;
-
-//        }
-////        netDiffItem->setText(QString::number(diff1 + diff2, 'f', 2));
-////        netPcntItem->setText(QString::number(pcnt1 + pcnt2, 'f', 2));
-//    }
-
-//    for (int r=0;r<tw->rowCount();++r) {
-
-//        Info* info = infoList.at(r);
-//        QTableWidgetItem* netDiffItem = tw->item(r, netDiffCol);
-//        QTableWidgetItem* netPcntItem = tw->item(r, netPcntCol);
-
-//        double netDiff = info->diff1 + info->diff2;
-//        double netPcnt = info->pcntChange1 + info->pcntChange2;
-
-//        netDiffItem->setText(QString::number(netDiff));
-//        netPcntItem->setText(QString::number(netPcnt));
-
-//        if (netDiff < 0 && netPcnt < 0) {
-//            netDiffItem->setTextColor(QColor(Qt::red));
-//            netPcntItem->setTextColor(QColor(Qt::red));
-//        }
-//        else {
-//            netDiffItem->setTextColor(QColor(Qt::black));
-//            netPcntItem->setTextColor(QColor(Qt::black));
-//        }
-//    }
 
     qDeleteAll(infoList);
 //qDebug() << "[DEBUG-updateOrdersTable] END";
