@@ -28,34 +28,7 @@
 
 #include <iostream>
 
-struct Info
-{
-    int row;
-    int isSym1;
-    bool isSym2;
-    bool sym1IsShort;
-    bool sym2IsShort;
-    double purchasePrice1;
-    double purchasePrice2;
-    double diff1;
-    double diff2;
-    double pcntChange1;
-    double pcntChange2;
 
-    Info()
-        : row(-1)
-        , isSym1(false)
-        , isSym2(false)
-        , sym1IsShort(false)
-        , sym2IsShort(false)
-        , purchasePrice1(0)
-        , purchasePrice2(0)
-        , diff1(0)
-        , diff2(0)
-        , pcntChange1(0)
-        , pcntChange2(0)
-    {}
-};
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1197,6 +1170,52 @@ QStringList MainWindow::getManagedAccounts() const
 }
 
 
+struct Info
+{
+    int row;
+    bool isSym1;
+    bool isSym2;
+    int size1;
+    int size2;
+    bool sym1IsShort;
+    bool sym2IsShort;
+    double purchasePrice1;
+    double purchasePrice2;
+    double totalCost1;
+    double totalCost2;
+    double last1;
+    double last2;
+    double diff1;
+    double diff2;
+    double pcntChange1;
+    double pcntChange2;
+    double netDiff;
+    double netPcnt;
+
+    Info()
+        : row(-1)
+        , isSym1(false)
+        , isSym2(false)
+        , size1(0)
+        , size2(0)
+        , sym1IsShort(false)
+        , sym2IsShort(false)
+        , purchasePrice1(0)
+        , purchasePrice2(0)
+        , totalCost1(0)
+        , totalCost2(0)
+        , last1(0)
+        , last2(0)
+        , diff1(0)
+        , diff2(0)
+        , pcntChange1(0)
+        , pcntChange2(0)
+        , netDiff(0)
+        , netPcnt(0)
+    {}
+};
+
+
 void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
 {
 // pDebug("");
@@ -1220,35 +1239,141 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
 //                      << "PercentChange2"
 //                      << "NetDiff"
 //                      << "NetPercentChange";
+    QList<Info*> infoList;
+
+    for (int r=0;r<tw->rowCount();++r) {
+        Info* info = new Info;
+        for (int c=0;c<tw->columnCount();++c) {
+            QString field = tw->horizontalHeaderItem(c)->text();
+            QString text = tw->item(r,c)->text();
+            if (field == "Sym1" && text == symbol) {
+                info->isSym1 = true;
+            }
+            else if (field == "Sym2" && text == symbol) {
+                info->isSym2 = true;
+            }
+            else if (field == "Size1") {
+                info->size1 = text.toInt();
+                if (info->size1 < 0) {
+                    info->sym1IsShort = true;
+                }
+            }
+            else if (field == "Size2") {
+                info->size2 = text.toInt();
+                if (info->size2 < 0) {
+                    info->sym2IsShort = true;
+                }
+            }
+            else if (field == "Cost/Unit1") {
+                info->purchasePrice1 = text.toDouble();
+            }
+            else if (field == "Cost/Unit2") {
+                info->purchasePrice2 = text.toDouble();
+            }
+            else if (field == "Last1") {
+                info->last1 = text.toDouble();
+            }
+            else if (field == "Last2") {
+                info->last2 = text.toDouble();
+            }
+            else if (field == "Diff1") {
+                info->diff1 = text.toDouble();
+            }
+            else if (field == "Diff2") {
+                info->diff2 = text.toDouble();
+            }
+            else if (field == "PercentChange1") {
+                info->pcntChange1 = text.toDouble();
+            }
+            else if (field == "PercentChange2") {
+                info->pcntChange2 = text.toDouble();
+            }
+            else if (field == "NetDiff") {
+                info->netDiff = text.toDouble();
+            }
+            else if (field == "NetPercentChange") {
+                info->netPcnt = text.toDouble();
+            }
+        }
+        infoList.append(info);
+    }
+
+    for (int r=0;r<infoList.count();++r) {
+        Info* info = infoList.at(r);
+        if (!(info->isSym1 || info->isSym2))
+            continue;
+        if (info->isSym1) {
+            info->diff1 = last - info->purchasePrice1;
+            info->pcntChange1 = info->diff1 / info->purchasePrice1 * 100;
+        }
+        else {
+            info->diff2 = last - info->purchasePrice2;
+            info->pcntChange2 = info->diff2 / info->purchasePrice2 * 100;
+        }
+    }
+
+    //    m_orderHeaderLabels << "Pair"
+    //                      << "Sym1"
+    //                      << "Sym2"
+    //                      << "Size1"
+    //                      << "Size2"
+    //                      << "Cost/Unit1"
+    //                      << "Cost/Unit2"
+    //                      << "TotalCost1"
+    //                      << "TotalCost2"
+    //                      << "Last1"
+    //                      << "Last2"
+    //                      << "Diff1"
+    //                      << "Diff2"
+    //                      << "PercentChange1"
+    //                      << "PercentChange2"
+    //                      << "NetDiff"
+    //                      << "NetPercentChange";
+
+    for (int r=0;r<tw->rowCount();++r) {
+        Info* info = infoList.at(r);
+        if (!(info->isSym1 || info->isSym2)) {
+            continue;
+        }
+        for (int c=0;c<tw->columnCount();++c) {
+            QString field = tw->horizontalHeaderItem(c)->text();
+            QTableWidgetItem* item = tw->item(r,c);
+            if (info->isSym1) {
+                if (field == "Last1") {
+                    item->setText(QString::number(info->last1,'f',2));
+                }
+                else if (field == "Diff1") {
+                    item->setText(QString::number(info->diff1,'f',2));
+                }
+                else if (field == "PercentChange1") {
+                    item->setText(QString::number(info->pcntChange1,'f',2));
+                }
+            }
+            else {
+                if (field == "Last2") {
+                    item->setText(QString::number(info->last2,'f',2));
+                }
+                else if (field == "Diff2") {
+                    item->setText(QString::number(info->diff2,'f',2));
+                }
+                else if (field == "PercentChange2") {
+                    item->setText(QString::number(info->pcntChange2,'f',2));
+                }
+            }
+            if (field == "NetDiff") {
+                item->setText(QString::number(info->diff1 + info->diff2,'f',2));
+            }
+            else if (field == "NetPercentChange") {
+                item->setText(QString::number(info->pcntChange1 + info->pcntChange2,'f',2));
+            }
+            else {
+                continue;
+            }
+        }
+
+    }
 
 
-
-//    QList<Info*> infoList;
-
-//    for (int r=0;r<tw->rowCount();++r) {
-//        Info *info = new Info;
-//        for (int c=0;c<tw->columnCount();++c) {
-//            QString field = tw->horizontalHeaderItem(c)->text();
-//            QString text = tw->item(r,c)->text();
-//            if (field == "Sym1" && text == symbol)
-//                info->isSym1 = true;
-//            if (field == "Sym2" && text == symbol)
-//                info->isSym2 = true;
-//            if (field == "Cost/Unit1") {
-//                info->purchasePrice1 = text.toDouble();
-//                info->diff1 = last - info->purchasePrice1;
-//            }
-//            if (field == "Cost/Unit2") {
-//                info->purchasePrice2 = text.toDouble();
-//                info->diff2 = last - info->purchasePrice2;
-//            }
-//            if (field == "Size1" && text.toInt() < 0)
-//                info->sym1IsShort = true;
-//            if (field == "Size2" && text.toInt() < 0)
-//                info->sym2IsShort = true;
-//        }
-//        infoList.append(info);
-//    }
 
 ////    QTableWidgetItem* netDiffItem = NULL;
 ////    QTableWidgetItem* netPcntItem = NULL;
