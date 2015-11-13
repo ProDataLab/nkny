@@ -907,6 +907,9 @@ QStringList MainWindow::getHeaderLabels() const
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     writeSettings();
+    foreach (QWidget *widget, QApplication::topLevelWidgets()) {
+        widget->close();
+    }
     event->accept();
 }
 
@@ -918,7 +921,8 @@ void MainWindow::on_actionGlobal_Config_triggered()
 
 void MainWindow::on_action_Log_Dialog_triggered()
 {
-    m_logDialog.exec();
+    m_logDialog.setWindowFlags(Qt::WindowStaysOnTopHint);
+    m_logDialog.show();
 }
 
 void MainWindow::onOrdersTableContextMenuEventTriggered(const QPoint &pos, const QPoint &globalPos)
@@ -1324,12 +1328,12 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
             continue;
         if (info->isSym1) {
             info->last1 = last;
-            info->diff1 = last - info->purchasePrice1;
+            info->diff1 = info->purchasePrice1 - last;
             info->pcntChange1 = info->diff1 / info->purchasePrice1 * 100;
         }
         else {
             info->last2 = last;
-            info->diff2 = last - info->purchasePrice2;
+            info->diff2 = info->purchasePrice2 - last;
             info->pcntChange2 = info->diff2 / info->purchasePrice2 * 100;
         }
     }
@@ -1347,7 +1351,8 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
                     item->setText(QString::number(info->last1,'f',2));
                 }
                 else if (field == "Diff1") {
-                    if (info->sym1IsShort && info->diff1 > 0) {
+                    if (!info->sym1IsShort && info->diff1 > 0)
+                    {
                         info->diff1 = info->diff1 * -1;
                         info->pcntChange1 = info->pcntChange1 * -1;
                     }
@@ -1370,7 +1375,8 @@ void MainWindow::updateOrdersTable(const QString & symbol, const double & last)
                     item->setText(QString::number(info->last2,'f',2));
                 }
                 else if (field == "Diff2") {
-                    if (info->sym2IsShort && info->diff2 > 0) {
+                    if  (!info->sym2IsShort && info->diff2 > 0)
+                    {
                         info->diff2 = info->diff2 * -1;
                         info->pcntChange2 = info->pcntChange2 * -1;
                     }
