@@ -1067,9 +1067,9 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
                     s->appendRawPrice(price);
                     p->appendPlotsAndTable(p->getSecurityMap().key(s));
 
-                    if (!p->getUi()->manualTradeEntryCheckBox->isChecked())
+                    if (!p->getUi()->manualTradeEntryCheckBox->isChecked() && !p->getUi()->activateButton->isEnabled())
                         p->checkTradeTriggers();
-                    if (!p->getUi()->manualTradeExitCheckBox->isChecked())
+                    if (!p->getUi()->manualTradeExitCheckBox->isChecked() && p->getUi()->deactivateButton->isEnabled())
                         p->checkTradeExits();
                 }
                 // pDebug(6);

@@ -379,7 +379,7 @@ qDebug() << "[DEBUG-onHistoricalData] NUM BARS RECEIVED:" << dvh->timeStamp.size
         if (date.startsWith("finished")) {
             pDebug("isNewDataRequest");
             s->handleNewBarData(m_timeFrame);
-            if (ui->activateButton->isEnabled()) {
+            if (!ui->activateButton->isEnabled() && !ui->manualTradeEntryCheckBox->isChecked()) {
                 checkTradeTriggers();
                 if (!s->getSecurityOrderMap()->isEmpty()) {
                     checkTradeExits();
@@ -648,7 +648,8 @@ void PairTabPage::onActivateButtonClicked(bool)
         for (int i=0;i<5;++i) {
             m_stdDevLayerPeaks.append(m_ratioStdDev.last());
         }
-        checkTradeTriggers();
+        if (!ui->manualTradeEntryCheckBox->isChecked())
+            checkTradeTriggers();
     }
 
     ui->activateButton->setEnabled(false);
@@ -2625,6 +2626,11 @@ void PairTabPage::addTableRow()
 
 void PairTabPage::checkTradeTriggers()
 {
+    if (ui->manualTradeEntryCheckBox->isChecked())
+        return;
+
+    pDebug("");
+
     int numLayers = ui->tradeEntryNumStdDevLayersSpinBox->value();
     bool rsiUpperChecked = ui->tradeEntryRSIUpperCheckBox->isChecked();
 //    bool rsiLowerChecked = ui->tradeEntryRSILowerCheckBox->isChecked();
@@ -2770,6 +2776,7 @@ void PairTabPage::checkTradeTriggers()
             }
         }
     }
+    pDebug("leaving");
 }
 
 void PairTabPage::checkTradeExits()
