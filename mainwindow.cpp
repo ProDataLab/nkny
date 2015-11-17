@@ -258,8 +258,16 @@ void MainWindow::onIbError(const int id, const int errorCode, const QByteArray e
 {
 //    qDebug() << "IbError:" << id << errorCode << errorString.data();
     QPlainTextEdit* pte = m_logDialog.getUi()->logPlainTextEdit;
-    QString msg(QString("[IB_ERROR] ") + QString::number(id) + QString(" ") + QString::number(errorCode) + QString(" ") + errorString);
+    QString errType("");
+    if (errorCode != 2106)
+        errType = "[IB_ERROR] ";
+    else
+        errType = "[IB_INFO_] ";
+    QString msg(errType + QString::number(id) + QString(" ") + QString::number(errorCode) + QString(" ") + errorString);
     pte->appendPlainText(msg);
+
+    statusBar()->clearMessage();
+    statusBar()->showMessage(QString("        Log: ") + msg);
 
     if (errorCode == 200) {
         QMessageBox msgBox;

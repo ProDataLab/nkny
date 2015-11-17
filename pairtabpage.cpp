@@ -1692,12 +1692,10 @@ void PairTabPage::readSettings()
     for (int i = 0;i<n1;++i) {
         s.setArrayIndex(i);
 
-        // A FIX FOR A CORNER CASE... DOES THIS BREAK SOMETHING ELSE?
-        if (!m_securityMap.count())
-            return;
-
         int ssSize = m_securityMap.count();
-        Q_UNUSED(ssSize);
+        // A FIX FOR A CORNER CASE... DOES THIS BREAK SOMETHING ELSE?
+        if (!ssSize || i == ssSize-1)
+            break;
 
         Security* ss = m_securityMap.values().at(i);
 
@@ -3127,14 +3125,21 @@ void PairTabPage::onMouseMove(QMouseEvent *event)
 
     xVal = cp->xAxis->pixelToCoord((double)(event->pos().x()));
     yVal = cp->yAxis->pixelToCoord((double)(event->pos().y()));
-    m_mainWindow->statusBar()->clearMessage();
 
     QDateTime dt = QDateTime::fromTime_t(xVal);
 
     QString dateString(QString("Date: " + dt.toString("MM/dd/yyyy")));
     QString timeString(QString("Time: " + dt.toString("hh:mm:ss")));
     QString valString(QString("Value: " + QString::number(yVal)));
-    m_mainWindow->statusBar()->showMessage(dateString + "        " + timeString + "        " + valString);
+    QString msg = dateString + "        " + timeString + "        " + valString;
+    QString oldMsg = m_mainWindow->statusBar()->currentMessage();
+    QString logMsg("");
+    QString preMsg("        Log:");
+    if (oldMsg.contains(':')) {
+        logMsg = oldMsg.split(':',QString::SkipEmptyParts).at(1);
+    }
+    m_mainWindow->statusBar()->clearMessage();
+    m_mainWindow->statusBar()->showMessage(msg + preMsg + logMsg);
 }
 
 int PairTabPage::getPairTabPageId() const
