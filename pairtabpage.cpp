@@ -3219,9 +3219,9 @@ void PairTabPage::onMouseMove(QMouseEvent *event)
     QString msg = dateString + "        " + timeString + "        " + valString;
     QString oldMsg = m_mainWindow->statusBar()->currentMessage();
     QString logMsg("");
-    QString preMsg("        Log:");
-    if (oldMsg.contains(':')) {
-        logMsg = oldMsg.split(':',QString::SkipEmptyParts).at(1);
+    QString preMsg("            Log:");
+    if (oldMsg.contains("Log:")) {
+        logMsg = oldMsg.split(QString("Log:"),QString::SkipEmptyParts).last();
     }
     m_mainWindow->statusBar()->clearMessage();
     m_mainWindow->statusBar()->showMessage(msg + preMsg + logMsg);
