@@ -68,7 +68,7 @@ public:
     uint getTimeFrameInSeconds() const;
 
     void checkTradeTriggers();
-    void checkTradeExits();
+    void checkTradeExits(double last);
 
     void appendPlotsAndTable(long sid);
 
@@ -82,6 +82,8 @@ public:
 
 
     void setDontClickShowButtons(bool dontClickShowButtons);
+
+    void setExitingOrder(bool exitingOrder);
 
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
@@ -183,11 +185,7 @@ private:
 
     bool                                    m_ratioRSITriggerActivated;
     bool                                    m_percentFromMeanTriggerActivated;
-//    bool                                    m_stdDevLayer1TriggerActivated;
-//    bool                                    m_stdDevLayer2TriggerActivated;
-//    bool                                    m_stdDevLayer3TriggerActivated;
-//    bool                                    m_stdDevLayer4TriggerActivated;
-//    bool                                    m_stdDevLayer5TriggerActivated;
+    int                                     m_numStdDevLayerTriggersActivated;
     QVector<double>                         m_stdDevLayerPeaks;
 
     ContractDetailsWidget*                  m_pair1ContractDetailsWidget;
@@ -209,6 +207,7 @@ private:
     bool                                    m_pair1ShowButtonClickedAlready;
     bool                                    m_pair2ShowButtonClickedAlready;
     int                                     m_pairTabPageId;
+    bool                                    m_exitingOrder;
 
     struct GraphInfo
     {

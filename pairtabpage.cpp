@@ -46,6 +46,7 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
     , ui(new Ui::PairTabPage)
     , m_ratioRSITriggerActivated(false)
     , m_percentFromMeanTriggerActivated(false)
+    , m_numStdDevLayerTriggersActivated(0)
     , m_homeTablePageRowIndex(-1)
     , m_gettingMoreHistoricalData(false)
     , m_bothPairsUpdated(true)
@@ -55,6 +56,7 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
     , m_pair1ShowButtonClickedAlready(false)
     , m_pair2ShowButtonClickedAlready(false)
     , m_pairTabPageId(++PairTabPageCount)
+    , m_exitingOrder(false)
 {
 //    qDebug() << "[DEBUG-PairTabPage]";
 
@@ -379,11 +381,11 @@ qDebug() << "[DEBUG-onHistoricalData] NUM BARS RECEIVED:" << dvh->timeStamp.size
         if (date.startsWith("finished")) {
             pDebug("isNewDataRequest");
             s->handleNewBarData(m_timeFrame);
-            if (!ui->activateButton->isEnabled() && !ui->manualTradeEntryCheckBox->isChecked()) {
+            if (!ui->manualTradeEntryCheckBox->isChecked()
+                    && !ui->activateButton->isEnabled()
+                    && ui->deactivateButton->isEnabled())
+            {
                 checkTradeTriggers();
-                if (!s->getSecurityOrderMap()->isEmpty()) {
-                    checkTradeExits();
-                }
             }
             appendPlotsAndTable(sid);
 
@@ -1834,10 +1836,7 @@ void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
 
 void PairTabPage::exitOrder()
 {
-//qDebug() << "[DEBUG-PairTabPage::exitOrder";
-
-//    Security* s1 = m_securityMap.values().at(0);
-//    Security* s2 = m_securityMap.values().at(1);
+    m_exitingOrder = true;
 
     for (int i=0;i<2;++i) {
         Security* s = m_securityMap.values().at(i);
@@ -1850,20 +1849,6 @@ void PairTabPage::exitOrder()
             newSo->triggerType = EXIT;
             newSo->referenceOrderId = so->order.orderId;
             Contract* contract = s->contract();
-//            QMap<long, SecurityOrder*>* soMap;
-
-
-//            if (i==0) {
-//                soMap = s1->getSecurityOrderMap();
-//                so = soMap->values().at(0);
-//                newSo = s1->newSecurityOrder(orderId);
-//                contract = s1->contract();
-//            }
-//            else {
-//                so = s2->getSecurityOrderMap()->values().at(0);
-//                newSo = s2->newSecurityOrder(orderId);
-//                contract = s2->contract();
-//            }
 
             if (so->order.action == "BUY")
                 newSo->order.action = "SELL";
@@ -1876,27 +1861,21 @@ void PairTabPage::exitOrder()
             newSo->order.totalQuantity = so->order.totalQuantity;
 
             m_ibClient->placeOrder(orderId, *contract, newSo->order);
-
-
-//        Order o1 = s1->getSecurityOrderMap()->values().at(i)->order;
-//        Order o2 = s2->getSecurityOrderMap()->values().at(i)->order;
-
-//        if (o1.action == "BUY") {
-//            o1.action = "SELL";
-//            o2.action = "BUY";
-//        }
-//        else {
-//            o1.action = "BUY";
-//            o2.action = "SELL";
-//        }
-//        int cnt1 = s1->getSecurityOrderMap()->count();
-//        int cnt2 = s2->getSecurityOrderMap()->count();
-//        for (int j=0;j<cnt1 ;++j) {
-//            m_ibClient->placeOrder(s1->getSecurityOrderMap()->keys().at(i), *s1->contract(), o1);
-//        }
-//        for (int j=0;j<cnt2;++j) {
-//            m_ibClient->placeOrder(s2->getSecurityOrderMap()->keys().at(j), *s2->contract(), o2);
-//        }
+            switch (so->triggerType)
+            {
+            case RSI:
+                m_ratioRSITriggerActivated = false;
+            case PCNT:
+                m_percentFromMeanTriggerActivated = false;
+            case EXIT:
+                ;
+            case MANUAL:
+                ;
+            case TEST:
+                ;
+            default:
+                --m_numStdDevLayerTriggersActivated;
+            }
         }
     }
 }
@@ -2624,8 +2603,12 @@ void PairTabPage::addTableRow()
 
 void PairTabPage::checkTradeTriggers()
 {
-    if (ui->manualTradeEntryCheckBox->isChecked())
-        return;
+//    if (ui->manualTradeEntryCheckBox->isChecked()
+//            || (!ui->activateButton->isEnabled() && !ui->deactivateButton->isEnabled())
+//            || (ui->activateButton->isEnabled() && !ui->deactivateButton->isEnabled()))
+//    {
+//        return;
+//    }
 
     pDebug("");
 
@@ -2650,18 +2633,23 @@ void PairTabPage::checkTradeTriggers()
 
     if (!m_percentFromMeanTriggerActivated && ui->tradeEntryPercentFromMeanCheckBox->checkState() == Qt::Checked) {
         double lastPofM = m_ratioPercentFromMA.last();
+        pDebug(lastPofM);
         if (fabs(lastPofM) > ui->tradeEntryPercentFromMeanDoubleSpinBox->value()) {
-            if (numLayers == 0) {
-                if (lastPofM > 0)
-                    placeOrder(PCNT);
-                else if (lastPofM < 0)
-                    placeOrder(PCNT, true);
-            }
             m_percentFromMeanTriggerActivated = true;
+            if (numLayers == 0) {
+                if (lastPofM > 0) {
+                    pDebug("greaterThan");
+                    placeOrder(PCNT);
+                }
+                else if (lastPofM < 0) {
+                    pDebug("lessThan");
+                    placeOrder(PCNT, true);
+                }
+            }
         }
     }
 
-    if (ui->tradeEntryNumStdDevLayersSpinBox->value() > 0) {
+    if (numLayers > 0) {
 
         double lastStdDev = m_ratioStdDev.last();
         bool reverse = false;
@@ -2672,6 +2660,8 @@ void PairTabPage::checkTradeTriggers()
         bool wait = false;
 
         for (int i=0;i<numLayers;++i) {
+            if (i == m_numStdDevLayerTriggersActivated - 1)
+                break;
             if (lastStdDev > m_stdDevLayerPeaks.at(i))
                 m_stdDevLayerPeaks[i] = lastStdDev;
             StdDevLayerTab* t = qobject_cast<StdDevLayerTab*>(ui->layersTabWidget->widget(i));
@@ -2701,16 +2691,19 @@ void PairTabPage::checkTradeTriggers()
                         if (!pcntFromMeanChecked
                                 && !rsiUpperChecked) {
                             placeOrder((TriggerType)i, reverse);
+                            ++m_numStdDevLayerTriggersActivated;
                         }
                         else if (pcntFromMeanChecked
                                  && !rsiUpperChecked
                                  && m_percentFromMeanTriggerActivated) {
                                 placeOrder((TriggerType)i, reverse);
+                                ++m_numStdDevLayerTriggersActivated;
                         }
                         else if(!pcntFromMeanChecked
                                 && rsiUpperChecked
                                 && m_ratioRSITriggerActivated) {
                             placeOrder((TriggerType)i, reverse);
+                            ++m_numStdDevLayerTriggersActivated;
                         }
                     }
                 }
@@ -2718,16 +2711,19 @@ void PairTabPage::checkTradeTriggers()
                     if (!pcntFromMeanChecked
                             && !rsiUpperChecked) {
                         placeOrder((TriggerType)i, reverse);
+                        ++m_numStdDevLayerTriggersActivated;
                     }
                     else if (pcntFromMeanChecked
                              && !rsiUpperChecked
                              && m_percentFromMeanTriggerActivated) {
                             placeOrder((TriggerType)i, reverse);
+                            ++m_numStdDevLayerTriggersActivated;
                     }
                     else if(!pcntFromMeanChecked
                             && rsiUpperChecked
                             && m_ratioRSITriggerActivated) {
                         placeOrder((TriggerType)i, reverse);
+                        ++m_numStdDevLayerTriggersActivated;
                     }
                 }
             }
@@ -2741,16 +2737,19 @@ void PairTabPage::checkTradeTriggers()
                         if (!pcntFromMeanChecked
                                 && !rsiUpperChecked) {
                             placeOrder((TriggerType)i, reverse);
+                            ++m_numStdDevLayerTriggersActivated;
                         }
                         else if (pcntFromMeanChecked
                                  && !rsiUpperChecked
                                  && m_percentFromMeanTriggerActivated) {
                                 placeOrder((TriggerType)i, reverse);
+                                ++m_numStdDevLayerTriggersActivated;
                         }
                         else if(!pcntFromMeanChecked
                                 && rsiUpperChecked
                                 && m_ratioRSITriggerActivated) {
                             placeOrder((TriggerType)i, reverse);
+                            ++m_numStdDevLayerTriggersActivated;
                         }
                     }
                 }
@@ -2760,16 +2759,19 @@ void PairTabPage::checkTradeTriggers()
                 if (!pcntFromMeanChecked
                         && !rsiUpperChecked) {
                     placeOrder((TriggerType)i, reverse);
+                    ++m_numStdDevLayerTriggersActivated;
                 }
                 else if (pcntFromMeanChecked
                          && !rsiUpperChecked
                          && m_percentFromMeanTriggerActivated) {
                         placeOrder((TriggerType)i, reverse);
+                        ++m_numStdDevLayerTriggersActivated;
                 }
                 else if(!pcntFromMeanChecked
                         && rsiUpperChecked
                         && m_ratioRSITriggerActivated) {
                     placeOrder((TriggerType)i, reverse);
+                    ++m_numStdDevLayerTriggersActivated;
                 }
             }
         }
@@ -2777,26 +2779,109 @@ void PairTabPage::checkTradeTriggers()
     pDebug("leaving");
 }
 
-void PairTabPage::checkTradeExits()
-{
+void PairTabPage::checkTradeExits(double last=0)
+{    
+    if (m_exitingOrder)
+        return;
+
+    // FOR TESTING
+//    return;
+
+//    if (ui->manualTradeExitCheckBox->isChecked()
+//            || (!ui->activateButton->isEnabled() && !ui->deactivateButton->isEnabled())
+//            || (ui->activateButton->isEnabled() && !ui->deactivateButton->isEnabled()))
+//    {
+//        return;
+//    }
+    pDebug("");
+    Q_UNUSED(last);
     if (ui->tradeExitPercentStopLossCheckBox->checkState() == Qt::Checked) {
 
-        // TODO: AFTER ORDERS AND PRICE OF ORDER IS DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // USE THE ORDERS TABLE TO GET THE CURRENT PERCENT GAIN/LOSS
+
+        //    m_orderHeaderLabels << "Pair"
+        //                      << "Sym1"
+        //                      << "Sym2"
+        //                      << "Size1"
+        //                      << "Size2"
+        //                      << "Cost/Unit1"
+        //                      << "Cost/Unit2"
+        //                      << "TotalCost1"
+        //                      << "TotalCost2"
+        //                      << "Last1"
+        //                      << "Last2"
+        //                      << "Diff1"
+        //                      << "Diff2"
+        //                      << "PercentChange1"
+        //                      << "PercentChange2"
+        //                      << "NetDiff"
+        //                      << "NetPercentChange";
+
+        double stopLoss = ui->tradeExitPercentStopLossDoubleSpinBox->value();
+
+        QTableWidget* tw = m_mainWindow->getUi()->ordersTableWidget;
+        int nRows = tw->rowCount();
+        int nCols = tw->columnCount();
+
+        QList<int> rows;
+
+        for (int r=0;r<nRows;++r) {
+            for (int c=0;c<nCols;++c) {
+                QString field = tw->horizontalHeaderItem(c)->text();
+                QString text  = tw->item(r,c)->text();
+                if (field == "Pair" && text != m_tabSymbol)
+                    continue;
+                else
+                    rows.append(r);
+            }
+        }
+
+        for (int r=0;r<rows.count();++r) {
+            for (int c=0;c<nCols;++c) {
+                QString field = tw->horizontalHeaderItem(c)->text();
+                QTableWidgetItem* item = tw->item(r,c);
+                if (!item)
+                    break;
+                QString text  = tw->item(r,c)->text();
+                if (field == "NetPercentChange") {
+                    double percentChange = text.toDouble();
+                    if (percentChange < 0) {
+                        percentChange = fabs(percentChange);
+                        if (percentChange > stopLoss) {
+                            exitOrder();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (ui->tradeExitPercentFromMeanCheckBox->checkState() == Qt::Checked) {
         double lastPercentFromMean = m_ratioPercentFromMA.last();
+        double lastPercentFromMeanMinusOne = m_ratioPercentFromMA.at(m_ratioPercentFromMA.count()-2);
         double trigger = ui->tradeExitPercentFromMeanDoubleSpinBox->value();
-        if (lastPercentFromMean < trigger)
+        if ((fabs(lastPercentFromMeanMinusOne > trigger) && fabs(lastPercentFromMean < trigger))
+                || (fabs(lastPercentFromMeanMinusOne < trigger) && fabs(lastPercentFromMean > trigger)))
+        {
             exitOrder();
-
+            return;
+        }
     }
 
     if (ui->tradeExitStdDevCheckBox->checkState() == Qt::Checked) {
         double lastStdDev = fabs(m_ratioStdDev.last());
+        double lastStdDevMinusOne = fabs(m_ratioStdDev.at(m_ratioStdDev.count()-2));
         double trigger = ui->tradeExitStdDevDoubleSpinBox->value();
-        if (lastStdDev < trigger)
-            exitOrder();
+
+        if ((lastStdDevMinusOne > trigger && lastStdDev < trigger)
+            || (lastStdDevMinusOne < trigger && lastStdDev > trigger))
+        {
+            for (int i=0;i<m_numStdDevLayerTriggersActivated;++i) {
+                exitOrder();
+            }
+            return;
+        }
     }
 }
 
@@ -3178,4 +3263,9 @@ void PairTabPage::on_sym1IsShortCheckBox_stateChanged(int arg1)
     else {
         ui->sym2IsShortCheckBox->setChecked(true);
     }
+}
+
+void PairTabPage::setExitingOrder(bool exitingOrder)
+{
+    m_exitingOrder = exitingOrder;
 }

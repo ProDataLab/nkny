@@ -377,7 +377,7 @@ void MainWindow::onTabCloseRequested(int idx)
                               + QString::number(m_pairTabPageMap.keys().at(i))
                               + "value: "
                               + m_pairTabPageMap.values().at(i)->getTabSymbol());
-            pDebug(QString("NO p... FUCK: " + mapString));
+            pDebug(QString("NO m_pairTabPageMap: " + mapString));
         }
         return;
     }
@@ -630,7 +630,8 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     }
     else
         s = s2;
-    SecurityOrder* so = (*(s->getSecurityOrderMap()))[orderId];
+//    SecurityOrder* so = (*(s->getSecurityOrderMap())xzc)[orderId];
+    SecurityOrder* so = s->getSecurityOrderMap()->value(orderId);
     so->status = status;
     so->filled = filled;
     so->remaining = remaining;
@@ -644,13 +645,29 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     // has the order been closed?
 
     if (so->triggerType == EXIT) {
-        if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
+        QMap<long, SecurityOrder *>* securityOrderMap = s->getSecurityOrderMap();
+        if (!securityOrderMap)
+            return;
+
+        // This is a hack to fix the security order map not containing the referenceOrderId crash.
+        if (!securityOrderMap->contains(so->referenceOrderId)) {
+            pDebug("so->referenceOrderId NOT FOUND");
+            return;
+        }
+
+        int sFilled = securityOrderMap->value(so->referenceOrderId)->filled;
+        // I had a crash from the line below... use sFilled now to be able to trace the crash.
+        //if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
+        if (so->filled == sFilled) {
             ui->ordersTableWidget->removeRow(row);
             for (int i=ui->portfolioTableWidget->rowCount()-1;i>=0;--i) {
                 ui->portfolioTableWidget->removeRow(i);
             }
-            (*(s->getSecurityOrderMap())).remove(so->referenceOrderId);
-            (*(s->getSecurityOrderMap())).remove(so->order.orderId);
+//            (*(s->getSecurityOrderMap())).remove(so->referenceOrderId);
+            s->getSecurityOrderMap()->remove(so->referenceOrderId);
+//            (*(s->getSecurityOrderMap())).remove(so->order.orderId);
+            s->getSecurityOrderMap()->remove(so->order.orderId);
+            p->setExitingOrder(false);
         }
     }
 }
@@ -846,6 +863,7 @@ void MainWindow::writeSettings()
     }
     settings.endArray();
     settings.endGroup();
+    settings.sync();
 //    qDebug() << "[DEBUG-" << __func__ << "] leaving";
 }
 
@@ -1049,6 +1067,7 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
             for (int j=0;j<m_pairTabPageMap.values().count();++j) {
                 // pDebug(3);
                 bool containsSecurity = false;
+                bool canCheckTradeExits = false;
                 Security* s = NULL;
                 PairTabPage* p = m_pairTabPageMap.values().at(j);
                 if (!p)
@@ -1070,6 +1089,14 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
                             containsSecurity = true;
                             break;
                         }
+//                        if (containsSecurity && !s->getSecurityOrderMap()->isEmpty()) {
+//                            for (int i=0;i<s->getSecurityOrderMap()->count();++i) {
+//                                SecurityOrder* so = s->getSecurityOrderMap()->values().at(i);
+//                                if (so->triggerType != EXIT) {
+//                                    canCheckTradeExits = true;
+//                                }
+//                            }
+//                        }
                     }
                 }
                 // pDebug(5);
@@ -1079,10 +1106,27 @@ void MainWindow::onTickPrice(const long &tickerId, const TickType &field, const 
                     s->appendRawPrice(price);
                     p->appendPlotsAndTable(p->getSecurityMap().key(s));
 
-                    if (!p->getUi()->manualTradeEntryCheckBox->isChecked() && !p->getUi()->activateButton->isEnabled())
+                    if (!p->getUi()->manualTradeEntryCheckBox->isChecked()
+                            && !p->getUi()->activateButton->isEnabled()
+                            && p->getUi()->deactivateButton->isEnabled())
+                    {
                         p->checkTradeTriggers();
-                    if (!p->getUi()->manualTradeExitCheckBox->isChecked() && p->getUi()->deactivateButton->isEnabled())
-                        p->checkTradeExits();
+                    }
+                    if (!p->getUi()->manualTradeExitCheckBox->isChecked()
+                            && !p->getUi()->activateButton->isEnabled()
+                            && p->getUi()->deactivateButton->isEnabled())
+                    {
+                        for (int i=0;i<s->getSecurityOrderMap()->count();++i) {
+                            SecurityOrder* so = s->getSecurityOrderMap()->values().at(i);
+                            if (so->triggerType != EXIT) {
+                                canCheckTradeExits = true;
+                                break;
+                            }
+                        }
+                        if (canCheckTradeExits) {
+                            p->checkTradeExits(price);
+                        }
+                    }
                 }
                 // pDebug(6);
             }
