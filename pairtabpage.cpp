@@ -57,6 +57,7 @@ PairTabPage::PairTabPage(IBClient *ibClient, const QStringList & managedAccounts
     , m_pair2ShowButtonClickedAlready(false)
     , m_pairTabPageId(++PairTabPageCount)
     , m_exitingOrder(false)
+    , m_placingOrder(false)
 {
 //    qDebug() << "[DEBUG-PairTabPage]";
 
@@ -960,23 +961,6 @@ bool PairTabPage::reqClosePair()
         }
         for (int i=0;i<PairTabPage::RawDataMap.values().count();++i) {
             Security* ss = PairTabPage::RawDataMap.values().at(i);
-//            if (ss->contract()->symbol == s1->contract()->symbol) {
-//                if (ss->contract()->secType == QByteArray("FUT")
-//                        && s1->contract()->secType == QByteArray("FUT")) {
-//                    if (ss->contract()->expiry == s1->contract()->expiry) {
-//                        long key = PairTabPage::RawDataMap.key(ss);
-//                        if (PairTabPage::RawDataMap.contains(key, ss))
-//                            PairTabPage::RawDataMap.remove(key, ss);
-//                        ++numOfSameSecurity;
-//                    }
-//                }
-//                else {
-//                    long key = PairTabPage::RawDataMap.key(ss);
-//                    if (PairTabPage::RawDataMap.contains(key, ss))
-//                        PairTabPage::RawDataMap.remove(key, ss);
-//                    ++numOfSameSecurity;
-//                }
-//            }
             if (ss == s1) {
                 long key = PairTabPage::RawDataMap.key(ss);
                 if (PairTabPage::RawDataMap.contains(key, ss))
@@ -1009,6 +993,8 @@ bool PairTabPage::reqClosePair()
         return true;
     }
     else {
+        pDebug(*(s1->getSecurityOrderMap()));
+        pDebug(*(s2->getSecurityOrderMap()));
         QMessageBox msgBox;
         msgBox.setText("Notice!");
         msgBox.setInformativeText("This pair page has open orders and will not be closed until the orders are closed");
@@ -1759,6 +1745,8 @@ QString PairTabPage::getTabSymbol() const
 
 void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
 {
+    m_placingOrder = true;
+
     if (ui->tradeEntryAmountSpinBox->value() == 0 && !ui->overrideUnitSizeCheckBox->isChecked()) {
         QMessageBox msgBox;
         msgBox.setText("Can not place order because the amount of money allocated is $0.00");
@@ -1770,14 +1758,38 @@ void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
     Security* s1 = m_securityMap.values().at(0);
     Security* s2 = m_securityMap.values().at(1);
 
+    // BEGIN: No more orders if while old order is exiting
+    for (int i=0;i<s1->getSecurityOrderMap()->count();++i) {
+        SecurityOrder* so = s1->getSecurityOrderMap()->values().at(i);
+        if (so->triggerType == EXIT) {
+            pDebug("s1 contains an EXIT order.. leaving placeOrder");
+            pDebug(*s1->getSecurityOrderMap());
+            return;
+        }
+    }
+    for (int i=0;i<s2->getSecurityOrderMap()->count();++i) {
+        SecurityOrder* so = s2->getSecurityOrderMap()->values().at(i);
+        if (so->triggerType == EXIT) {
+            pDebug("s2 contains an EXIT order.. leaving");
+            pDebug(*s2->getSecurityOrderMap());
+            return;
+        }
+    }
+    // END: No more orders while exiting
+
     Contract* c1 = s1->contract();
     Contract* c2 = s2->contract();
 
     long orderId1 = m_ibClient->getOrderId();
     long orderId2 = m_ibClient->getOrderId();
 
+    pDebug(orderId1);
+    pDebug(orderId2);
+
     SecurityOrder* so1 = s1->newSecurityOrder(orderId1);
     SecurityOrder* so2 = s2->newSecurityOrder(orderId2);
+
+
 
     so1->triggerType = triggerType;
     so2->triggerType = triggerType;
@@ -1845,6 +1857,9 @@ void PairTabPage::exitOrder()
             if (so->triggerType == EXIT)
                 continue;
             long orderId = m_ibClient->getOrderId();
+
+            pDebug(orderId);
+
             SecurityOrder* newSo = s->newSecurityOrder(orderId);
             newSo->triggerType = EXIT;
             newSo->referenceOrderId = so->order.orderId;
@@ -2610,7 +2625,7 @@ void PairTabPage::checkTradeTriggers()
 //        return;
 //    }
 
-    pDebug("");
+//    pDebug("");
 
     int numLayers = ui->tradeEntryNumStdDevLayersSpinBox->value();
     bool rsiUpperChecked = ui->tradeEntryRSIUpperCheckBox->isChecked();
@@ -2633,7 +2648,7 @@ void PairTabPage::checkTradeTriggers()
 
     if (!m_percentFromMeanTriggerActivated && ui->tradeEntryPercentFromMeanCheckBox->checkState() == Qt::Checked) {
         double lastPofM = m_ratioPercentFromMA.last();
-        pDebug(lastPofM);
+//        pDebug(lastPofM);
         if (fabs(lastPofM) > ui->tradeEntryPercentFromMeanDoubleSpinBox->value()) {
             m_percentFromMeanTriggerActivated = true;
             if (numLayers == 0) {
@@ -2776,7 +2791,7 @@ void PairTabPage::checkTradeTriggers()
             }
         }
     }
-    pDebug("leaving");
+//    pDebug("leaving");
 }
 
 void PairTabPage::checkTradeExits(double last=0)
@@ -2793,7 +2808,7 @@ void PairTabPage::checkTradeExits(double last=0)
 //    {
 //        return;
 //    }
-    pDebug("");
+//    pDebug("");
     Q_UNUSED(last);
     if (ui->tradeExitPercentStopLossCheckBox->checkState() == Qt::Checked) {
 
@@ -2848,6 +2863,7 @@ void PairTabPage::checkTradeExits(double last=0)
                     if (percentChange < 0) {
                         percentChange = fabs(percentChange);
                         if (percentChange > stopLoss) {
+                            pDebug("exitOrder() called");
                             exitOrder();
                             return;
                         }
@@ -2864,20 +2880,28 @@ void PairTabPage::checkTradeExits(double last=0)
         if ((fabs(lastPercentFromMeanMinusOne > trigger) && fabs(lastPercentFromMean < trigger))
                 || (fabs(lastPercentFromMeanMinusOne < trigger) && fabs(lastPercentFromMean > trigger)))
         {
+            pDebug("exitOrder() called");
             exitOrder();
             return;
         }
     }
 
     if (ui->tradeExitStdDevCheckBox->checkState() == Qt::Checked) {
+//        pDebug("ui->tradeExitStdDevCheckBox->checkState() == Qt::Checked");
         double lastStdDev = fabs(m_ratioStdDev.last());
         double lastStdDevMinusOne = fabs(m_ratioStdDev.at(m_ratioStdDev.count()-2));
         double trigger = ui->tradeExitStdDevDoubleSpinBox->value();
+
+        QString msg("lastStdDev: " + QString::number(lastStdDev)
+                    + " lastStdDevMinusOne: " + QString::number(lastStdDevMinusOne)
+                    + " trigger: " + QString::number(trigger));
+        pDebug(msg);
 
         if ((lastStdDevMinusOne > trigger && lastStdDev < trigger)
             || (lastStdDevMinusOne < trigger && lastStdDev > trigger))
         {
             for (int i=0;i<m_numStdDevLayerTriggersActivated;++i) {
+                pDebug("exitOrder() called");
                 exitOrder();
             }
             return;
@@ -3263,6 +3287,16 @@ void PairTabPage::on_sym1IsShortCheckBox_stateChanged(int arg1)
     else {
         ui->sym2IsShortCheckBox->setChecked(true);
     }
+}
+
+bool PairTabPage::getPlacingOrder() const
+{
+    return m_placingOrder;
+}
+
+void PairTabPage::setPlacingOrder(bool placingOrder)
+{
+    m_placingOrder = placingOrder;
 }
 
 void PairTabPage::setExitingOrder(bool exitingOrder)

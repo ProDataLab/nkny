@@ -358,7 +358,7 @@ void MainWindow::onTwsConnectionClosed()
 void MainWindow::onTabCloseRequested(int idx)
 {
 
-    pDebug(idx);
+//    pDebug(idx);
 
     QMap<int, PairTabPage*> tmpMap;
 
@@ -368,23 +368,23 @@ void MainWindow::onTabCloseRequested(int idx)
 
     PairTabPage* p = m_pairTabPageMap.value(idx);
 
-    pDebug(m_pairTabPageMap);
+//    pDebug(m_pairTabPageMap);
 
     if (!p) {
-        pDebug("");
+//        pDebug("");
         for (int i=3;i<m_pairTabPageMap.count();++i) {
             QString mapString("key: "
                               + QString::number(m_pairTabPageMap.keys().at(i))
                               + "value: "
                               + m_pairTabPageMap.values().at(i)->getTabSymbol());
-            pDebug(QString("NO m_pairTabPageMap: " + mapString));
+//            pDebug(QString("NO m_pairTabPageMap: " + mapString));
         }
         return;
     }
 
 
     if (p->reqClosePair()) {
-        pDebug(2);
+//        pDebug(2);
 
         // remove tabWidget tab
         QWidget* w = ui->tabWidget->widget(idx);
@@ -400,11 +400,11 @@ void MainWindow::onTabCloseRequested(int idx)
         }
         delete w;
         m_pairTabPageMap = tmpMap;
-        pDebug(m_pairTabPageMap);
+//        pDebug(m_pairTabPageMap);
     }
 
 
-    pDebug("leaving");
+//    pDebug("leaving");
 
 //    // else ... POP UP WINDOW THAT THERE ARE ORDERS ACTIVE
 }
@@ -412,6 +412,11 @@ void MainWindow::onTabCloseRequested(int idx)
 void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int filled, int remaining, double avgFillPrice,
                                 int permId, int parentId, double lastFillPrice, int clientId, const QByteArray &whyHeld)
 {
+    pDebug(orderId);
+
+//    bool orderCancelled = false;
+
+
 //qDebug() << "[DEBUG-onOrderStatus]"
 //             << orderId
 //             << status
@@ -425,8 +430,18 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
 //             << whyHeld;
 
     // THIS IS TEMPORARY  ... FIX ME !!!!
-    if (status == "PendingCancel" || status == "Cancelled")
+    if (status == "PendingCancel") {
+        QString msg("PendingCancel: " + QString::number(orderId));
+        pDebug(msg);
         return;
+    }
+
+    if (status == "Cancelled") {
+        QString msg("Cancelled: " + QString::number(orderId));
+        pDebug(msg);
+//        orderCancelled = true;
+//        return;
+    }
 
     if (!ui->ordersTab->isEnabled())
         ui->ordersTab->setEnabled(true);
@@ -476,11 +491,18 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     }
 
     // is this an order initiated from TWS interface?
-    if (!isS1 && !isS2) {
+    if (!(isS1 || isS2)) {
         // FIXME.. I need to address this !!!!!!!!!!!!!!!!
-//qDebug() << "[DEBUG-onOrderStatus] WARNING: orderId (" << orderId << ") not known.. is it from TWS?";
+        qDebug() << "[DEBUG-onOrderStatus] WARNING: orderId (" << orderId << ") not known.. is it from TWS?";
+        pDebug(*(s1->getSecurityOrderMap()));
+        pDebug(*(s2->getSecurityOrderMap()));
         return;
     }
+
+    // DEBUG FOR CANCELLED ORDERS, ETC
+    pDebug(*(s1->getSecurityOrderMap()));
+    pDebug(*(s2->getSecurityOrderMap()));
+
 
     // is this a new row?
     for (int r=0;r<ui->ordersTableWidget->rowCount();++r) {
@@ -632,6 +654,7 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
         s = s2;
 //    SecurityOrder* so = (*(s->getSecurityOrderMap())xzc)[orderId];
     SecurityOrder* so = s->getSecurityOrderMap()->value(orderId);
+
     so->status = status;
     so->filled = filled;
     so->remaining = remaining;
@@ -645,13 +668,17 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     // has the order been closed?
 
     if (so->triggerType == EXIT) {
+        pDebug("TriggerType == EXIT");
         QMap<long, SecurityOrder *>* securityOrderMap = s->getSecurityOrderMap();
-        if (!securityOrderMap)
+        if (!securityOrderMap) {
+            pDebug("securityOrderMap NOT FOUND!");
             return;
+        }
 
         // This is a hack to fix the security order map not containing the referenceOrderId crash.
         if (!securityOrderMap->contains(so->referenceOrderId)) {
-            pDebug("so->referenceOrderId NOT FOUND");
+            QString msg("so->referenceOrderId NOT FOUND: " + QString::number(so->referenceOrderId));
+            pDebug(msg);
             return;
         }
 
@@ -659,6 +686,7 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
         // I had a crash from the line below... use sFilled now to be able to trace the crash.
         //if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
         if (so->filled == sFilled) {
+            pDebug("so-filled == sFilled");
             ui->ordersTableWidget->removeRow(row);
             for (int i=ui->portfolioTableWidget->rowCount()-1;i>=0;--i) {
                 ui->portfolioTableWidget->removeRow(i);
@@ -667,8 +695,12 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
             s->getSecurityOrderMap()->remove(so->referenceOrderId);
 //            (*(s->getSecurityOrderMap())).remove(so->order.orderId);
             s->getSecurityOrderMap()->remove(so->order.orderId);
-            p->setExitingOrder(false);
+
+            if (s1->getSecurityOrderMap()->isEmpty() && s2->getSecurityOrderMap()->isEmpty())
+                p->setExitingOrder(false);
         }
+        pDebug(*s1->getSecurityOrderMap());
+        pDebug(*s2->getSecurityOrderMap());
     }
 }
 
@@ -980,6 +1012,7 @@ void MainWindow::onCloseOrder()
             continue;
         p = m_pairTabPageMap.values().at(i);
         if (p->getTabSymbol() == tabSymbol) {
+            pDebug("exitOrder() called");
             p->exitOrder();
         }
     }
