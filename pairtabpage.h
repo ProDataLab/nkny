@@ -85,6 +85,9 @@ public:
 
     void setExitingOrder(bool exitingOrder);
 
+    bool getPlacingOrder() const;
+    void setPlacingOrder(bool placingOrder);
+
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
         double low, double close, int volume, int barCount, double WAP, int hasGaps);
@@ -208,6 +211,7 @@ private:
     bool                                    m_pair2ShowButtonClickedAlready;
     int                                     m_pairTabPageId;
     bool                                    m_exitingOrder;
+    bool                                    m_placingOrder;
 
     struct GraphInfo
     {

@@ -336,7 +336,7 @@ SecurityOrder *Security::newSecurityOrder(long orderId)
 {
     SecurityOrder* so = new SecurityOrder;
     so->order.orderId = orderId;
-    m_securityOrderMap[orderId] = so;
+    m_securityOrderMap.insert(orderId, so);
     return so;
 }
 
