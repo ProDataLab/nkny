@@ -88,6 +88,10 @@ public:
     bool getPlacingOrder() const;
     void setPlacingOrder(bool placingOrder);
 
+    void setNumStdDevLayerTriggersActivated(int numStdDevLayerTriggersActivated);
+
+    int getNumStdDevLayerTriggersActivated() const;
+
 public slots:
     void onHistoricalData(long reqId, const QByteArray& date, double open, double high,
         double low, double close, int volume, int barCount, double WAP, int hasGaps);

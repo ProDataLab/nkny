@@ -414,6 +414,7 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
 {
     pDebug(orderId);
 
+
 //    bool orderCancelled = false;
 
 
@@ -502,6 +503,10 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
     // DEBUG FOR CANCELLED ORDERS, ETC
     pDebug(*(s1->getSecurityOrderMap()));
     pDebug(*(s2->getSecurityOrderMap()));
+
+    if (status == "Filled") {
+        p->setPlacingOrder(false);
+    }
 
 
     // is this a new row?
@@ -683,6 +688,8 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
         }
 
         int sFilled = securityOrderMap->value(so->referenceOrderId)->filled;
+//        TriggerType referenceTriggerType = securityOrderMap->value(so->referenceOrderId)->triggerType;
+
         // I had a crash from the line below... use sFilled now to be able to trace the crash.
         //if (so->filled == (*(s->getSecurityOrderMap()))[so->referenceOrderId]->filled) {
         if (so->filled == sFilled) {
@@ -696,8 +703,14 @@ void MainWindow::onOrderStatus(long orderId, const QByteArray &status, int fille
 //            (*(s->getSecurityOrderMap())).remove(so->order.orderId);
             s->getSecurityOrderMap()->remove(so->order.orderId);
 
-            if (s1->getSecurityOrderMap()->isEmpty() && s2->getSecurityOrderMap()->isEmpty())
+            if (s1->getSecurityOrderMap()->isEmpty() && s2->getSecurityOrderMap()->isEmpty()) {
                 p->setExitingOrder(false);
+                p->setNumStdDevLayerTriggersActivated(0);
+            }
+            pDebug(QString("so->triggerType: " + QString::number((int)so->triggerType)));
+//            if ((int)referenceTriggerType < 5) {
+//                p->setNumStdDevLayerTriggersActivated(p->getNumStdDevLayerTriggersActivated() - 1);
+//            }
         }
         pDebug(*s1->getSecurityOrderMap());
         pDebug(*s2->getSecurityOrderMap());

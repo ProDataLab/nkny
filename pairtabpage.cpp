@@ -1848,6 +1848,11 @@ void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
 
 void PairTabPage::exitOrder()
 {
+    // IS THIS GOING TO BREAK ANYTHING ??
+    if (m_placingOrder) {
+        return;
+    }
+
     m_exitingOrder = true;
 
     for (int i=0;i<2;++i) {
@@ -1876,6 +1881,10 @@ void PairTabPage::exitOrder()
             newSo->order.totalQuantity = so->order.totalQuantity;
 
             m_ibClient->placeOrder(orderId, *contract, newSo->order);
+
+            //
+            // THIS SHOULD BE MOVED TO orderStatus
+            //
             switch (so->triggerType)
             {
             case RSI:
@@ -1889,7 +1898,8 @@ void PairTabPage::exitOrder()
             case TEST:
                 ;
             default:
-                --m_numStdDevLayerTriggersActivated;
+//                --m_numStdDevLayerTriggersActivated;
+                ;
             }
         }
     }
@@ -2664,7 +2674,12 @@ void PairTabPage::checkTradeTriggers()
         }
     }
 
-    if (numLayers > 0) {
+    QString msg("numLayers: " + QString::number(numLayers) + " m_numLayersActivated: " + QString::number(m_numStdDevLayerTriggersActivated));
+    pDebug(msg);
+
+    if ((numLayers > 0) && (numLayers > m_numStdDevLayerTriggersActivated)) {
+
+
 
         double lastStdDev = m_ratioStdDev.last();
         bool reverse = false;
@@ -2892,16 +2907,14 @@ void PairTabPage::checkTradeExits(double last=0)
         double lastStdDevMinusOne = fabs(m_ratioStdDev.at(m_ratioStdDev.count()-2));
         double trigger = ui->tradeExitStdDevDoubleSpinBox->value();
 
-        QString msg("lastStdDev: " + QString::number(lastStdDev)
-                    + " lastStdDevMinusOne: " + QString::number(lastStdDevMinusOne)
-                    + " trigger: " + QString::number(trigger));
-        pDebug(msg);
 
-        if ((lastStdDevMinusOne > trigger && lastStdDev < trigger)
-            || (lastStdDevMinusOne < trigger && lastStdDev > trigger))
-        {
+        if (lastStdDevMinusOne > trigger && lastStdDev < trigger) {
             for (int i=0;i<m_numStdDevLayerTriggersActivated;++i) {
                 pDebug("exitOrder() called");
+                QString msg("lastStdDev: " + QString::number(lastStdDev)
+                            + " lastStdDevMinusOne: " + QString::number(lastStdDevMinusOne)
+                            + " trigger: " + QString::number(trigger));
+                pDebug(msg);
                 exitOrder();
             }
             return;
@@ -3287,6 +3300,17 @@ void PairTabPage::on_sym1IsShortCheckBox_stateChanged(int arg1)
     else {
         ui->sym2IsShortCheckBox->setChecked(true);
     }
+}
+
+int PairTabPage::getNumStdDevLayerTriggersActivated() const
+{
+    return m_numStdDevLayerTriggersActivated;
+}
+
+void PairTabPage::setNumStdDevLayerTriggersActivated(int numStdDevLayerTriggersActivated)
+{
+    pDebug(QString("numLayers(already)Activated: " + QString::number(m_numStdDevLayerTriggersActivated)));
+    m_numStdDevLayerTriggersActivated = numStdDevLayerTriggersActivated;
 }
 
 bool PairTabPage::getPlacingOrder() const
