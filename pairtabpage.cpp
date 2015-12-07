@@ -1849,7 +1849,7 @@ void PairTabPage::placeOrder(TriggerType triggerType, bool reverse)
 void PairTabPage::exitOrder()
 {
     // IS THIS GOING TO BREAK ANYTHING ??
-    if (m_placingOrder) {
+    if (m_placingOrder/* || m_exitingOrder*/) {
         return;
     }
 
@@ -2626,7 +2626,7 @@ void PairTabPage::addTableRow()
 //    qDebug() << "[DEBUG-addTableRow] leaving";
 }
 
-void PairTabPage::checkTradeTriggers()
+void PairTabPage::ccheckTradeTriggers()
 {
 //    if (ui->manualTradeEntryCheckBox->isChecked()
 //            || (!ui->activateButton->isEnabled() && !ui->deactivateButton->isEnabled())
@@ -2916,6 +2916,7 @@ void PairTabPage::checkTradeExits(double last=0)
                             + " trigger: " + QString::number(trigger));
                 pDebug(msg);
                 exitOrder();
+                return;
             }
             return;
         }
